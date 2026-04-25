@@ -1,9 +1,9 @@
 package com.os.features.product.domain;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -11,11 +11,9 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Part extends Product {
 
-    private String manufacturerCode; // código do fabricante
+    private String manufacturerCode;
     private int warrantyMonths;
 
-    // TODO: Add compatibility list of vehicles
-    //private List<Vehicle> vehiclesCompatibilityList;
-
-
+    // TODO: Add compatibility list when Vehicle domain class is created
+    // private List<Vehicle> compatibleVehicles = new ArrayList<>();
 }

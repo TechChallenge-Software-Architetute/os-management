@@ -1,13 +1,14 @@
 package com.os.features.product.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -20,13 +21,11 @@ public abstract class Product {
     protected String sku;
     protected ProductType type;
     protected UnitOfMeasure unit;
-
     protected String category;
     protected String brand;
-
     protected BigDecimal costPrice;
     protected BigDecimal salePrice;
-
-    protected boolean active;
-
+    protected boolean active = true;
+    protected LocalDateTime createdAt;
+    protected LocalDateTime updatedAt;
 }
