@@ -2,7 +2,6 @@ package com.os.features.product.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,7 +15,7 @@ import lombok.Setter;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class Product {
 
-    protected UUID id;
+    protected Long id;
     protected String name;
     protected String sku;
     protected ProductType type;

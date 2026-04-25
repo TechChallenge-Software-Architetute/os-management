@@ -4,13 +4,12 @@ import com.os.features.product.domain.Supply;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface SupplyRepository {
 
     Supply save(Supply supply);
 
-    Optional<Supply> findById(UUID id);
+    Optional<Supply> findById(Long id);
 
     List<Supply> findAllActive();
 

@@ -4,13 +4,12 @@ import com.os.features.product.domain.Part;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface PartRepository {
 
     Part save(Part part);
 
-    Optional<Part> findById(UUID id);
+    Optional<Part> findById(Long id);
 
     List<Part> findAllActive();
 
