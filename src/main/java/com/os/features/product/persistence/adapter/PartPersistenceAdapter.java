@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -33,7 +32,7 @@ public class PartPersistenceAdapter implements PartRepository {
     }
 
     @Override
-    public Optional<Part> findById(UUID id) {
+    public Optional<Part> findById(Long id) {
         return jpaRepository.findById(id).map(PartMapper::toDomain);
     }
 

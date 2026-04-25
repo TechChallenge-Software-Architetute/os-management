@@ -6,10 +6,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface SupplyJpaRepository extends JpaRepository<SupplyEntity, UUID> {
+public interface SupplyJpaRepository extends JpaRepository<SupplyEntity, Long> {
 
     Optional<SupplyEntity> findBySku(String sku);
 
