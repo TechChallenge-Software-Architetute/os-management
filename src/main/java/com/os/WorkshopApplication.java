@@ -1,4 +1,4 @@
-package com.os.workshop;
+package com.os;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
