@@ -1,0 +1,71 @@
+package com.os.features.client.persistence.adapter;
+
+import com.os.features.client.domain.Client;
+import com.os.features.client.persistence.entity.ClientEntity;
+import com.os.features.client.persistence.mapper.ClientMapper;
+import com.os.features.client.persistence.repository.ClientJpaRepository;
+import com.os.features.client.repository.ClientRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Adaptador que implementa a porta {@link ClientRepository} usando Spring Data JPA.
+ *
+ * <p>Responsabilidades:
+ * <ul>
+ *   <li>Decidir entre insert e update com base na presença de ID no aggregate.</li>
+ *   <li>Converter entre o domínio ({@link Client}) e a entidade JPA ({@link ClientEntity})
+ *       através do {@link ClientMapper}.</li>
+ *   <li>Isolar o serviço de aplicação de qualquer detalhe de persistência.</li>
+ * </ul>
+ */
+@Component
+@RequiredArgsConstructor
+public class ClientPersistenceAdapter implements ClientRepository {
+
+    private final ClientJpaRepository jpaRepository;
+    private final ClientMapper mapper;
+
+    /**
+     * Persiste o cliente. Se o aggregate já possui ID, carrega a entidade existente e aplica
+     * o update; caso contrário, cria uma nova entidade para insert.
+     */
+    @Override
+    public Client save(Client client) {
+        ClientEntity entity;
+        if (client.getId() != null) {
+            entity = jpaRepository.findById(client.getId())
+                    .orElse(mapper.toEntity(client));
+            mapper.updateEntity(entity, client);
+        } else {
+            entity = mapper.toEntity(client);
+        }
+        return mapper.toDomain(jpaRepository.save(entity));
+    }
+
+    @Override
+    public Optional<Client> findById(UUID id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<Client> findByCpf(String normalizedCpf) {
+        return jpaRepository.findByCpf(normalizedCpf).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Client> findAllActive() {
+        return jpaRepository.findByActiveTrue().stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public boolean existsByCpf(String normalizedCpf) {
+        return jpaRepository.existsByCpf(normalizedCpf);
+    }
+}
