@@ -1,10 +1,9 @@
-package com.os.features.vehicle;
+package com.os.features.vehicle.dto;
 
 import com.os.features.vehicle.domain.Vehicle;
 import com.os.features.vehicle.domain.VehicleType;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Payload de saída com os dados de um veículo.
@@ -14,7 +13,7 @@ import java.util.UUID;
  * O factory method {@link #from(Vehicle)} isola a conversão do domínio para o contrato da API.
  *
  * @param id        identificador único do veículo
- * @param clientId  UUID do cliente proprietário
+ * @param clientId  ID do cliente proprietário
  * @param plate     placa formatada (ex: {@code "ABC-1234"} ou {@code "ABC-1D23"})
  * @param brand     marca do veículo
  * @param model     modelo do veículo
@@ -26,8 +25,8 @@ import java.util.UUID;
  * @param updatedAt data/hora da última atualização
  */
 public record VehicleResponse(
-        UUID id,
-        UUID clientId,
+        Long id,
+        Long clientId,
         String plate,
         String brand,
         String model,

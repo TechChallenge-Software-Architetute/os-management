@@ -1,9 +1,8 @@
-package com.os.features.client;
+package com.os.features.client.dto;
 
 import com.os.features.client.domain.Client;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Payload de saída com os dados de um cliente.
@@ -21,7 +20,7 @@ import java.util.UUID;
  * @param updatedAt data/hora da última atualização
  */
 public record ClientResponse(
-        UUID id,
+        Long id,
         String name,
         String cpf,
         String email,

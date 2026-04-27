@@ -1,6 +1,7 @@
 package com.os.features.client;
 
 import com.os.features.client.domain.Client;
+import com.os.features.client.dto.ClientRequest;
 import com.os.features.client.exception.ClientNotFoundException;
 import com.os.features.client.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Serviço de aplicação responsável pelos casos de uso de cliente.
@@ -49,7 +49,7 @@ public class ClientService {
      * @throws ClientNotFoundException se nenhum cliente existir com o ID informado
      */
     @Transactional(readOnly = true)
-    public Client findById(UUID id) {
+    public Client findById(Long id) {
         return clientRepository.findById(id)
                 .orElseThrow(() -> new ClientNotFoundException("id: " + id));
     }
@@ -88,7 +88,7 @@ public class ClientService {
      * @throws ClientNotFoundException se o cliente não for encontrado
      */
     @Transactional
-    public Client update(UUID id, ClientRequest request) {
+    public Client update(Long id, ClientRequest request) {
         Client client = findById(id);
         client.update(request.name(), request.email(), request.phone());
         return clientRepository.save(client);
@@ -102,7 +102,7 @@ public class ClientService {
      * @throws ClientNotFoundException se o cliente não for encontrado
      */
     @Transactional
-    public void deactivate(UUID id) {
+    public void deactivate(Long id) {
         Client client = findById(id);
         client.deactivate();
         clientRepository.save(client);

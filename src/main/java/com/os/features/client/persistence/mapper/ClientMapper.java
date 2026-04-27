@@ -20,8 +20,8 @@ import org.mapstruct.MappingTarget;
  *       {@link Client#reconstitute}, que bypassa as validações de criação.</li>
  * </ul>
  *
- * <p>O campo {@code cpf} requer mapeamento explícito pois no domínio é um value object ({@link com.os.features.client.domain.valueobject.Cpf})
- * enquanto na entidade é uma {@code String}.
+ * <p>O campo {@code cpf} requer mapeamento explícito pois no domínio é um value object
+ * ({@link com.os.features.client.domain.valueobject.Cpf}) enquanto na entidade é uma {@code String}.
  */
 @Mapper(componentModel = "spring")
 public interface ClientMapper {

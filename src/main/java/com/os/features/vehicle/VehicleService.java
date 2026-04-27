@@ -3,6 +3,7 @@ package com.os.features.vehicle;
 import com.os.features.client.exception.ClientNotFoundException;
 import com.os.features.client.repository.ClientRepository;
 import com.os.features.vehicle.domain.Vehicle;
+import com.os.features.vehicle.dto.VehicleRequest;
 import com.os.features.vehicle.exception.VehicleNotFoundException;
 import com.os.features.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Serviço de aplicação responsável pelos casos de uso de veículo.
@@ -64,7 +64,7 @@ public class VehicleService {
      * @throws VehicleNotFoundException se nenhum veículo existir com o ID informado
      */
     @Transactional(readOnly = true)
-    public Vehicle findById(UUID id) {
+    public Vehicle findById(Long id) {
         return vehicleRepository.findById(id)
                 .orElseThrow(() -> new VehicleNotFoundException("id: " + id));
     }
@@ -91,7 +91,7 @@ public class VehicleService {
      * @throws ClientNotFoundException se o cliente não existir
      */
     @Transactional(readOnly = true)
-    public List<Vehicle> findAllByClient(UUID clientId) {
+    public List<Vehicle> findAllByClient(Long clientId) {
         clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientNotFoundException("id: " + clientId));
         return vehicleRepository.findAllByClientId(clientId);
@@ -109,7 +109,7 @@ public class VehicleService {
      * @throws IllegalStateException    se a nova placa já pertencer a outro veículo
      */
     @Transactional
-    public Vehicle update(UUID id, VehicleRequest request) {
+    public Vehicle update(Long id, VehicleRequest request) {
         Vehicle vehicle = findById(id);
 
         String normalizedPlate = normalizePlate(request.plate());
@@ -131,7 +131,7 @@ public class VehicleService {
      * @throws VehicleNotFoundException se o veículo não for encontrado
      */
     @Transactional
-    public void deactivate(UUID id) {
+    public void deactivate(Long id) {
         Vehicle vehicle = findById(id);
         vehicle.deactivate();
         vehicleRepository.save(vehicle);

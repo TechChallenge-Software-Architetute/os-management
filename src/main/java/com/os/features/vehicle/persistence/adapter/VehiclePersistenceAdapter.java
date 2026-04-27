@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Adaptador que implementa a porta {@link VehicleRepository} usando Spring Data JPA.
@@ -63,7 +62,7 @@ public class VehiclePersistenceAdapter implements VehicleRepository {
     }
 
     @Override
-    public Optional<Vehicle> findById(UUID id) {
+    public Optional<Vehicle> findById(Long id) {
         return vehicleJpaRepository.findById(id).map(vehicleMapper::toDomain);
     }
 
@@ -73,7 +72,7 @@ public class VehiclePersistenceAdapter implements VehicleRepository {
     }
 
     @Override
-    public List<Vehicle> findAllByClientId(UUID clientId) {
+    public List<Vehicle> findAllByClientId(Long clientId) {
         return vehicleJpaRepository.findByClient_IdAndActiveTrue(clientId).stream()
                 .map(vehicleMapper::toDomain)
                 .toList();

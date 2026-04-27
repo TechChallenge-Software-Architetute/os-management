@@ -4,7 +4,6 @@ import com.os.features.vehicle.domain.Vehicle;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Porta de saída (output port) para operações de persistência de {@link Vehicle}.
@@ -24,10 +23,10 @@ public interface VehicleRepository {
     /**
      * Busca um veículo pelo seu identificador único.
      *
-     * @param id UUID do veículo
+     * @param id ID do veículo
      * @return {@code Optional} com o veículo ou vazio se não existir
      */
-    Optional<Vehicle> findById(UUID id);
+    Optional<Vehicle> findById(Long id);
 
     /**
      * Busca um veículo pela placa normalizada (sem separadores, maiúscula).
@@ -40,10 +39,10 @@ public interface VehicleRepository {
     /**
      * Retorna todos os veículos ativos de um determinado cliente.
      *
-     * @param clientId UUID do cliente proprietário
+     * @param clientId ID do cliente proprietário
      * @return lista de veículos ativos do cliente
      */
-    List<Vehicle> findAllByClientId(UUID clientId);
+    List<Vehicle> findAllByClientId(Long clientId);
 
     /**
      * Verifica se já existe um veículo com a placa informada.

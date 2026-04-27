@@ -5,7 +5,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Aggregate root que representa um veículo pertencente a um cliente da oficina.
@@ -27,10 +26,10 @@ import java.util.UUID;
 @Getter
 public class Vehicle {
 
-    private UUID id;
+    private Long id;
 
     /** Referência ao cliente proprietário por ID — não carrega o aggregate completo. */
-    private UUID clientId;
+    private Long clientId;
 
     private LicensePlate plate;
     private String brand;
@@ -50,7 +49,7 @@ public class Vehicle {
      * A existência do {@code clientId} como cliente válido deve ser verificada
      * pelo serviço de aplicação antes de chamar este método.
      *
-     * @param clientId  UUID do cliente proprietário (obrigatório)
+     * @param clientId  ID do cliente proprietário (obrigatório)
      * @param rawPlate  placa em qualquer formato aceito — validada pelo {@link LicensePlate}
      * @param brand     marca do veículo (obrigatório)
      * @param model     modelo do veículo (obrigatório)
@@ -60,7 +59,7 @@ public class Vehicle {
      * @return novo {@code Vehicle} com {@code active = true} e sem ID
      * @throws IllegalArgumentException se algum campo obrigatório for inválido
      */
-    public static Vehicle create(UUID clientId, String rawPlate, String brand,
+    public static Vehicle create(Long clientId, String rawPlate, String brand,
                                   String model, int year, String color, VehicleType type) {
         Objects.requireNonNull(clientId, "Client ID is required");
         Objects.requireNonNull(type, "Vehicle type is required");
@@ -85,7 +84,7 @@ public class Vehicle {
      * quando o veículo foi originalmente cadastrado.
      * Utilizado exclusivamente pela camada de infraestrutura (mapper de persistência).
      */
-    public static Vehicle reconstitute(UUID id, UUID clientId, String plate,
+    public static Vehicle reconstitute(Long id, Long clientId, String plate,
                                         String brand, String model, int year,
                                         String color, VehicleType type, boolean active,
                                         LocalDateTime createdAt, LocalDateTime updatedAt) {

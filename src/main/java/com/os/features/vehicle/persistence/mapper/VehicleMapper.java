@@ -15,7 +15,7 @@ import org.mapstruct.MappingTarget;
  * <ul>
  *   <li>{@code plate}: no domínio é {@code LicensePlate} (value object); na entidade é {@code String}.
  *       Mapeado com {@code source = "vehicle.plate.value"} para extrair o valor normalizado.</li>
- *   <li>{@code client}: o domínio referencia o cliente por {@code clientId} (UUID);
+ *   <li>{@code client}: o domínio referencia o cliente por {@code clientId} (Long);
  *       a entidade precisa do {@link ClientEntity} completo para o {@code @ManyToOne}.
  *       Por isso {@code toEntity} recebe o {@link ClientEntity} como segundo parâmetro,
  *       resolvido pelo adapter antes de chamar o mapper.</li>
@@ -53,7 +53,7 @@ public interface VehicleMapper {
      * O relacionamento com o cliente ({@code client}) não é alterado pelo mapper —
      * o adapter atualiza-o explicitamente caso necessário.
      */
-    @Mapping(target = "plate",  source = "plate.value")
+    @Mapping(target = "plate",      source = "plate.value")
     @Mapping(target = "id",         ignore = true)
     @Mapping(target = "client",     ignore = true)
     @Mapping(target = "createdAt",  ignore = true)

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Repositório Spring Data JPA para {@link ClientEntity}.
@@ -15,7 +14,7 @@ import java.util.UUID;
  * diretamente em serviços de aplicação ou domínio, mantendo o isolamento de camadas.
  */
 @Repository
-public interface ClientJpaRepository extends JpaRepository<ClientEntity, UUID> {
+public interface ClientJpaRepository extends JpaRepository<ClientEntity, Long> {
 
     /**
      * Busca um cliente pelo CPF normalizado (sem formatação).

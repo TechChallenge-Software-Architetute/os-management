@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Adaptador que implementa a porta {@link ClientRepository} usando Spring Data JPA.
@@ -48,7 +47,7 @@ public class ClientPersistenceAdapter implements ClientRepository {
     }
 
     @Override
-    public Optional<Client> findById(UUID id) {
+    public Optional<Client> findById(Long id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
     }
 

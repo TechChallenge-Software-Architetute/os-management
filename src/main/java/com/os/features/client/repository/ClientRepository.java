@@ -4,7 +4,6 @@ import com.os.features.client.domain.Client;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Porta de saída (output port) para operações de persistência de {@link Client}.
@@ -24,12 +23,12 @@ public interface ClientRepository {
     Client save(Client client);
 
     /**
-     * Busca um cliente pelo seu identificador único (UUID).
+     * Busca um cliente pelo seu identificador único (Long).
      *
      * @param id identificador do cliente
      * @return {@code Optional} com o cliente ou vazio se não existir
      */
-    Optional<Client> findById(UUID id);
+    Optional<Client> findById(Long id);
 
     /**
      * Busca um cliente pelo CPF normalizado (apenas dígitos, 11 caracteres).

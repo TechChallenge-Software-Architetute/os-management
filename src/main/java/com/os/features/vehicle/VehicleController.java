@@ -1,5 +1,7 @@
 package com.os.features.vehicle;
 
+import com.os.features.vehicle.dto.VehicleRequest;
+import com.os.features.vehicle.dto.VehicleResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Controller REST para operações CRUD de veículos.
@@ -52,11 +53,11 @@ public class VehicleController {
     /**
      * Busca um veículo pelo seu identificador único.
      *
-     * @param id UUID do veículo
+     * @param id ID do veículo
      * @return dados do veículo com HTTP 200, ou 404 se não encontrado
      */
     @GetMapping("/{id}")
-    public ResponseEntity<VehicleResponse> findById(@PathVariable UUID id) {
+    public ResponseEntity<VehicleResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(VehicleResponse.from(vehicleService.findById(id)));
     }
 
@@ -75,11 +76,11 @@ public class VehicleController {
     /**
      * Lista todos os veículos ativos de um cliente.
      *
-     * @param clientId UUID do cliente proprietário
+     * @param clientId ID do cliente proprietário
      * @return lista de veículos com HTTP 200, ou 404 se o cliente não existir
      */
     @GetMapping("/client/{clientId}")
-    public ResponseEntity<List<VehicleResponse>> findAllByClient(@PathVariable UUID clientId) {
+    public ResponseEntity<List<VehicleResponse>> findAllByClient(@PathVariable Long clientId) {
         List<VehicleResponse> response = vehicleService.findAllByClient(clientId).stream()
                 .map(VehicleResponse::from)
                 .toList();
@@ -90,12 +91,12 @@ public class VehicleController {
      * Atualiza os dados de um veículo existente.
      * O cliente proprietário não pode ser alterado.
      *
-     * @param id      UUID do veículo
+     * @param id      ID do veículo
      * @param request novos dados do veículo
      * @return veículo atualizado com HTTP 200, ou 404 se não encontrado
      */
     @PutMapping("/{id}")
-    public ResponseEntity<VehicleResponse> update(@PathVariable UUID id,
+    public ResponseEntity<VehicleResponse> update(@PathVariable Long id,
                                                    @Valid @RequestBody VehicleRequest request) {
         return ResponseEntity.ok(VehicleResponse.from(vehicleService.update(id, request)));
     }
@@ -104,11 +105,11 @@ public class VehicleController {
      * Desativa um veículo (soft delete).
      * O veículo permanece no banco mas não aparece mais nas listagens ativas.
      *
-     * @param id UUID do veículo
+     * @param id ID do veículo
      * @return HTTP 204 em caso de sucesso, ou 404 se não encontrado
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
+    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         vehicleService.deactivate(id);
         return ResponseEntity.noContent().build();
     }

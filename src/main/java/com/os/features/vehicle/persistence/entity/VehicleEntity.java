@@ -21,7 +21,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Entidade JPA que representa a tabela {@code vehicles} no banco de dados.
@@ -42,8 +41,8 @@ import java.util.UUID;
 public class VehicleEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private Long id;
 
     /** Relacionamento com o cliente proprietário — carregamento lazy para eficiência. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

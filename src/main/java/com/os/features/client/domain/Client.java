@@ -5,7 +5,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Aggregate root que representa um cliente da oficina.
@@ -22,7 +21,7 @@ import java.util.UUID;
 @Getter
 public class Client {
 
-    private UUID id;
+    private Long id;
     private String name;
     private Cpf cpf;
     private String email;
@@ -65,7 +64,7 @@ public class Client {
      * assume que os dados já foram validados quando o registro foi originalmente criado.
      * Utilizado exclusivamente pela camada de infraestrutura (mapper de persistência).
      */
-    public static Client reconstitute(UUID id, String name, String cpfValue,
+    public static Client reconstitute(Long id, String name, String cpfValue,
                                        String email, String phone, boolean active,
                                        LocalDateTime createdAt, LocalDateTime updatedAt) {
         var client = new Client();
@@ -108,7 +107,7 @@ public class Client {
     }
 
     /** Setter de pacote usado pelo mapper para definir o ID após a persistência. */
-    void setId(UUID id) {
+    void setId(Long id) {
         this.id = id;
     }
 }

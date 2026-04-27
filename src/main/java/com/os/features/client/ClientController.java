@@ -1,5 +1,7 @@
 package com.os.features.client;
 
+import com.os.features.client.dto.ClientRequest;
+import com.os.features.client.dto.ClientResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Controller REST para operações CRUD de clientes.
@@ -65,11 +66,11 @@ public class ClientController {
     /**
      * Busca um cliente pelo seu identificador único.
      *
-     * @param id UUID do cliente
+     * @param id ID do cliente
      * @return dados do cliente com HTTP 200, ou 404 se não encontrado
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ClientResponse> findById(@PathVariable UUID id) {
+    public ResponseEntity<ClientResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(ClientResponse.from(clientService.findById(id)));
     }
 
@@ -89,12 +90,12 @@ public class ClientController {
      * Atualiza os dados de contato de um cliente existente.
      * O CPF não pode ser alterado.
      *
-     * @param id      UUID do cliente
+     * @param id      ID do cliente
      * @param request novos dados do cliente
      * @return cliente atualizado com HTTP 200, ou 404 se não encontrado
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ClientResponse> update(@PathVariable UUID id,
+    public ResponseEntity<ClientResponse> update(@PathVariable Long id,
                                                   @Valid @RequestBody ClientRequest request) {
         return ResponseEntity.ok(ClientResponse.from(clientService.update(id, request)));
     }
@@ -103,11 +104,11 @@ public class ClientController {
      * Desativa um cliente (soft delete).
      * O cliente permanece no banco mas não aparece mais nas listagens ativas.
      *
-     * @param id UUID do cliente
+     * @param id ID do cliente
      * @return HTTP 204 em caso de sucesso, ou 404 se não encontrado
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
+    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         clientService.deactivate(id);
         return ResponseEntity.noContent().build();
     }

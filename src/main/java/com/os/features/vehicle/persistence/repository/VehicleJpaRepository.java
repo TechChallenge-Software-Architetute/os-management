@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Repositório Spring Data JPA para {@link VehicleEntity}.
@@ -18,7 +17,7 @@ import java.util.UUID;
  * a navegação pela associação {@code client → id}, evitando ambiguidade com o Spring Data.
  */
 @Repository
-public interface VehicleJpaRepository extends JpaRepository<VehicleEntity, UUID> {
+public interface VehicleJpaRepository extends JpaRepository<VehicleEntity, Long> {
 
     /**
      * Busca um veículo pela placa normalizada (sem hífen, maiúscula).
@@ -33,10 +32,10 @@ public interface VehicleJpaRepository extends JpaRepository<VehicleEntity, UUID>
      * O underscore em {@code Client_Id} instrui o Spring Data a navegar pela associação
      * {@code client} até a propriedade {@code id} da {@code ClientEntity}.
      *
-     * @param clientId UUID do cliente proprietário
+     * @param clientId ID do cliente proprietário
      * @return lista de entidades com {@code active = true}
      */
-    List<VehicleEntity> findByClient_IdAndActiveTrue(UUID clientId);
+    List<VehicleEntity> findByClient_IdAndActiveTrue(Long clientId);
 
     /**
      * Verifica se já existe um veículo com a placa informada.
