@@ -1,4 +1,4 @@
-package com.os.workshop.service.adapter;
+package com.os.workshop.service.adapter.api;
 
 import com.os.workshop.service.domain.ServiceEntity;
 import com.os.workshop.service.usecases.ListServicesUC;

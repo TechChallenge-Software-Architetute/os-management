@@ -1,4 +1,4 @@
-package com.os.workshop.service.repository;
+package com.os.workshop.service.adapter.database;
 
 import com.os.workshop.service.domain.ServiceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;

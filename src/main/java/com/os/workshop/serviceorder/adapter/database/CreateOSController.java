@@ -1,11 +1,12 @@
-package com.os.workshop.serviceorder.adapter;
+package com.os.workshop.serviceorder.adapter.database;
 
+import com.os.workshop.serviceorder.domain.CreateOrderRequest;
 import com.os.workshop.serviceorder.usecases.CreateOrderUC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,9 +19,9 @@ public class CreateOSController {
 
     @PostMapping
     public ResponseEntity<Void> createService(
-            @RequestHeader(value = "correlationId") String correlationId
+            @RequestBody CreateOrderRequest request
     ) {
-        createOrderUC.process();
+        createOrderUC.process(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

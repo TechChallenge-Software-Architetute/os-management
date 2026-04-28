@@ -1,16 +1,13 @@
 package com.os.workshop.service.usecases;
 
 import com.os.workshop.service.domain.ServiceEntity;
-import com.os.workshop.service.domain.enums.ServiceStatusEnum;
 import com.os.workshop.service.domain.requests.CreateServiceRequest;
-import com.os.workshop.service.repository.ServiceRepository;
-import com.os.workshop.service.repository.ServiceTypeRepository;
+import com.os.workshop.service.adapter.database.ServiceRepository;
+import com.os.workshop.service.adapter.database.ServiceTypeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 @Service
 public class CreateServiceUC {

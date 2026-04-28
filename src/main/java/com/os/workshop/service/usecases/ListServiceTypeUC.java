@@ -1,7 +1,7 @@
 package com.os.workshop.service.usecases;
 
 import com.os.workshop.service.domain.ServiceTypeEntity;
-import com.os.workshop.service.repository.ServiceTypeRepository;
+import com.os.workshop.service.adapter.database.ServiceTypeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
