@@ -1,5 +1,6 @@
 package com.os.features.vehicle.dto;
 
+import com.os.features.utils.annotations.UpperCase;
 import com.os.features.vehicle.domain.VehicleType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -28,9 +29,9 @@ import jakarta.validation.constraints.Positive;
  */
 public record VehicleRequest(
         @NotNull @Positive Long clientId,
-        @NotBlank String plate,
-        @NotBlank String brand,
-        @NotBlank String model,
+        @NotBlank @UpperCase String plate,
+        @NotBlank @UpperCase String brand,
+        @NotBlank @UpperCase String model,
         @Min(1886) int year,
         String color,
         @NotNull VehicleType type

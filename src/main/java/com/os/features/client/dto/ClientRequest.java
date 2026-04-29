@@ -1,5 +1,6 @@
 package com.os.features.client.dto;
 
+import com.os.features.utils.annotations.UpperCase;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -19,7 +20,7 @@ import jakarta.validation.constraints.NotBlank;
  * @param phone telefone de contato (opcional)
  */
 public record ClientRequest(
-        @NotBlank String name,
+        @NotBlank @UpperCase String name,
         @NotBlank String cpf,
         @Email String email,
         String phone
