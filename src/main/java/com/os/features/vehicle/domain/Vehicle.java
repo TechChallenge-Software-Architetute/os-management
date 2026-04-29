@@ -68,10 +68,10 @@ public class Vehicle {
         var vehicle = new Vehicle();
         vehicle.clientId = clientId;
         vehicle.plate = new LicensePlate(rawPlate);
-        vehicle.brand = brand.strip();
-        vehicle.model = model.strip();
+        vehicle.brand = brand.strip().toUpperCase();
+        vehicle.model = model.strip().toUpperCase();
         vehicle.year = year;
-        vehicle.color = color;
+        vehicle.color = color.strip().toUpperCase();
         vehicle.type = type;
         vehicle.active = true;
         return vehicle;

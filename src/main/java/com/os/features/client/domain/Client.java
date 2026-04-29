@@ -49,7 +49,7 @@ public class Client {
             throw new IllegalArgumentException("Name cannot be blank");
         }
         var client = new Client();
-        client.name = name.strip();
+        client.name = name.strip().toUpperCase();
         client.cpf = new Cpf(rawCpf);
         client.email = email;
         client.phone = phone;
