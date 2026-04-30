@@ -24,16 +24,14 @@ public class ListServiceTypeController {
     private ListServiceTypeUC listServiceTypeUC;
 
     @GetMapping
-    public ResponseEntity<List<ServiceTypeEntity>> listServices(
-            @RequestHeader(value = "correlationId") String correlationId
-    ) {
-        logger.info("Recebida requisição para listar serviços. CorrelationId: {}", correlationId);
+    public ResponseEntity<List<ServiceTypeEntity>> listServices() {
+        logger.info("Recebida requisição para listar serviços.");
         try {
             List<ServiceTypeEntity> serviceType = listServiceTypeUC.process();
             logger.info("Tipos de Serviços listados com sucesso. Tipos: {}", serviceType);
             return ResponseEntity.ok(serviceType);
         } catch (Exception e) {
-            logger.error("Erro ao listar serviços. CorrelationId: {}, Erro: {}", correlationId, e.getMessage(), e);
+            logger.error("Erro ao listar serviços. Erro: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
