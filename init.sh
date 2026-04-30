@@ -56,8 +56,29 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     SELECT id, id_os, service_type_name, service_status, created_at FROM service;
 EOSQL
 
+# ✓ Criando tabela 'service_order'
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE TABLE IF NOT EXISTS service_order (
+        id UUID PRIMARY KEY,
+        service_type_name VARCHAR(255) NOT NULL,
+        service_status VARCHAR(10) DEFAULT 'TO_DO',
+        list_service VARCHAR(255) NOT NULL
+    );
+EOSQL
+
+# ✓ Inserindo dados mock na tabela 'service_order'
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    INSERT INTO service_order (id, service_type_name, list_service) VALUES
+    ('b46ac51b-5ca6-439b-ba52-a36bd52e8648', 'TROCA_OLEO', '["Troca de óleo", "alinhamento"]'::jsonb);
+EOSQL
+
+echo "✓ Verificando dados inseridos em service_order..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SELECT COUNT(*) as total_orders FROM "service_order";
+    SELECT id, service_type_name, service_status, list_service FROM "service_order";
+EOSQL
+
 echo ""
 echo "=========================================="
 echo "✓ Inicialização concluída com sucesso!"
 echo "=========================================="
-

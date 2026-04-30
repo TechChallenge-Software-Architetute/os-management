@@ -4,6 +4,7 @@ import com.os.workshop.service.domain.enums.ServiceStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -12,8 +13,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "Order")
-public class OrderEntity {
+@Table(name = "service_order")
+public class ServiceOrderEntity {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -26,6 +27,7 @@ public class OrderEntity {
     private String serviceStatus = ServiceStatusEnum.TO_DO.getStatus();
 
     @Column(name = "list_service", nullable = false)
-    private String listService;
+    @Convert(converter = ListToJsonConverter.class)
+    private List<String> listService;
 
 }

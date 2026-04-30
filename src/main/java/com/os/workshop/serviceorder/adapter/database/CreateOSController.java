@@ -1,6 +1,7 @@
 package com.os.workshop.serviceorder.adapter.database;
 
 import com.os.workshop.serviceorder.domain.CreateOrderRequest;
+import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
 import com.os.workshop.serviceorder.usecases.CreateOrderUC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,10 +19,10 @@ public class CreateOSController {
     private CreateOrderUC createOrderUC;
 
     @PostMapping
-    public ResponseEntity<Void> createService(
+    public ResponseEntity<ServiceOrderEntity> createService(
             @RequestBody CreateOrderRequest request
     ) {
-        createOrderUC.process(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        var serviceOrder = createOrderUC.process(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(serviceOrder);
     }
 }

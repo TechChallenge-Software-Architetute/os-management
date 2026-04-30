@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-@Builder
+//@Builder
 public class CreateOrderRequest {
     private String cpfCnpj;
     private String placaVeiculo;
