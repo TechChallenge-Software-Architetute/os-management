@@ -2,6 +2,7 @@ package com.os.workshop.serviceorder.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import org.slf4j.Logger;
@@ -14,7 +15,8 @@ import java.util.List;
 public class ListToJsonConverter implements AttributeConverter<List<String>, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(ListToJsonConverter.class);
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
     @Override
     public String convertToDatabaseColumn(List<String> attribute) {

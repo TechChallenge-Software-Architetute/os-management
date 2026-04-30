@@ -1,13 +1,18 @@
 package com.os.workshop.service.usecases;
 
-import com.os.workshop.service.domain.ServiceEntity;
-import com.os.workshop.service.domain.requests.CreateServiceRequest;
 import com.os.workshop.service.adapter.database.ServiceRepository;
 import com.os.workshop.service.adapter.database.ServiceTypeRepository;
+import com.os.workshop.service.domain.ServiceEntity;
+import com.os.workshop.service.domain.Status;
+import com.os.workshop.service.domain.enums.ServiceStatusEnum;
+import com.os.workshop.service.domain.requests.CreateServiceRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CreateServiceUC {
@@ -34,6 +39,7 @@ public class CreateServiceUC {
         ServiceEntity newService = new ServiceEntity();
         newService.setServiceTypeName(serviceType.getName());
         newService.setIdOS(request.getIdOS());
+        newService.setServiceStatus(List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now())));
 
         // Salva no repositório
         ServiceEntity createdService = serviceRepository.save(newService);
