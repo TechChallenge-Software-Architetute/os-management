@@ -46,13 +46,16 @@ public class JwtService {
     }
 
     public boolean isValid(String token, UserDetails userDetails) {
+        try {
+            final String usernameFromToken = extractUsername(token);
 
-        log.debug("Validating JWT Token for user {}", userDetails.getUsername());
+            return (usernameFromToken.equals(userDetails.getUsername())
+                    && !isTokenExpired(token));
 
-        final String usernameFromToken = extractUsername(token);
-
-        return (usernameFromToken.equals(userDetails.getUsername())
-                && !isTokenExpired(token));
+        } catch (Exception e) {
+            log.debug("Invalid JWT token: {}", e.getMessage());
+            return false;
+        }
     }
 
     public String extractUsername(String token) {
