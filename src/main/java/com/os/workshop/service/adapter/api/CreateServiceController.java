@@ -22,7 +22,14 @@ public class CreateServiceController {
     public ResponseEntity<ServiceEntity> createService(
             @RequestBody CreateServiceRequest request
     ) {
-        var createdService = createServiceUC.process(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
+        try {
+
+            var createdService = createServiceUC.process(request);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

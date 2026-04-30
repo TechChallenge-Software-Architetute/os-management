@@ -1,4 +1,4 @@
-package com.os.workshop.serviceorder.adapter.database;
+package com.os.workshop.serviceorder.adapter.api;
 
 import com.os.workshop.serviceorder.domain.CreateOrderRequest;
 import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
@@ -22,11 +22,13 @@ public class CreateOSController {
     public ResponseEntity<ServiceOrderEntity> createService(
             @RequestBody CreateOrderRequest request
     ) {
+
         try {
+
             var serviceOrder = createOrderUC.process(request);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(serviceOrder);
         } catch (Exception e) {
-            // Log the exception (not shown here for brevity)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

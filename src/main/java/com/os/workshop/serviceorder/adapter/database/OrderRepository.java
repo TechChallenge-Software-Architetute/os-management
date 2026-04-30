@@ -1,4 +1,4 @@
-package com.os.workshop.serviceorder.adapter.api;
+package com.os.workshop.serviceorder.adapter.database;
 
 import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
 import org.springframework.data.jpa.repository.JpaRepository;

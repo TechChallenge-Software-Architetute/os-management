@@ -25,9 +25,13 @@ public class ListServiceTypeController {
     @GetMapping
     public ResponseEntity<List<ServiceTypeEntity>> listServices() {
         logger.info("Recebida requisição para listar serviços.");
+
         try {
+
             List<ServiceTypeEntity> serviceType = listServiceTypeUC.process();
+
             logger.info("Tipos de Serviços listados com sucesso. Tipos: {}", serviceType);
+
             return ResponseEntity.ok(serviceType);
         } catch (Exception e) {
             logger.error("Erro ao listar serviços. Erro: {}", e.getMessage(), e);

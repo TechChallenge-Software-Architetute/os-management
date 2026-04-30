@@ -27,9 +27,13 @@ public class UpdateStatusServiceController {
             @RequestBody UpdateStatusServiceRequest request
     ) {
         logger.info("Recebida requisição para atualizar status serviços.");
+
         try {
+
             var service = updateServiceStatusUC.process(request);
+
             logger.info("Serviço atualizado. Serviço: {}", service);
+
             return ResponseEntity.ok().body(service);
         } catch (Exception e) {
             logger.error("Erro ao listar serviços. Erro: {}", e.getMessage(), e);
