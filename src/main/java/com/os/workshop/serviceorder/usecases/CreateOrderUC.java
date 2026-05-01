@@ -32,10 +32,8 @@ public class CreateOrderUC {
 
         var IdOrdemServico = UUID.randomUUID();
 
-        //TODO: Identifica Cliente
         clientService.findByCpf(request.getCpfCnpj());
 
-        //TODO: Identifica Veiculo
         vehicleService.findByPlate(request.getPlacaVeiculo());
 
         request.getServiceTypes().forEach(
@@ -53,11 +51,9 @@ public class CreateOrderUC {
         order.setServiceStatus(ServiceStatusEnum.TO_DO.getStatus());
         order.setListService(request.getServiceTypes());
 
-        //TODO: Salva Ordem de Serviço
         orderRepository.save(order);
 
         //TODO: Notifica Mecanico
-
 
         return order;
     }
