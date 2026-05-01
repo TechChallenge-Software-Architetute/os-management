@@ -1,11 +1,13 @@
 package com.os.workshop.serviceorder.usecases;
 
+import com.os.workshop.client.ClientService;
 import com.os.workshop.service.domain.enums.ServiceStatusEnum;
 import com.os.workshop.service.domain.requests.CreateServiceRequest;
 import com.os.workshop.service.usecases.CreateServiceUC;
 import com.os.workshop.serviceorder.adapter.database.OrderRepository;
 import com.os.workshop.serviceorder.domain.CreateOrderRequest;
 import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
+import com.os.workshop.vehicle.VehicleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +20,12 @@ public class CreateOrderUC {
     private CreateServiceUC createServiceUC;
 
     @Autowired
+    private ClientService clientService;
+
+    @Autowired
+    private VehicleService vehicleService;
+
+    @Autowired
     private OrderRepository orderRepository;
 
     public ServiceOrderEntity process(CreateOrderRequest request) {
@@ -25,9 +33,10 @@ public class CreateOrderUC {
         var IdOrdemServico = UUID.randomUUID();
 
         //TODO: Identifica Cliente
+        clientService.findByCpf(request.getCpfCnpj());
 
         //TODO: Identifica Veiculo
-
+        vehicleService.findByPlate(request.getPlacaVeiculo());
 
         request.getServiceTypes().forEach(
                 service -> {
