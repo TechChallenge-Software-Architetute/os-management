@@ -4,7 +4,7 @@ spring:
   # PostgreSQL connection — defaults match docker-compose setup.
   # Override via environment variables (DB_USERNAME, DB_PASSWORD) for other environments.
   datasource:
-    url: jdbc:postgresql://localhost:5432/workshop
+    url: ${DB_USERNAME:jdbc:postgresql://localhost:5432/workshop}
     username: ${DB_USERNAME:user}
     password: ${DB_PASSWORD:password}
 
