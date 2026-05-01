@@ -172,13 +172,13 @@ echo "=========================================="
 echo "            TABLE PRODUCTS                "
 echo "=========================================="
 
-echo "✓ Criando sequence e tabela 'products' (Single Table Inheritance para Part e Supply)..."
+echo "✓ Criando sequence e tabela 'products' (tabela base com campos compartilhados)..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE SEQUENCE IF NOT EXISTS product_seq START WITH 1 INCREMENT BY 50;
 
     CREATE TABLE IF NOT EXISTS products (
         id BIGINT PRIMARY KEY DEFAULT nextval('product_seq'),
-        product_type VARCHAR(31) NOT NULL,
+        product_type VARCHAR(50) NOT NULL,
         name VARCHAR(255) NOT NULL,
         sku VARCHAR(255) NOT NULL UNIQUE,
         unit VARCHAR(50) NOT NULL,
@@ -187,15 +187,20 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         cost_price NUMERIC(19,2) NOT NULL,
         sale_price NUMERIC(19,2) NOT NULL,
         active BOOLEAN NOT NULL DEFAULT TRUE,
-        -- Part fields
-        manufacturer_code VARCHAR(255),
-        warranty_months INTEGER,
-        -- Supply fields
-        fractional_allowed BOOLEAN,
-        package_size NUMERIC(19,2),
-        -- Timestamps
         created_at TIMESTAMP WITHOUT TIME ZONE,
         updated_at TIMESTAMP WITHOUT TIME ZONE
+    );
+
+    CREATE TABLE IF NOT EXISTS parts (
+        id BIGINT PRIMARY KEY REFERENCES products(id),
+        manufacturer_code VARCHAR(255),
+        warranty_months INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS supplies (
+        id BIGINT PRIMARY KEY REFERENCES products(id),
+        fractional_allowed BOOLEAN,
+        package_size NUMERIC(19,2)
     );
 EOSQL
 
