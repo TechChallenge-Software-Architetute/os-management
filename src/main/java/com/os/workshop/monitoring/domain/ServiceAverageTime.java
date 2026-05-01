@@ -9,5 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ServiceAverageTime {
     private String serviceTypeName;
-    private double averageTimeMinutes;
+    private double averageTimeSeconds;
 }

@@ -1,6 +1,8 @@
 package com.os.workshop.monitoring.usecases;
 
 import com.os.workshop.monitoring.domain.ServiceAverageTime;
+import com.os.workshop.monitoring.domain.enums.AverageTimeEnum;
+import com.os.workshop.monitoring.domain.requests.AverageExecutionTimeRequest;
 import com.os.workshop.service.adapter.database.ServiceRepository;
 import com.os.workshop.service.domain.ServiceEntity;
 import com.os.workshop.service.domain.Status;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,7 +28,7 @@ public class GetAverageExecutionTimeUC {
     @Autowired
     private ServiceRepository serviceRepository;
 
-    public List<ServiceAverageTime> process() {
+    public List<ServiceAverageTime> process(AverageExecutionTimeRequest request) {
         logger.info("Calculando tempo médio de execução dos serviços...");
 
         List<ServiceEntity> services = serviceRepository.findAll();
@@ -35,21 +38,35 @@ public class GetAverageExecutionTimeUC {
                 .collect(Collectors.groupingBy(ServiceEntity::getServiceTypeName));
 
         List<ServiceAverageTime> averages = groupedByType.entrySet().stream()
-                .map(this::calculateAverageForType)
+                .map(entry -> calculateAverageForType(entry, request.getTimeUnit()))
                 .collect(Collectors.toList());
 
         logger.info("Calculado média pelos {} tipos de serviços", averages.size());
         return averages;
     }
 
-    private ServiceAverageTime calculateAverageForType(Map.Entry<String, List<ServiceEntity>> entry) {
+    public ServiceAverageTime processById(UUID id, AverageTimeEnum request) {
+        logger.info("Calculando tempo médio de execução dos serviço...");
+
+        ServiceEntity service = serviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Servico nao encontrado. ID: " + id));
+
+        return service.getServiceTypeName() != null
+                ? calculateAverageForType(Map.entry(service.getServiceTypeName(), List.of(service)), request)
+                : new ServiceAverageTime("Unknown", 0.0);
+    }
+
+    private ServiceAverageTime calculateAverageForType(
+            Map.Entry<String, List<ServiceEntity>> entry,
+            AverageTimeEnum request
+    ) {
         String type = entry.getKey();
         List<ServiceEntity> typeServices = entry.getValue();
 
         // Calcular tempo de execução para cada serviço concluído e filtrar tempos válidos
         List<Double> times = typeServices.stream()
                 .filter(this::hasCompleted)
-                .map(this::calculateExecutionTime)
+                .map(service -> calculateExecutionTime(service, request))
                 .filter(time -> time > 0)
                 .toList();
 
@@ -66,15 +83,16 @@ public class GetAverageExecutionTimeUC {
                 .anyMatch(status -> status.getStatus() == ServiceStatusEnum.DONE);
     }
 
-    private double calculateExecutionTime(ServiceEntity service) {
-        List<Status> statuses = service.getServiceStatus();
+    private double calculateExecutionTime(ServiceEntity service, AverageTimeEnum request) {
+        List<Status> status = service.getServiceStatus();
 
-        LocalDateTime doingTime = findEarliestStatusTime(statuses, ServiceStatusEnum.DOING);
-        LocalDateTime doneTime = findEarliestStatusTime(statuses, ServiceStatusEnum.DONE);
+        LocalDateTime doingTime = findEarliestStatusTime(status, ServiceStatusEnum.DOING);
+        LocalDateTime doneTime = findEarliestStatusTime(status, ServiceStatusEnum.DONE);
 
         if (doingTime != null && doneTime != null && doneTime.isAfter(doingTime)) {
-            long minutes = Duration.between(doingTime, doneTime).toMinutes();
-            return (double) minutes;
+            Duration duration = Duration.between(doingTime, doneTime);
+
+            return request.calculate(duration);
         }
         return 0.0;
     }
