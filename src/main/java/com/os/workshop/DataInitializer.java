@@ -1,10 +1,10 @@
 package com.os.workshop;
 
-import com.os.features.client.domain.Client;
-import com.os.features.client.repository.ClientRepository;
-import com.os.features.vehicle.domain.Vehicle;
-import com.os.features.vehicle.domain.VehicleType;
-import com.os.features.vehicle.repository.VehicleRepository;
+import com.os.workshop.client.domain.Client;
+import com.os.workshop.client.repository.ClientRepository;
+import com.os.workshop.vehicle.domain.Vehicle;
+import com.os.workshop.vehicle.domain.VehicleType;
+import com.os.workshop.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
