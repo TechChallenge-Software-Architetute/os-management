@@ -17,6 +17,8 @@ import java.io.IOException;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
+    private static final int BEARER_REMOVE_LENGTH = 7;
+
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
 
@@ -40,7 +42,7 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(BEARER_REMOVE_LENGTH);
 
         String username = jwtService.extractUsername(token);
 
