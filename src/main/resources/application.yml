@@ -12,6 +12,7 @@ spring:
     hibernate:
       # Auto-creates/updates tables from JPA entities. Use 'validate' or a migration tool (Flyway/Liquibase) in production.
       ddl-auto: update
+      #ddl-auto: validate
     # Logs SQL queries to console — useful for development debugging.
     show-sql: false
     # Required because the main app class is in com.os.workshop but entities live in com.os.features.

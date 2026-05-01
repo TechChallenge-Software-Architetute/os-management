@@ -87,6 +87,72 @@ EOSQL
 
 
 echo "=========================================="
+echo "              TABLE CLIENTS               "
+echo "=========================================="
+echo "✓ Criando sequence 'clients_seq'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE SEQUENCE IF NOT EXISTS clients_seq
+        START WITH 1
+        INCREMENT BY 50;
+EOSQL
+
+echo "✓ Criando tabela 'clients'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE TABLE IF NOT EXISTS clients (
+        id BIGINT PRIMARY KEY DEFAULT nextval('clients_seq'),
+        name VARCHAR(255) NOT NULL,
+        cpf VARCHAR(11) NOT NULL UNIQUE,
+        email VARCHAR(255),
+        phone VARCHAR(255),
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+EOSQL
+
+echo "✓ Verificando tabela clients..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SELECT COUNT(*) as total_clients FROM clients;
+EOSQL
+
+
+echo "=========================================="
+echo "              TABLE VEHICLES              "
+echo "=========================================="
+echo "✓ Criando sequence 'vehicles_seq'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE SEQUENCE IF NOT EXISTS vehicles_seq
+        START WITH 1
+        INCREMENT BY 50;
+EOSQL
+
+echo "✓ Criando tabela 'vehicles'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE TABLE IF NOT EXISTS vehicles (
+        id BIGINT PRIMARY KEY DEFAULT nextval('vehicles_seq'),
+        client_id BIGINT NOT NULL,
+        plate VARCHAR(7) NOT NULL UNIQUE,
+        brand VARCHAR(255) NOT NULL,
+        model VARCHAR(255) NOT NULL,
+        year INTEGER NOT NULL,
+        color VARCHAR(255),
+        type VARCHAR(255) NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_vehicles_clients
+            FOREIGN KEY (client_id)
+            REFERENCES clients (id)
+    );
+EOSQL
+
+echo "✓ Verificando tabela vehicles..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SELECT COUNT(*) as total_vehicles FROM vehicles;
+EOSQL
+
+
+echo "=========================================="
 echo "           TABLE SERVICE_TYPE             "
 echo "=========================================="
 echo "✓ Criando tabela 'service_type'..."
