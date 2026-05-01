@@ -13,11 +13,6 @@ services:
       - "5432:5432"
     volumes:
       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d workshop"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
 #  app:
 #    build: .
@@ -31,15 +26,12 @@ services:
 #      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/workshop
 #      SPRING_DATASOURCE_USERNAME: user
 #      SPRING_DATASOURCE_PASSWORD: password
-#
+
 #  validation:
 #    image: curlimages/curl:8.10.1
 #    container_name: os_management_validation
 #    depends_on:
-#      - app
-#    environment:
-#      APP_URL: http://app:8080
+#      - postgres
 #    volumes:
-#      - ./validation.sh:/validation.sh:ro
+#      - ./validation.sh:/validation.sh
 #    command: ["sh", "-c", "sleep 20 && sh /validation.sh"]
-#    restart: "no"

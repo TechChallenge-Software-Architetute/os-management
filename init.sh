@@ -272,6 +272,154 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     );
 EOSQL
 
+echo "✓ Inserindo mock na tabela 'parts'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    INSERT INTO products (
+        id,
+        product_type,
+        name,
+        sku,
+        unit,
+        category,
+        brand,
+        cost_price,
+        sale_price,
+        active,
+        created_at,
+        updated_at
+    ) VALUES (
+        1,
+        'PART',
+        'Pastilha de Freio Dianteira',
+        'BRK-PAD-001',
+        'UNIT',
+        'Freios',
+        'Bosch',
+        45.00,
+        89.90,
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (sku) DO UPDATE SET
+        product_type = EXCLUDED.product_type,
+        name = EXCLUDED.name,
+        unit = EXCLUDED.unit,
+        category = EXCLUDED.category,
+        brand = EXCLUDED.brand,
+        cost_price = EXCLUDED.cost_price,
+        sale_price = EXCLUDED.sale_price,
+        active = EXCLUDED.active,
+        updated_at = CURRENT_TIMESTAMP;
+
+    INSERT INTO parts (
+        id,
+        manufacturer_code,
+        warranty_months
+    ) VALUES (
+        1,
+        'BOH-BP-2025',
+        12
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        manufacturer_code = EXCLUDED.manufacturer_code,
+        warranty_months = EXCLUDED.warranty_months;
+
+    SELECT setval('product_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM products), 1));
+EOSQL
+
+echo "✓ Verificando mock inserido em parts..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SELECT
+        p.id,
+        p.name,
+        p.sku,
+        p.unit,
+        p.category,
+        p.brand,
+        p.cost_price,
+        p.sale_price,
+        pt.manufacturer_code,
+        pt.warranty_months
+    FROM products p
+    JOIN parts pt ON pt.id = p.id
+    WHERE p.sku = 'BRK-PAD-001';
+EOSQL
+
+echo "âœ“ Inserindo mock na tabela 'supplies'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    INSERT INTO products (
+        id,
+        product_type,
+        name,
+        sku,
+        unit,
+        category,
+        brand,
+        cost_price,
+        sale_price,
+        active,
+        created_at,
+        updated_at
+    ) VALUES (
+        2,
+        'SUPPLY',
+        'Óleo Motor 5W30 Sintético',
+        'OIL-5W30-SINT',
+        'LITER',
+        'Lubrificantes',
+        'Mobil',
+        28.50,
+        54.90,
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (sku) DO UPDATE SET
+        product_type = EXCLUDED.product_type,
+        name = EXCLUDED.name,
+        unit = EXCLUDED.unit,
+        category = EXCLUDED.category,
+        brand = EXCLUDED.brand,
+        cost_price = EXCLUDED.cost_price,
+        sale_price = EXCLUDED.sale_price,
+        active = EXCLUDED.active,
+        updated_at = CURRENT_TIMESTAMP;
+
+    INSERT INTO supplies (
+        id,
+        fractional_allowed,
+        package_size
+    ) VALUES (
+        2,
+        TRUE,
+        1.00
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        fractional_allowed = EXCLUDED.fractional_allowed,
+        package_size = EXCLUDED.package_size;
+
+    SELECT setval('product_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM products), 1));
+EOSQL
+
+echo "âœ“ Verificando mock inserido em supplies..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SELECT
+        p.id,
+        p.name,
+        p.sku,
+        p.unit,
+        p.category,
+        p.brand,
+        p.cost_price,
+        p.sale_price,
+        s.fractional_allowed,
+        s.package_size
+    FROM products p
+    JOIN supplies s ON s.id = p.id
+    WHERE p.sku = 'OIL-5W30-SINT';
+EOSQL
+
 echo "=========================================="
 echo "              TABLE STOCKS                "
 echo "=========================================="
@@ -289,6 +437,39 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         created_at TIMESTAMP WITHOUT TIME ZONE,
         updated_at TIMESTAMP WITHOUT TIME ZONE
     );
+EOSQL
+
+echo "✓ Inserindo mock na tabela 'stocks'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    INSERT INTO stocks (
+        product_id,
+        quantity,
+        reserved_quantity,
+        minimum_quantity,
+        created_at,
+        updated_at
+    ) VALUES (
+        1,
+        100.00,
+        0.00,
+        10.00,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+    )
+    ON CONFLICT (product_id) DO UPDATE SET
+        quantity = EXCLUDED.quantity,
+        reserved_quantity = EXCLUDED.reserved_quantity,
+        minimum_quantity = EXCLUDED.minimum_quantity,
+        updated_at = CURRENT_TIMESTAMP;
+
+    SELECT setval('stock_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM stocks), 1));
+EOSQL
+
+echo "✓ Verificando mock inserido em stocks..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    SELECT id, product_id, quantity, reserved_quantity, minimum_quantity
+    FROM stocks
+    WHERE product_id = 1;
 EOSQL
 
 echo "=========================================="
