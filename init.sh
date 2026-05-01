@@ -88,6 +88,94 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     SELECT id, service_type_name, service_status, list_service FROM "service_order";
 EOSQL
 
+echo "=========================================="
+echo "            TABLE PRODUCTS                "
+echo "=========================================="
+
+echo "✓ Criando sequence e tabela 'products' (Single Table Inheritance para Part e Supply)..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE SEQUENCE IF NOT EXISTS product_seq START WITH 1 INCREMENT BY 50;
+
+    CREATE TABLE IF NOT EXISTS products (
+        id BIGINT PRIMARY KEY DEFAULT nextval('product_seq'),
+        product_type VARCHAR(31) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        sku VARCHAR(255) NOT NULL UNIQUE,
+        unit VARCHAR(50) NOT NULL,
+        category VARCHAR(255),
+        brand VARCHAR(255),
+        cost_price NUMERIC(19,2) NOT NULL,
+        sale_price NUMERIC(19,2) NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        -- Part fields
+        manufacturer_code VARCHAR(255),
+        warranty_months INTEGER,
+        -- Supply fields
+        fractional_allowed BOOLEAN,
+        package_size NUMERIC(19,2),
+        -- Timestamps
+        created_at TIMESTAMP WITHOUT TIME ZONE,
+        updated_at TIMESTAMP WITHOUT TIME ZONE
+    );
+EOSQL
+
+echo "=========================================="
+echo "              TABLE STOCKS                "
+echo "=========================================="
+
+echo "✓ Criando sequence e tabela 'stocks'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE SEQUENCE IF NOT EXISTS stock_seq START WITH 1 INCREMENT BY 50;
+
+    CREATE TABLE IF NOT EXISTS stocks (
+        id BIGINT PRIMARY KEY DEFAULT nextval('stock_seq'),
+        product_id BIGINT NOT NULL UNIQUE,
+        quantity NUMERIC(19,2) NOT NULL DEFAULT 0,
+        reserved_quantity NUMERIC(19,2) NOT NULL DEFAULT 0,
+        minimum_quantity NUMERIC(19,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP WITHOUT TIME ZONE,
+        updated_at TIMESTAMP WITHOUT TIME ZONE
+    );
+EOSQL
+
+echo "=========================================="
+echo "          TABLE STOCK_MOVEMENTS           "
+echo "=========================================="
+
+echo "✓ Criando sequence e tabela 'stock_movements'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE SEQUENCE IF NOT EXISTS stock_movement_seq START WITH 1 INCREMENT BY 50;
+
+    CREATE TABLE IF NOT EXISTS stock_movements (
+        id BIGINT PRIMARY KEY DEFAULT nextval('stock_movement_seq'),
+        stock_id BIGINT NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        quantity NUMERIC(19,2) NOT NULL,
+        reason VARCHAR(255),
+        created_at TIMESTAMP WITHOUT TIME ZONE
+    );
+EOSQL
+
+echo "=========================================="
+echo "        TABLE STOCK_RESERVATIONS          "
+echo "=========================================="
+
+echo "✓ Criando sequence e tabela 'stock_reservations'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE SEQUENCE IF NOT EXISTS stock_reservation_seq START WITH 1 INCREMENT BY 50;
+
+    CREATE TABLE IF NOT EXISTS stock_reservations (
+        id BIGINT PRIMARY KEY DEFAULT nextval('stock_reservation_seq'),
+        stock_id BIGINT NOT NULL,
+        product_id BIGINT NOT NULL,
+        service_order_id BIGINT NOT NULL,
+        quantity NUMERIC(19,2) NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        created_at TIMESTAMP WITHOUT TIME ZONE,
+        updated_at TIMESTAMP WITHOUT TIME ZONE
+    );
+EOSQL
+
 echo ""
 echo "=========================================="
 echo "✓ Inicialização concluída com sucesso!"
