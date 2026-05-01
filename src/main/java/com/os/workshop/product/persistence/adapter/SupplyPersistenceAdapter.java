@@ -1,10 +1,10 @@
-package com.os.features.product.persistence.adapter;
+package com.os.workshop.product.persistence.adapter;
 
-import com.os.features.product.domain.Supply;
-import com.os.features.product.persistence.entity.SupplyEntity;
-import com.os.features.product.persistence.mappers.SupplyMapper;
-import com.os.features.product.persistence.repository.SupplyJpaRepository;
-import com.os.features.product.repository.SupplyRepository;
+import com.os.workshop.product.domain.Supply;
+import com.os.workshop.product.persistence.entity.SupplyEntity;
+import com.os.workshop.product.persistence.mappers.SupplyMapper;
+import com.os.workshop.product.persistence.repository.SupplyJpaRepository;
+import com.os.workshop.product.repository.SupplyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

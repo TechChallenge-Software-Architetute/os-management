@@ -1,6 +1,6 @@
-package com.os.features.product.persistence.repository;
+package com.os.workshop.product.persistence.repository;
 
-import com.os.features.product.persistence.entity.SupplyEntity;
+import com.os.workshop.product.persistence.entity.SupplyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

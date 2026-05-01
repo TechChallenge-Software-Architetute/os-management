@@ -1,7 +1,7 @@
-package com.os.features.product.supply;
+package com.os.workshop.product.supply;
 
-import com.os.features.product.domain.Supply;
-import com.os.features.product.domain.UnitOfMeasure;
+import com.os.workshop.product.domain.Supply;
+import com.os.workshop.product.domain.UnitOfMeasure;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

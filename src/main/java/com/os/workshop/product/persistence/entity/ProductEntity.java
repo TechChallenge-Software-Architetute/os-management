@@ -1,7 +1,7 @@
-package com.os.features.product.persistence.entity;
+package com.os.workshop.product.persistence.entity;
 
-import com.os.features.product.domain.ProductType;
-import com.os.features.product.domain.UnitOfMeasure;
+import com.os.workshop.product.domain.ProductType;
+import com.os.workshop.product.domain.UnitOfMeasure;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;

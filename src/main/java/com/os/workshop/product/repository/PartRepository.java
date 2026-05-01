@@ -1,6 +1,6 @@
-package com.os.features.product.repository;
+package com.os.workshop.product.repository;
 
-import com.os.features.product.domain.Part;
+import com.os.workshop.product.domain.Part;
 
 import java.util.List;
 import java.util.Optional;

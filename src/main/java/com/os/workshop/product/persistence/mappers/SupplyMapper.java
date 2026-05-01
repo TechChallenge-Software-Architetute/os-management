@@ -1,24 +1,24 @@
-package com.os.features.product.persistence.mappers;
+package com.os.workshop.product.persistence.mappers;
 
-import com.os.features.product.domain.Part;
-import com.os.features.product.persistence.entity.PartEntity;
+import com.os.workshop.product.domain.Supply;
+import com.os.workshop.product.persistence.entity.SupplyEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
-public interface PartMapper {
+public interface SupplyMapper {
 
-    Part toDomain(PartEntity entity);
+    Supply toDomain(SupplyEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    PartEntity toEntity(Part part);
+    SupplyEntity toEntity(Supply supply);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "type", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntity(@MappingTarget PartEntity entity, Part part);
+    void updateEntity(@MappingTarget SupplyEntity entity, Supply supply);
 }

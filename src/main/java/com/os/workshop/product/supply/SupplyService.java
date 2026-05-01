@@ -1,8 +1,8 @@
-package com.os.features.product.supply;
+package com.os.workshop.product.supply;
 
-import com.os.features.product.domain.ProductType;
-import com.os.features.product.domain.Supply;
-import com.os.features.product.repository.SupplyRepository;
+import com.os.workshop.product.domain.ProductType;
+import com.os.workshop.product.domain.Supply;
+import com.os.workshop.product.repository.SupplyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

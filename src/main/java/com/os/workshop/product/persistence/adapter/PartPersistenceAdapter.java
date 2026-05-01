@@ -1,10 +1,10 @@
-package com.os.features.product.persistence.adapter;
+package com.os.workshop.product.persistence.adapter;
 
-import com.os.features.product.domain.Part;
-import com.os.features.product.persistence.entity.PartEntity;
-import com.os.features.product.persistence.mappers.PartMapper;
-import com.os.features.product.persistence.repository.PartJpaRepository;
-import com.os.features.product.repository.PartRepository;
+import com.os.workshop.product.domain.Part;
+import com.os.workshop.product.persistence.entity.PartEntity;
+import com.os.workshop.product.persistence.mappers.PartMapper;
+import com.os.workshop.product.persistence.repository.PartJpaRepository;
+import com.os.workshop.product.repository.PartRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

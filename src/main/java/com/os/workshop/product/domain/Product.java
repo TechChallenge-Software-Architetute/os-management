@@ -1,4 +1,4 @@
-package com.os.features.product.domain;
+package com.os.workshop.product.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

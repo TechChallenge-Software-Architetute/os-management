@@ -1,4 +1,4 @@
-package com.os.features.product.supply;
+package com.os.workshop.product.supply;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
