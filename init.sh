@@ -5,6 +5,102 @@ echo "=========================================="
 echo "Iniciando script de inicialização do PostgreSQL"
 echo "=========================================="
 
+echo "=========================================="
+echo "          TABLE USERS AND ROLES           "
+echo "=========================================="
+echo "✓ Criando tabelas de usuários, roles e grupos..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- Ativa suporte a UUID (PostgreSQL)
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+    -- =========================
+    -- USERS
+    -- =========================
+    CREATE TABLE users (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL
+    );
+
+    -- =========================
+    -- ROLES
+    -- =========================
+    CREATE TABLE roles (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name VARCHAR(50) NOT NULL UNIQUE
+    );
+
+    -- =========================
+    -- GROUPS
+    -- =========================
+    CREATE TABLE groups (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name VARCHAR(100) NOT NULL UNIQUE
+    );
+
+    -- =========================
+    -- USER_ROLES
+    -- =========================
+    CREATE TABLE user_roles (
+        user_id UUID NOT NULL,
+        role_id UUID NOT NULL,
+
+        PRIMARY KEY (user_id, role_id),
+
+        CONSTRAINT fk_user_roles_user
+            FOREIGN KEY (user_id) REFERENCES users(id)
+            ON DELETE CASCADE,
+
+        CONSTRAINT fk_user_roles_role
+            FOREIGN KEY (role_id) REFERENCES roles(id)
+            ON DELETE CASCADE
+    );
+
+    -- =========================
+    -- USER_GROUPS
+    -- =========================
+    CREATE TABLE user_groups (
+        user_id UUID NOT NULL,
+        group_id UUID NOT NULL,
+
+        PRIMARY KEY (user_id, group_id),
+
+        CONSTRAINT fk_user_groups_user
+            FOREIGN KEY (user_id) REFERENCES users(id)
+            ON DELETE CASCADE,
+
+        CONSTRAINT fk_user_groups_group
+            FOREIGN KEY (group_id) REFERENCES groups(id)
+            ON DELETE CASCADE
+    );
+
+    -- =========================
+    -- ROLES SEED
+    -- =========================
+    INSERT INTO roles (id, name) VALUES
+    (uuid_generate_v4(), 'ROLE_ADMIN'),
+    (uuid_generate_v4(), 'ROLE_USER'),
+    (uuid_generate_v4(), 'ROLE_TECHNICIAN');
+
+    -- =========================
+    -- DEFAULT USER (SUPER ADMIN)
+    -- =========================
+    INSERT INTO users (id, email, password)
+    VALUES (
+        uuid_generate_v4(),
+        'superadmin@system.com',
+        '$2a$12$RJVIgDQpKX6.CtZiY9BQB.RNqNiDU7Y0Y6AMMlLUrxyApokRvMVrC' -- Coxinha123
+    );
+
+    -- =========================
+    -- LINK USER -> ALL ROLES
+    -- =========================
+    INSERT INTO user_roles (user_id, role_id)
+    SELECT u.id, r.id
+    FROM users u, roles r
+    WHERE u.email = 'superadmin@system.com';
+EOSQL
+
 
 echo "=========================================="
 echo "           TABLE SERVICE_TYPE             "
