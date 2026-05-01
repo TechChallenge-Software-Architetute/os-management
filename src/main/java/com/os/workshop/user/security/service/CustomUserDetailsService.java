@@ -1,0 +1,45 @@
+package com.os.workshop.user.security.service;
+
+import com.os.workshop.user.repository.UserRepository;
+import org.jspecify.annotations.NonNull;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    private final UserRepository repo;
+
+    public CustomUserDetailsService(UserRepository repo) {
+        this.repo = repo;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(@NonNull String email) {
+
+        var user = repo.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+
+        return new User(
+                user.getEmail(),
+                user.getPassword(),
+                user.getRoles()
+                        .stream()
+                        .map(role -> new SimpleGrantedAuthority(
+                                normalizeRole(role.getName())
+                        ))
+                        .toList()
+        );
+    }
+
+    private String normalizeRole(String role) {
+        if (role.startsWith("ROLE_")) {
+            return role;
+        }
+        return "ROLE_" + role;
+    }
+}

@@ -1,7 +1,6 @@
 package com.os.workshop.service.domain;
 
 import com.os.workshop.service.domain.enums.ServiceStatusEnum;
-import com.os.workshop.serviceorder.domain.ListToJsonConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.os.workshop;
+package com.os.workshop.workshop;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
