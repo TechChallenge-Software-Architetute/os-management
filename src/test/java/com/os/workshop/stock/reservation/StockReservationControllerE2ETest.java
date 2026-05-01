@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -71,7 +72,7 @@ class StockReservationControllerE2ETest {
     @Test
     void whenReservingStockForServiceOrder_thenReturns201WithActiveStatus() throws Exception {
         Long productId = 1L;
-        Long osId = 2L;
+        UUID osId = UUID.randomUUID();
         Stock stock = createStock(productId);
 
         when(stockRepository.findByProductId(productId)).thenReturn(Optional.of(stock));
@@ -97,7 +98,7 @@ class StockReservationControllerE2ETest {
 
     @Test
     void whenConfirmingReservations_thenReturns200WithConfirmedStatus() throws Exception {
-        Long osId = 4L;
+        UUID osId = UUID.randomUUID();
         Stock stock = createStock(5L);
         stock.reserve(new BigDecimal("20"));
 
@@ -123,7 +124,7 @@ class StockReservationControllerE2ETest {
 
     @Test
     void whenReleasingReservations_thenReturns200WithReleasedStatus() throws Exception {
-        Long osId = 7L;
+        UUID osId = UUID.randomUUID();
         Stock stock = createStock(8L);
         stock.reserve(new BigDecimal("15"));
 
@@ -149,7 +150,7 @@ class StockReservationControllerE2ETest {
 
     @Test
     void whenFindingReservationsByServiceOrder_thenReturns200WithList() throws Exception {
-        Long osId = 10L;
+        UUID osId = UUID.randomUUID();
         StockReservation reservation = new StockReservation();
         reservation.setId(11L);
         reservation.setStockId(12L);

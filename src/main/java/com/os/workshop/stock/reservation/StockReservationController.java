@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * REST controller for managing stock reservations tied to service orders (OS).
@@ -72,7 +73,7 @@ public class StockReservationController {
      * @throws IllegalArgumentException if no active reservations exist for the given OS
      */
     @PatchMapping("/service-order/{serviceOrderId}/confirm")
-    public ResponseEntity<List<StockReservationResponse>> confirm(@PathVariable Long serviceOrderId) {
+    public ResponseEntity<List<StockReservationResponse>> confirm(@PathVariable UUID serviceOrderId) {
         var confirmed = reservationService.confirmReservations(serviceOrderId).stream()
                 .map(StockReservationResponse::from)
                 .toList();
@@ -91,7 +92,7 @@ public class StockReservationController {
      * @throws IllegalArgumentException if no active reservations exist for the given OS
      */
     @PatchMapping("/service-order/{serviceOrderId}/release")
-    public ResponseEntity<List<StockReservationResponse>> release(@PathVariable Long serviceOrderId) {
+    public ResponseEntity<List<StockReservationResponse>> release(@PathVariable UUID serviceOrderId) {
         var released = reservationService.releaseReservations(serviceOrderId).stream()
                 .map(StockReservationResponse::from)
                 .toList();
@@ -107,7 +108,7 @@ public class StockReservationController {
      * @return list of all reservations for the given OS
      */
     @GetMapping("/service-order/{serviceOrderId}")
-    public ResponseEntity<List<StockReservationResponse>> findByServiceOrder(@PathVariable Long serviceOrderId) {
+    public ResponseEntity<List<StockReservationResponse>> findByServiceOrder(@PathVariable UUID serviceOrderId) {
         var reservations = reservationService.findByServiceOrderId(serviceOrderId).stream()
                 .map(StockReservationResponse::from)
                 .toList();

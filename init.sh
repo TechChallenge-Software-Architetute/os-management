@@ -151,15 +151,17 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE TABLE IF NOT EXISTS service_order (
         id UUID PRIMARY KEY,
         service_type_name VARCHAR(255) NOT NULL,
-        service_status VARCHAR(10) DEFAULT 'TO_DO',
-        list_service VARCHAR(255) NOT NULL
+        service_status VARCHAR(10) DEFAULT 'RECEBIDA',
+        list_service VARCHAR(255) NOT NULL,
+        cpf_cnpj VARCHAR(50) NOT NULL,
+        placa VARCHAR(20) NOT NULL
     );
 EOSQL
 
 echo "✓ Inserindo dados mock na tabela 'service_order'"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    INSERT INTO service_order (id, service_type_name, list_service) VALUES
-    ('b46ac51b-5ca6-439b-ba52-a36bd52e8648', 'TROCA_OLEO', '["Troca de óleo", "alinhamento"]'::jsonb);
+    INSERT INTO service_order (id, service_type_name, list_service, cpf_cnpj, placa) VALUES
+    ('b46ac51b-5ca6-439b-ba52-a36bd52e8648', 'TROCA_OLEO', '["TROCA_OLEO", "ALINHAMENTO"]'::jsonb, '529.982.247-25', 'ABC-1234');
 EOSQL
 
 echo "✓ Verificando dados inseridos em service_order..."
@@ -253,7 +255,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         id BIGINT PRIMARY KEY DEFAULT nextval('stock_reservation_seq'),
         stock_id BIGINT NOT NULL,
         product_id BIGINT NOT NULL,
-        service_order_id BIGINT NOT NULL,
+        service_order_id UUID NOT NULL,
         quantity NUMERIC(19,2) NOT NULL,
         status VARCHAR(50) NOT NULL,
         created_at TIMESTAMP WITHOUT TIME ZONE,

@@ -1,13 +1,15 @@
 package com.os.workshop.serviceorder.usecases;
 
 import com.os.workshop.client.ClientService;
-import com.os.workshop.service.domain.enums.ServiceStatusEnum;
 import com.os.workshop.service.domain.requests.CreateServiceRequest;
 import com.os.workshop.service.usecases.CreateServiceUC;
 import com.os.workshop.serviceorder.adapter.database.OrderRepository;
 import com.os.workshop.serviceorder.domain.CreateOrderRequest;
+import com.os.workshop.serviceorder.domain.OrderServiceStatusEnum;
 import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
 import com.os.workshop.vehicle.VehicleService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Service
 public class CreateOrderUC {
+
+    private static final Logger logger = LoggerFactory.getLogger(CreateOrderUC.class);
 
     @Autowired
     private CreateServiceUC createServiceUC;
@@ -48,12 +52,18 @@ public class CreateOrderUC {
         ServiceOrderEntity order = new ServiceOrderEntity();
         order.setId(IdOrdemServico);
         order.setServiceTypeName(request.getServiceTypes().toString());
-        order.setServiceStatus(ServiceStatusEnum.TO_DO.getStatus());
+        order.setServiceStatus(OrderServiceStatusEnum.RECEBIDA.getStatus());
         order.setListService(request.getServiceTypes());
+        order.setCpfCnpj(request.getCpfCnpj());
+        order.setPlacaVeiculo(request.getPlacaVeiculo());
 
         orderRepository.save(order);
 
-        //TODO: Notifica Mecanico
+        logger.info("Ordem de serviço Criado.");
+
+
+
+        logger.info("Mecanico deve ser notificado!");
 
         return order;
     }

@@ -19,6 +19,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -40,7 +41,7 @@ public class StockReservationEntity {
     private Long productId;
 
     @Column(nullable = false)
-    private Long serviceOrderId;
+    private UUID serviceOrderId;
 
     @Column(nullable = false)
     private BigDecimal quantity;
