@@ -255,7 +255,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         id BIGINT PRIMARY KEY DEFAULT nextval('stock_reservation_seq'),
         stock_id BIGINT NOT NULL,
         product_id BIGINT NOT NULL,
-        service_order_id BIGINT NOT NULL,
+        service_order_id UUID NOT NULL,
         quantity NUMERIC(19,2) NOT NULL,
         status VARCHAR(50) NOT NULL,
         created_at TIMESTAMP WITHOUT TIME ZONE,

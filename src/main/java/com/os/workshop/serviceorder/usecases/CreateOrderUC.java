@@ -61,6 +61,8 @@ public class CreateOrderUC {
 
         logger.info("Ordem de serviço Criado.");
 
+
+
         logger.info("Mecanico deve ser notificado!");
 
         return order;

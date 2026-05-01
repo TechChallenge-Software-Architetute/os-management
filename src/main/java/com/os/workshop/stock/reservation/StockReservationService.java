@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service responsible for stock reservation business rules.
@@ -109,7 +110,7 @@ public class StockReservationService {
      * @throws IllegalArgumentException if no active reservations exist for the OS
      */
     @Transactional
-    public List<StockReservation> confirmReservations(Long serviceOrderId) {
+    public List<StockReservation> confirmReservations(UUID serviceOrderId) {
         List<StockReservation> activeReservations = reservationRepository
                 .findByServiceOrderIdAndStatus(serviceOrderId, StockReservationStatus.ACTIVE);
 
@@ -149,7 +150,7 @@ public class StockReservationService {
      * @throws IllegalArgumentException if no active reservations exist for the OS
      */
     @Transactional
-    public List<StockReservation> releaseReservations(Long serviceOrderId) {
+    public List<StockReservation> releaseReservations(UUID serviceOrderId) {
         List<StockReservation> activeReservations = reservationRepository
                 .findByServiceOrderIdAndStatus(serviceOrderId, StockReservationStatus.ACTIVE);
 
@@ -184,7 +185,7 @@ public class StockReservationService {
      * @return list of all reservations for the OS
      */
     @Transactional(readOnly = true)
-    public List<StockReservation> findByServiceOrderId(Long serviceOrderId) {
+    public List<StockReservation> findByServiceOrderId(UUID serviceOrderId) {
         return reservationRepository.findByServiceOrderId(serviceOrderId);
     }
 

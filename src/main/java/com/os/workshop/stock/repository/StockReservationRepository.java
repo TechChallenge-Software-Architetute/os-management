@@ -5,6 +5,7 @@ import com.os.workshop.stock.domain.StockReservationStatus;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface StockReservationRepository {
 
@@ -12,7 +13,7 @@ public interface StockReservationRepository {
 
     Optional<StockReservation> findById(Long id);
 
-    List<StockReservation> findByServiceOrderId(Long serviceOrderId);
+    List<StockReservation> findByServiceOrderId(UUID serviceOrderId);
 
-    List<StockReservation> findByServiceOrderIdAndStatus(Long serviceOrderId, StockReservationStatus status);
+    List<StockReservation> findByServiceOrderIdAndStatus(UUID serviceOrderId, StockReservationStatus status);
 }

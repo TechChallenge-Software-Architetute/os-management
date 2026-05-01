@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -40,14 +41,14 @@ public class StockReservationPersistenceAdapter implements StockReservationRepos
     }
 
     @Override
-    public List<StockReservation> findByServiceOrderId(Long serviceOrderId) {
+    public List<StockReservation> findByServiceOrderId(UUID serviceOrderId) {
         return jpaRepository.findByServiceOrderId(serviceOrderId).stream()
                 .map(stockReservationMapper::toDomain)
                 .toList();
     }
 
     @Override
-    public List<StockReservation> findByServiceOrderIdAndStatus(Long serviceOrderId, StockReservationStatus status) {
+    public List<StockReservation> findByServiceOrderIdAndStatus(UUID serviceOrderId, StockReservationStatus status) {
         return jpaRepository.findByServiceOrderIdAndStatus(serviceOrderId, status).stream()
                 .map(stockReservationMapper::toDomain)
                 .toList();
