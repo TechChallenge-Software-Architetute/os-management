@@ -46,10 +46,13 @@ class StockReservationControllerE2ETest {
     @Mock
     private StockMovementRepository movementRepository;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @BeforeEach
     void setUp() {
         StockReservationService reservationService = new StockReservationService(
-                stockRepository, reservationRepository, movementRepository);
+                stockRepository, reservationRepository, movementRepository, eventPublisher);
         StockReservationController controller = new StockReservationController(reservationService);
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
