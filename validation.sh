@@ -21,9 +21,9 @@ done
 
 echo " "
 echo " "
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo " - 1. Autenticando usuario superadmin."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 LOGIN_RESPONSE="$(curl --silent --show-error --fail --request POST \
   --url "$APP_URL/auth/login" \
   --header 'content-type: application/json' \
@@ -40,15 +40,15 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo "Token obtido com sucesso."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 
 echo " "
 echo " "
 echo "-------------------------------------------------------------------"
 echo " - 2. Criando ordem de servico."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 ORDER_RESPONSE="$(curl --silent --show-error --fail --request POST \
   --url "$APP_URL/order" \
   --header "authorization: Bearer $TOKEN" \
@@ -78,9 +78,9 @@ sleep 2
 
 echo " "
 echo " "
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo " - 3. Mecanico comecou a realizar diagnostico [EM_DIAGNOSTICO]."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
   --header "authorization: Bearer $TOKEN" \
@@ -89,42 +89,45 @@ curl --request PATCH \
   "status": "EM_DIAGNOSTICO"
 }'
 
+sleep 2
 echo " "
 echo " "
-echo "--------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo " - 4. Mecanico Consulta Ordem de Serviço."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 
 curl --request GET \
   --url "$APP_URL/order/$ORDER_ID" \
   --header "authorization: Bearer $TOKEN"
 
-
+sleep 2
 echo " "
 echo " "
-echo "--------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo " - 5. Mecanico Consulta Peças para Ordem de Serviço."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 
 curl --request GET \
   --url "$APP_URL/api/parts" \
   --header "authorization: Bearer $TOKEN"
 
+sleep 2
 echo " "
 echo " "
-echo "--------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo " - 6. Mecanico Consulta Estoque para Ordem de Serviço."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 
 curl --request GET \
   --url "$APP_URL/api/stocks" \
   --header "authorization: Bearer $TOKEN"
 
+sleep 2
 echo " "
 echo " "
-echo "--------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 echo " - 7. Mecanico Reserva Estoque para Ordem de Serviço."
-echo "---------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------"
 
 curl --request POST \
   --url "$APP_URL/api/stocks/reservations" \
@@ -139,3 +142,44 @@ curl --request POST \
     }
   ]
 }'
+
+sleep 2
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 8. Mecanico Termina avaliação Ordem de Serviço [AGUARDANDO_APROVACAO]."
+echo "------------------------------------------------------------------------------"
+
+curl --request PATCH \
+  --url "$APP_URL/order/$ORDER_ID" \
+  --header "authorization: Bearer $TOKEN" \
+  --header 'content-type: application/json' \
+  --data '{
+  "status": "AGUARDANDO_APROVACAO"
+}'
+
+
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 9. Cliente Aprova Orçamento ."
+echo "------------------------------------------------------------------------------"
+
+curl --request PATCH \
+  --url "$APP_URL/order/$ORDER_ID" \
+  --header "authorization: Bearer $TOKEN" \
+  --header 'content-type: application/json' \
+  --data '{
+  "status": "APROVADO"
+}'
+
+sleep 2
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 10. Mecanico visualiza serviços a serem feitos ."
+echo "------------------------------------------------------------------------------"
+
+curl --request GET \
+  --url "$APP_URL/services/os/$ORDER_ID" \
+  --header "authorization: Bearer $TOKEN"
