@@ -9,6 +9,7 @@ import com.os.workshop.stock.repository.StockMovementRepository;
 import com.os.workshop.stock.repository.StockRepository;
 import com.os.workshop.stock.repository.StockReservationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ public class StockReservationService {
     private final StockRepository stockRepository;
     private final StockReservationRepository reservationRepository;
     private final StockMovementRepository movementRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Reserves stock for all items in a service order (atomic operation).
@@ -94,6 +96,7 @@ public class StockReservationService {
                     "Reserved for OS: " + request.serviceOrderId());
         }
 
+        eventPublisher.publishEvent(new ReservationChangedEvent(request.serviceOrderId()));
         return reservations;
     }
 
@@ -135,6 +138,7 @@ public class StockReservationService {
                     "Confirmed for OS: " + serviceOrderId);
         }
 
+        eventPublisher.publishEvent(new ReservationChangedEvent(serviceOrderId));
         return confirmed;
     }
 
@@ -175,6 +179,7 @@ public class StockReservationService {
                     "Released from OS: " + serviceOrderId);
         }
 
+        eventPublisher.publishEvent(new ReservationChangedEvent(serviceOrderId));
         return released;
     }
 
