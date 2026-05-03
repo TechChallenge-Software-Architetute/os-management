@@ -40,9 +40,6 @@ services:
   sonarqube_db:
     image: postgres:16-alpine
     restart: unless-stopped
-    depends_on:
-      validation:
-        condition: service_completed_successfully
     environment:
       POSTGRES_DB: sonarqube
       POSTGRES_USER: sonar
@@ -54,10 +51,7 @@ services:
     image: sonarqube:community
     restart: unless-stopped
     depends_on:
-      validation:
-        condition: service_completed_successfully
-      sonarqube_db:
-        condition: service_started
+      - sonarqube_db
     environment:
       SONAR_JDBC_URL: jdbc:postgresql://sonarqube_db:5432/sonarqube
       SONAR_JDBC_USERNAME: sonar
