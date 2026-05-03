@@ -2,12 +2,12 @@ package com.os.workshop.features.budget.recalculate;
 
 import com.os.workshop.features.budget.shared.domain.Budget;
 import com.os.workshop.features.budget.shared.repository.BudgetRepository;
-import com.os.workshop.features.product.domain.Part;
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.Supply;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.repository.PartRepository;
-import com.os.workshop.features.product.repository.SupplyRepository;
+import com.os.workshop.features.product.shared.domain.Part;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.Supply;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.repository.PartRepository;
+import com.os.workshop.features.product.shared.repository.SupplyRepository;
 import com.os.workshop.features.stock.domain.StockReservation;
 import com.os.workshop.features.stock.domain.StockReservationStatus;
 import com.os.workshop.features.stock.repository.StockReservationRepository;

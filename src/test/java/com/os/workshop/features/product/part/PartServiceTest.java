@@ -1,9 +1,15 @@
 package com.os.workshop.features.product.part;
 
-import com.os.workshop.features.product.domain.Part;
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.repository.PartRepository;
+import com.os.workshop.features.product.part.create.CreatePartHandler;
+import com.os.workshop.features.product.part.create.CreatePartRequest;
+import com.os.workshop.features.product.part.deactivate.DeactivatePartHandler;
+import com.os.workshop.features.product.part.findById.FindPartByIdHandler;
+import com.os.workshop.features.product.part.findBySku.FindPartBySkuHandler;
+import com.os.workshop.features.product.part.list.ListPartsHandler;
+import com.os.workshop.features.product.shared.domain.Part;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.repository.PartRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,10 +32,22 @@ class PartServiceTest {
     private PartRepository partRepository;
 
     @InjectMocks
-    private PartService partService;
+    private CreatePartHandler createPartHandler;
 
-    private PartRequest createRequest() {
-        return new PartRequest("Brake Pad", "BP-001", UnitOfMeasure.UNIT,
+    @InjectMocks
+    private FindPartByIdHandler findPartByIdHandler;
+
+    @InjectMocks
+    private FindPartBySkuHandler findPartBySkuHandler;
+
+    @InjectMocks
+    private ListPartsHandler listPartsHandler;
+
+    @InjectMocks
+    private DeactivatePartHandler deactivatePartHandler;
+
+    private CreatePartRequest createRequest() {
+        return new CreatePartRequest("Brake Pad", "BP-001", UnitOfMeasure.UNIT,
                 "Brakes", "Bosch", new BigDecimal("45"), new BigDecimal("90"), "MFG-001", 12);
     }
 
@@ -49,7 +67,7 @@ class PartServiceTest {
         when(partRepository.existsBySku("BP-001")).thenReturn(false);
         when(partRepository.save(any(Part.class))).thenAnswer(i -> i.getArgument(0));
 
-        Part result = partService.create(createRequest());
+        Part result = createPartHandler.handle(createRequest());
 
         assertEquals("Brake Pad", result.getName());
         assertEquals(ProductType.PART, result.getType());
@@ -60,7 +78,7 @@ class PartServiceTest {
     void whenCreatingPartWithDuplicateSku_thenThrowsIllegalArgument() {
         when(partRepository.existsBySku("BP-001")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> partService.create(createRequest()));
+        assertThrows(IllegalArgumentException.class, () -> createPartHandler.handle(createRequest()));
     }
 
     @Test
@@ -68,7 +86,7 @@ class PartServiceTest {
         Part part = createPart();
         when(partRepository.findById(1L)).thenReturn(Optional.of(part));
 
-        Part result = partService.findById(1L);
+        Part result = findPartByIdHandler.handle(1L);
 
         assertEquals(1L, result.getId());
     }
@@ -77,7 +95,7 @@ class PartServiceTest {
     void whenFindingPartByNonExistingId_thenThrowsIllegalArgument() {
         when(partRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> partService.findById(999L));
+        assertThrows(IllegalArgumentException.class, () -> findPartByIdHandler.handle(999L));
     }
 
     @Test
@@ -85,7 +103,7 @@ class PartServiceTest {
         Part part = createPart();
         when(partRepository.findBySku("BP-001")).thenReturn(Optional.of(part));
 
-        Part result = partService.findBySku("BP-001");
+        Part result = findPartBySkuHandler.handle("BP-001");
 
         assertEquals("BP-001", result.getSku());
     }
@@ -94,7 +112,7 @@ class PartServiceTest {
     void whenFindingAllParts_thenReturnsOnlyActive() {
         when(partRepository.findAllActive()).thenReturn(List.of(createPart()));
 
-        List<Part> result = partService.findAll();
+        List<Part> result = listPartsHandler.handle();
 
         assertEquals(1, result.size());
     }
@@ -105,7 +123,7 @@ class PartServiceTest {
         when(partRepository.findById(1L)).thenReturn(Optional.of(part));
         when(partRepository.save(any(Part.class))).thenAnswer(i -> i.getArgument(0));
 
-        partService.deactivate(1L);
+        deactivatePartHandler.handle(1L);
 
         assertFalse(part.isActive());
         verify(partRepository).save(part);
@@ -117,6 +135,6 @@ class PartServiceTest {
         part.setActive(false);
         when(partRepository.findById(1L)).thenReturn(Optional.of(part));
 
-        assertThrows(IllegalArgumentException.class, () -> partService.deactivate(1L));
+        assertThrows(IllegalArgumentException.class, () -> deactivatePartHandler.handle(1L));
     }
 }

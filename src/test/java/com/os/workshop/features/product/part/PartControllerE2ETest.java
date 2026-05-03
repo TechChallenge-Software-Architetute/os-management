@@ -1,11 +1,18 @@
 package com.os.workshop.features.product.part;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.os.workshop.features.product.domain.Part;
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.exception.GlobalExceptionHandler;
-import com.os.workshop.features.product.repository.PartRepository;
+import com.os.workshop.features.product.part.create.CreatePartHandler;
+import com.os.workshop.features.product.part.create.CreatePartRequest;
+import com.os.workshop.features.product.part.deactivate.DeactivatePartHandler;
+import com.os.workshop.features.product.part.findById.FindPartByIdHandler;
+import com.os.workshop.features.product.part.findBySku.FindPartBySkuHandler;
+import com.os.workshop.features.product.part.list.ListPartsHandler;
+import com.os.workshop.features.product.part.update.UpdatePartHandler;
+import com.os.workshop.features.product.part.update.UpdatePartRequest;
+import com.os.workshop.features.product.shared.domain.Part;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,9 +25,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,13 +40,18 @@ class PartControllerE2ETest {
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Mock
-    private PartRepository partRepository;
+    @Mock private CreatePartHandler createPartHandler;
+    @Mock private FindPartByIdHandler findPartByIdHandler;
+    @Mock private FindPartBySkuHandler findPartBySkuHandler;
+    @Mock private ListPartsHandler listPartsHandler;
+    @Mock private UpdatePartHandler updatePartHandler;
+    @Mock private DeactivatePartHandler deactivatePartHandler;
 
     @BeforeEach
     void setUp() {
-        PartService partService = new PartService(partRepository);
-        PartController partController = new PartController(partService);
+        PartController partController = new PartController(
+                createPartHandler, findPartByIdHandler, findPartBySkuHandler,
+                listPartsHandler, updatePartHandler, deactivatePartHandler);
         mockMvc = MockMvcBuilders.standaloneSetup(partController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -65,14 +78,10 @@ class PartControllerE2ETest {
 
     @Test
     void whenCreatingPartWithValidData_thenReturns201() throws Exception {
-        when(partRepository.existsBySku("BP-001")).thenReturn(false);
-        when(partRepository.save(any(Part.class))).thenAnswer(i -> {
-            Part p = i.getArgument(0);
-            p.setId(1L);
-            return p;
-        });
+        Part part = createPart();
+        when(createPartHandler.handle(any(CreatePartRequest.class))).thenReturn(part);
 
-        PartRequest request = new PartRequest("Brake Pad", "BP-001", UnitOfMeasure.UNIT,
+        CreatePartRequest request = new CreatePartRequest("Brake Pad", "BP-001", UnitOfMeasure.UNIT,
                 "Brakes", "Bosch", new BigDecimal("45"), new BigDecimal("90"), "MFG-001", 12);
 
         mockMvc.perform(post("/api/parts")
@@ -85,9 +94,10 @@ class PartControllerE2ETest {
 
     @Test
     void whenCreatingPartWithDuplicateSku_thenReturns400() throws Exception {
-        when(partRepository.existsBySku("BP-001")).thenReturn(true);
+        when(createPartHandler.handle(any(CreatePartRequest.class)))
+                .thenThrow(new IllegalArgumentException("A part with SKU 'BP-001' already exists"));
 
-        PartRequest request = new PartRequest("Brake Pad", "BP-001", UnitOfMeasure.UNIT,
+        CreatePartRequest request = new CreatePartRequest("Brake Pad", "BP-001", UnitOfMeasure.UNIT,
                 "Brakes", "Bosch", new BigDecimal("45"), new BigDecimal("90"), "MFG-001", 12);
 
         mockMvc.perform(post("/api/parts")
@@ -99,7 +109,7 @@ class PartControllerE2ETest {
     @Test
     void whenFindingPartByExistingId_thenReturns200() throws Exception {
         Part part = createPart();
-        when(partRepository.findById(1L)).thenReturn(Optional.of(part));
+        when(findPartByIdHandler.handle(1L)).thenReturn(part);
 
         mockMvc.perform(get("/api/parts/{id}", 1L))
                 .andExpect(status().isOk())
@@ -108,7 +118,7 @@ class PartControllerE2ETest {
 
     @Test
     void whenFindingAllParts_thenReturns200WithList() throws Exception {
-        when(partRepository.findAllActive()).thenReturn(List.of(createPart()));
+        when(listPartsHandler.handle()).thenReturn(List.of(createPart()));
 
         mockMvc.perform(get("/api/parts"))
                 .andExpect(status().isOk())
@@ -118,7 +128,7 @@ class PartControllerE2ETest {
     @Test
     void whenFindingPartByExistingSku_thenReturns200() throws Exception {
         Part part = createPart();
-        when(partRepository.findBySku("BP-001")).thenReturn(Optional.of(part));
+        when(findPartBySkuHandler.handle("BP-001")).thenReturn(part);
 
         mockMvc.perform(get("/api/parts/sku/{sku}", "BP-001"))
                 .andExpect(status().isOk())
@@ -128,10 +138,10 @@ class PartControllerE2ETest {
     @Test
     void whenUpdatingPartWithValidData_thenReturns200() throws Exception {
         Part part = createPart();
-        when(partRepository.findById(1L)).thenReturn(Optional.of(part));
-        when(partRepository.save(any(Part.class))).thenAnswer(i -> i.getArgument(0));
+        part.setName("Updated Pad");
+        when(updatePartHandler.handle(eq(1L), any(UpdatePartRequest.class))).thenReturn(part);
 
-        PartRequest request = new PartRequest("Updated Pad", "BP-001", UnitOfMeasure.UNIT,
+        UpdatePartRequest request = new UpdatePartRequest("Updated Pad", "BP-001", UnitOfMeasure.UNIT,
                 "Brakes", "Bosch", new BigDecimal("50"), new BigDecimal("100"), "MFG-002", 24);
 
         mockMvc.perform(put("/api/parts/{id}", 1L)
@@ -143,9 +153,7 @@ class PartControllerE2ETest {
 
     @Test
     void whenDeactivatingPart_thenReturns204() throws Exception {
-        Part part = createPart();
-        when(partRepository.findById(1L)).thenReturn(Optional.of(part));
-        when(partRepository.save(any(Part.class))).thenAnswer(i -> i.getArgument(0));
+        doNothing().when(deactivatePartHandler).handle(1L);
 
         mockMvc.perform(delete("/api/parts/{id}", 1L))
                 .andExpect(status().isNoContent());

@@ -1,9 +1,14 @@
 package com.os.workshop.features.product.supply;
 
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.Supply;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.repository.SupplyRepository;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.Supply;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.repository.SupplyRepository;
+import com.os.workshop.features.product.supply.create.CreateSupplyHandler;
+import com.os.workshop.features.product.supply.create.CreateSupplyRequest;
+import com.os.workshop.features.product.supply.deactivate.DeactivateSupplyHandler;
+import com.os.workshop.features.product.supply.findById.FindSupplyByIdHandler;
+import com.os.workshop.features.product.supply.list.ListSuppliesHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,10 +31,19 @@ class SupplyServiceTest {
     private SupplyRepository supplyRepository;
 
     @InjectMocks
-    private SupplyService supplyService;
+    private CreateSupplyHandler createSupplyHandler;
 
-    private SupplyRequest createRequest() {
-        return new SupplyRequest("Engine Oil", "OIL-5W30", UnitOfMeasure.LITER,
+    @InjectMocks
+    private FindSupplyByIdHandler findSupplyByIdHandler;
+
+    @InjectMocks
+    private ListSuppliesHandler listSuppliesHandler;
+
+    @InjectMocks
+    private DeactivateSupplyHandler deactivateSupplyHandler;
+
+    private CreateSupplyRequest createRequest() {
+        return new CreateSupplyRequest("Engine Oil", "OIL-5W30", UnitOfMeasure.LITER,
                 "Lubricants", "Mobil", new BigDecimal("25"), new BigDecimal("50"), true, new BigDecimal("1"));
     }
 
@@ -50,7 +64,7 @@ class SupplyServiceTest {
         when(supplyRepository.existsBySku("OIL-5W30")).thenReturn(false);
         when(supplyRepository.save(any(Supply.class))).thenAnswer(i -> i.getArgument(0));
 
-        Supply result = supplyService.create(createRequest());
+        Supply result = createSupplyHandler.handle(createRequest());
 
         assertEquals("Engine Oil", result.getName());
         assertEquals(ProductType.SUPPLY, result.getType());
@@ -61,7 +75,7 @@ class SupplyServiceTest {
     void whenCreatingSupplyWithDuplicateSku_thenThrowsIllegalArgument() {
         when(supplyRepository.existsBySku("OIL-5W30")).thenReturn(true);
 
-        assertThrows(IllegalArgumentException.class, () -> supplyService.create(createRequest()));
+        assertThrows(IllegalArgumentException.class, () -> createSupplyHandler.handle(createRequest()));
     }
 
     @Test
@@ -69,7 +83,7 @@ class SupplyServiceTest {
         Supply supply = createSupply();
         when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
 
-        Supply result = supplyService.findById(1L);
+        Supply result = findSupplyByIdHandler.handle(1L);
 
         assertEquals(1L, result.getId());
     }
@@ -78,7 +92,7 @@ class SupplyServiceTest {
     void whenFindingSupplyByNonExistingId_thenThrowsIllegalArgument() {
         when(supplyRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> supplyService.findById(999L));
+        assertThrows(IllegalArgumentException.class, () -> findSupplyByIdHandler.handle(999L));
     }
 
     @Test
@@ -87,7 +101,7 @@ class SupplyServiceTest {
         when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
         when(supplyRepository.save(any(Supply.class))).thenAnswer(i -> i.getArgument(0));
 
-        supplyService.deactivate(1L);
+        deactivateSupplyHandler.handle(1L);
 
         assertFalse(supply.isActive());
         verify(supplyRepository).save(supply);
@@ -99,13 +113,13 @@ class SupplyServiceTest {
         supply.setActive(false);
         when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
 
-        assertThrows(IllegalArgumentException.class, () -> supplyService.deactivate(1L));
+        assertThrows(IllegalArgumentException.class, () -> deactivateSupplyHandler.handle(1L));
     }
 
     @Test
     void whenFindingAllSupplies_thenReturnsOnlyActive() {
         when(supplyRepository.findAllActive()).thenReturn(List.of(createSupply()));
 
-        assertEquals(1, supplyService.findAll().size());
+        assertEquals(1, listSuppliesHandler.handle().size());
     }
 }
