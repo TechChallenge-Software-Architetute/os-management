@@ -171,7 +171,7 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 10. Cliente aprova orcamento [APROVADO]."
+echo " - 10. Cliente aprova Ordem de Serviço [APROVADO]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
