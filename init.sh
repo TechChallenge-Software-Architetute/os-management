@@ -113,7 +113,7 @@ EOSQL
 echo "✓ Inserindo dados mock na tabela 'clients'..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
-    SELECT 1, U&'JO\00C3O DA SILVA', '52998224725', 'joao.silva@email.com', '(11) 99999-1234', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    SELECT 1, 'JOAO DA SILVA', '52998224725', 'joao.silva@email.com', '(11) 99999-1234', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '52998224725');
 
     INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
