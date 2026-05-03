@@ -1,7 +1,5 @@
 package com.os.workshop.features.service.domain;
 
-import com.os.workshop.features.service.domain.ServiceStatusConverter;
-import com.os.workshop.features.service.domain.Status;
 import com.os.workshop.features.service.domain.enums.ServiceStatusEnum;
 import org.junit.jupiter.api.Test;
 

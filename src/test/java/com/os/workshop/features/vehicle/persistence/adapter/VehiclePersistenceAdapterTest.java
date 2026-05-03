@@ -4,7 +4,6 @@ import com.os.workshop.features.client.shared.repository.ClientEntity;
 import com.os.workshop.features.client.shared.repository.ClientJpaRepository;
 import com.os.workshop.features.vehicle.domain.Vehicle;
 import com.os.workshop.features.vehicle.domain.VehicleType;
-import com.os.workshop.features.vehicle.persistence.adapter.VehiclePersistenceAdapter;
 import com.os.workshop.features.vehicle.persistence.entity.VehicleEntity;
 import com.os.workshop.features.vehicle.persistence.mapper.VehicleMapper;
 import com.os.workshop.features.vehicle.persistence.repository.VehicleJpaRepository;

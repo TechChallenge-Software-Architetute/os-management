@@ -2,7 +2,6 @@ package com.os.workshop.features.stock.persistence.adapter;
 
 import com.os.workshop.features.stock.domain.StockMovement;
 import com.os.workshop.features.stock.domain.StockMovementType;
-import com.os.workshop.features.stock.persistence.adapter.StockMovementPersistenceAdapter;
 import com.os.workshop.features.stock.persistence.entity.StockMovementEntity;
 import com.os.workshop.features.stock.persistence.mappers.StockMovementMapper;
 import com.os.workshop.features.stock.persistence.repository.StockMovementJpaRepository;

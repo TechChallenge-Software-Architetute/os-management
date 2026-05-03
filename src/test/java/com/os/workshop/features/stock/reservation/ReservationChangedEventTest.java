@@ -1,6 +1,5 @@
 package com.os.workshop.features.stock.reservation;
 
-import com.os.workshop.features.stock.reservation.ReservationChangedEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;

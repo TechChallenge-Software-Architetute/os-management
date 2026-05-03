@@ -1,7 +1,6 @@
 package com.os.workshop.features.stock.persistence.adapter;
 
 import com.os.workshop.features.stock.domain.Stock;
-import com.os.workshop.features.stock.persistence.adapter.StockPersistenceAdapter;
 import com.os.workshop.features.stock.persistence.entity.StockEntity;
 import com.os.workshop.features.stock.persistence.mappers.StockMapper;
 import com.os.workshop.features.stock.persistence.repository.StockJpaRepository;

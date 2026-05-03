@@ -1,6 +1,5 @@
 package com.os.workshop.features.user.security.config;
 
-import com.os.workshop.features.user.security.config.JwtProperties;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

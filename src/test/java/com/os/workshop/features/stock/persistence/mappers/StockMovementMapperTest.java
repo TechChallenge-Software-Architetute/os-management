@@ -2,8 +2,6 @@ package com.os.workshop.features.stock.persistence.mappers;
 
 import com.os.workshop.features.stock.domain.StockMovement;
 import com.os.workshop.features.stock.domain.StockMovementType;
-import com.os.workshop.features.stock.persistence.mappers.StockMovementMapper;
-import com.os.workshop.features.stock.persistence.mappers.StockMovementMapperImpl;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

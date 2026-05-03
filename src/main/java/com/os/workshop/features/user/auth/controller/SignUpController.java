@@ -5,7 +5,6 @@ import com.os.workshop.features.user.dto.SignUpRequest;
 import com.os.workshop.features.user.dto.SignUpResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +22,6 @@ public class SignUpController {
     }
 
     @PostMapping
-    @PreAuthorize("ROLE_ADMIN")
     public ResponseEntity<SignUpResponse> signUp(@RequestBody SignUpRequest signUpRequest) {
         return new ResponseEntity<>(signUpIterator.signUp(signUpRequest), HttpStatus.OK);
     }

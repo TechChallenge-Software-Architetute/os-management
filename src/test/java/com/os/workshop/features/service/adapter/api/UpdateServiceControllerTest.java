@@ -1,6 +1,5 @@
 package com.os.workshop.features.service.adapter.api;
 
-import com.os.workshop.features.service.adapter.api.UpdateServiceController;
 import com.os.workshop.features.service.domain.ServiceEntity;
 import com.os.workshop.features.service.domain.requests.UpdateServiceRequest;
 import com.os.workshop.features.service.usecases.UpdateServiceUC;

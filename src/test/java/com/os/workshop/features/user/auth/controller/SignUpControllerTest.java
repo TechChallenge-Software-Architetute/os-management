@@ -1,6 +1,5 @@
 package com.os.workshop.features.user.auth.controller;
 
-import com.os.workshop.features.user.auth.controller.SignUpController;
 import com.os.workshop.features.user.auth.iterator.SignUpIterator;
 import com.os.workshop.features.user.dto.SignUpRequest;
 import com.os.workshop.features.user.dto.SignUpResponse;

@@ -1,6 +1,10 @@
 package com.os.workshop.features.product.supply;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.Supply;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.exception.GlobalExceptionHandler;
 import com.os.workshop.features.product.supply.create.CreateSupplyHandler;
 import com.os.workshop.features.product.supply.create.CreateSupplyRequest;
 import com.os.workshop.features.product.supply.deactivate.DeactivateSupplyHandler;
@@ -9,10 +13,6 @@ import com.os.workshop.features.product.supply.findBySku.FindSupplyBySkuHandler;
 import com.os.workshop.features.product.supply.list.ListSuppliesHandler;
 import com.os.workshop.features.product.supply.update.UpdateSupplyHandler;
 import com.os.workshop.features.product.supply.update.UpdateSupplyRequest;
-import com.os.workshop.features.product.shared.domain.ProductType;
-import com.os.workshop.features.product.shared.domain.Supply;
-import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
-import com.os.workshop.features.product.shared.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -2,7 +2,6 @@ package com.os.workshop.features.stock.reservation;
 
 import com.os.workshop.features.stock.domain.StockReservation;
 import com.os.workshop.features.stock.domain.StockReservationStatus;
-import com.os.workshop.features.stock.reservation.StockReservationResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
