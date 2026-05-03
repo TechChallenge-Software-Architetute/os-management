@@ -1,7 +1,18 @@
 package com.os.workshop.features.vehicle;
 
-import com.os.workshop.features.vehicle.dto.VehicleRequest;
-import com.os.workshop.features.vehicle.dto.VehicleResponse;
+import com.os.workshop.features.vehicle.create.CreateVehicleHandler;
+import com.os.workshop.features.vehicle.create.CreateVehicleRequest;
+import com.os.workshop.features.vehicle.create.CreateVehicleResponse;
+import com.os.workshop.features.vehicle.deactivate.DeactivateVehicleHandler;
+import com.os.workshop.features.vehicle.findByClient.FindVehiclesByClientHandler;
+import com.os.workshop.features.vehicle.findByClient.FindVehiclesByClientResponse;
+import com.os.workshop.features.vehicle.findById.FindVehicleByIdHandler;
+import com.os.workshop.features.vehicle.findById.FindVehicleByIdResponse;
+import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateHandler;
+import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateResponse;
+import com.os.workshop.features.vehicle.update.UpdateVehicleHandler;
+import com.os.workshop.features.vehicle.update.UpdateVehicleRequest;
+import com.os.workshop.features.vehicle.update.UpdateVehicleResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,82 +39,46 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VehicleController {
 
-    private final VehicleService vehicleService;
+    private final CreateVehicleHandler createVehicleHandler;
+    private final FindVehicleByIdHandler findVehicleByIdHandler;
+    private final FindVehicleByPlateHandler findVehicleByPlateHandler;
+    private final FindVehiclesByClientHandler findVehiclesByClientHandler;
+    private final UpdateVehicleHandler updateVehicleHandler;
+    private final DeactivateVehicleHandler deactivateVehicleHandler;
 
-    /**
-     * Cadastra um novo veículo para um cliente existente.
-     * A placa deve ser única no sistema e o cliente deve existir.
-     *
-     * @param request dados do veículo
-     * @return veículo criado com HTTP 201
-     */
     @PostMapping
-    public ResponseEntity<VehicleResponse> create(@Valid @RequestBody VehicleRequest request) {
+    public ResponseEntity<CreateVehicleResponse> create(@Valid @RequestBody CreateVehicleRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(VehicleResponse.from(vehicleService.create(request)));
+                .body(CreateVehicleResponse.from(createVehicleHandler.handle(request)));
     }
 
-    /**
-     * Busca um veículo pelo seu identificador único.
-     *
-     * @param id ID do veículo
-     * @return dados do veículo com HTTP 200, ou 404 se não encontrado
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<VehicleResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(VehicleResponse.from(vehicleService.findById(id)));
+    public ResponseEntity<FindVehicleByIdResponse> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(FindVehicleByIdResponse.from(findVehicleByIdHandler.handle(id)));
     }
 
-    /**
-     * Busca um veículo pela placa.
-     * Aceita placa com ou sem hífen e em qualquer capitalização.
-     *
-     * @param plate placa do veículo (ex: {@code ABC1234} ou {@code ABC-1234})
-     * @return dados do veículo com HTTP 200, ou 404 se não encontrado
-     */
     @GetMapping("/plate/{plate}")
-    public ResponseEntity<VehicleResponse> findByPlate(@PathVariable String plate) {
-        return ResponseEntity.ok(VehicleResponse.from(vehicleService.findByPlate(plate)));
+    public ResponseEntity<FindVehicleByPlateResponse> findByPlate(@PathVariable String plate) {
+        return ResponseEntity.ok(FindVehicleByPlateResponse.from(findVehicleByPlateHandler.handle(plate)));
     }
 
-    /**
-     * Lista todos os veículos ativos de um cliente.
-     *
-     * @param clientId ID do cliente proprietário
-     * @return lista de veículos com HTTP 200, ou 404 se o cliente não existir
-     */
     @GetMapping("/client/{clientId}")
-    public ResponseEntity<List<VehicleResponse>> findAllByClient(@PathVariable Long clientId) {
-        List<VehicleResponse> response = vehicleService.findAllByClient(clientId).stream()
-                .map(VehicleResponse::from)
+    public ResponseEntity<List<FindVehiclesByClientResponse>> findAllByClient(@PathVariable Long clientId) {
+        List<FindVehiclesByClientResponse> response = findVehiclesByClientHandler.handle(clientId).stream()
+                .map(FindVehiclesByClientResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Atualiza os dados de um veículo existente.
-     * O cliente proprietário não pode ser alterado.
-     *
-     * @param id      ID do veículo
-     * @param request novos dados do veículo
-     * @return veículo atualizado com HTTP 200, ou 404 se não encontrado
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<VehicleResponse> update(@PathVariable Long id,
-                                                   @Valid @RequestBody VehicleRequest request) {
-        return ResponseEntity.ok(VehicleResponse.from(vehicleService.update(id, request)));
+    public ResponseEntity<UpdateVehicleResponse> update(@PathVariable Long id,
+                                                         @Valid @RequestBody UpdateVehicleRequest request) {
+        return ResponseEntity.ok(UpdateVehicleResponse.from(updateVehicleHandler.handle(id, request)));
     }
 
-    /**
-     * Desativa um veículo (soft delete).
-     * O veículo permanece no banco mas não aparece mais nas listagens ativas.
-     *
-     * @param id ID do veículo
-     * @return HTTP 204 em caso de sucesso, ou 404 se não encontrado
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        vehicleService.deactivate(id);
+        deactivateVehicleHandler.handle(id);
         return ResponseEntity.noContent().build();
     }
 }
