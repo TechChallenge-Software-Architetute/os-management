@@ -3,7 +3,6 @@ package com.os.workshop.features.product.persistence.adapter;
 import com.os.workshop.features.product.domain.Part;
 import com.os.workshop.features.product.domain.ProductType;
 import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.persistence.adapter.PartPersistenceAdapter;
 import com.os.workshop.features.product.persistence.entity.PartEntity;
 import com.os.workshop.features.product.persistence.mappers.PartMapper;
 import com.os.workshop.features.product.persistence.repository.PartJpaRepository;

@@ -1,6 +1,5 @@
 package com.os.workshop.features.user.auth.iterator;
 
-import com.os.workshop.features.user.auth.iterator.SignUpIterator;
 import com.os.workshop.features.user.dto.SignUpRequest;
 import com.os.workshop.features.user.dto.SignUpResponse;
 import com.os.workshop.features.user.repository.UserRepository;

@@ -3,7 +3,6 @@ package com.os.workshop.features.product.part;
 import com.os.workshop.features.product.domain.Part;
 import com.os.workshop.features.product.domain.ProductType;
 import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.part.PartResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

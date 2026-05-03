@@ -2,7 +2,6 @@ package com.os.workshop.features.stock.management;
 
 import com.os.workshop.features.stock.domain.StockMovement;
 import com.os.workshop.features.stock.domain.StockMovementType;
-import com.os.workshop.features.stock.management.StockMovementResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

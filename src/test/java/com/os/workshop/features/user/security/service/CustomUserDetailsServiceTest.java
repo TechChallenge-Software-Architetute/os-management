@@ -3,7 +3,6 @@ package com.os.workshop.features.user.security.service;
 import com.os.workshop.features.user.domain.Role;
 import com.os.workshop.features.user.domain.User;
 import com.os.workshop.features.user.repository.UserRepository;
-import com.os.workshop.features.user.security.service.CustomUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 

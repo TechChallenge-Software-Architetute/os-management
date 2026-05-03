@@ -2,7 +2,6 @@ package com.os.workshop.features.utils.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.os.workshop.features.utils.annotations.UpperCase;
-import com.os.workshop.features.utils.json.UpperCaseDeserializer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

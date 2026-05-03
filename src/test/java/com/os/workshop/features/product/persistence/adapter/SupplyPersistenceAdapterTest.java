@@ -3,7 +3,6 @@ package com.os.workshop.features.product.persistence.adapter;
 import com.os.workshop.features.product.domain.ProductType;
 import com.os.workshop.features.product.domain.Supply;
 import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.persistence.adapter.SupplyPersistenceAdapter;
 import com.os.workshop.features.product.persistence.entity.SupplyEntity;
 import com.os.workshop.features.product.persistence.mappers.SupplyMapper;
 import com.os.workshop.features.product.persistence.repository.SupplyJpaRepository;

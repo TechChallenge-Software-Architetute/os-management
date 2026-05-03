@@ -1,6 +1,5 @@
 package com.os.workshop.features.user.security.filter;
 
-import com.os.workshop.features.user.security.filter.JwtFilter;
 import com.os.workshop.features.user.security.jwt.JwtService;
 import com.os.workshop.features.user.security.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;

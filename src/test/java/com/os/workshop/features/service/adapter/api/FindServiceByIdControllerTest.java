@@ -1,6 +1,5 @@
 package com.os.workshop.features.service.adapter.api;
 
-import com.os.workshop.features.service.adapter.api.FindServiceByIdController;
 import com.os.workshop.features.service.domain.ServiceEntity;
 import com.os.workshop.features.service.usecases.FindServiceByIdUC;
 import org.junit.jupiter.api.Test;

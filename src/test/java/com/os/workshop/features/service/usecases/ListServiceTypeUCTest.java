@@ -2,7 +2,6 @@ package com.os.workshop.features.service.usecases;
 
 import com.os.workshop.features.service.adapter.database.ServiceTypeRepository;
 import com.os.workshop.features.service.domain.ServiceTypeEntity;
-import com.os.workshop.features.service.usecases.ListServiceTypeUC;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

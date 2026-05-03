@@ -1,6 +1,5 @@
 package com.os.workshop.features.user.auth.iterator;
 
-import com.os.workshop.features.user.auth.iterator.AuthIterator;
 import com.os.workshop.features.user.domain.Role;
 import com.os.workshop.features.user.domain.User;
 import com.os.workshop.features.user.repository.UserRepository;

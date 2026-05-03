@@ -43,7 +43,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/clients/my-orders/**")
+                        .hasAnyRole("USER", "ADMIN", "TECHNICIAN")
+                        .anyRequest().hasAnyRole("ADMIN", "TECHNICIAN")
                 )
 
                 .exceptionHandling(ex -> ex
