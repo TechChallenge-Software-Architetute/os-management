@@ -1,8 +1,7 @@
-package com.os.workshop.features.monitoring.usecases;
+package com.os.workshop.features.monitoring.averageExecutionTime;
 
-import com.os.workshop.features.monitoring.domain.ServiceAverageTime;
-import com.os.workshop.features.monitoring.domain.enums.AverageTimeEnum;
-import com.os.workshop.features.monitoring.domain.requests.AverageExecutionTimeRequest;
+import com.os.workshop.features.monitoring.shared.domain.AverageTimeEnum;
+import com.os.workshop.features.monitoring.shared.domain.ServiceAverageTime;
 import com.os.workshop.features.service.adapter.database.ServiceRepository;
 import com.os.workshop.features.service.domain.ServiceEntity;
 import com.os.workshop.features.service.domain.Status;
@@ -17,25 +16,24 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class GetAverageExecutionTimeUC {
+public class GetAverageExecutionTimeHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(GetAverageExecutionTimeUC.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetAverageExecutionTimeHandler.class);
 
     @Autowired
     private ServiceRepository serviceRepository;
 
-    public List<ServiceAverageTime> process(AverageExecutionTimeRequest request) {
+    public List<ServiceAverageTime> handle(GetAverageExecutionTimeRequest request) {
         logger.info("Calculando tempo médio de execução dos serviços...");
 
         List<ServiceEntity> services = serviceRepository.findAll();
 
-        // Agrupar serviços por tipo
         Map<String, List<ServiceEntity>> groupedByType = services.stream()
-                .collect(Collectors.groupingBy(service -> service.getServiceTypeName() != null ? service.getServiceTypeName() : "Unknown"));
+                .collect(Collectors.groupingBy(service ->
+                        service.getServiceTypeName() != null ? service.getServiceTypeName() : "Unknown"));
 
         List<ServiceAverageTime> averages = groupedByType.entrySet().stream()
                 .map(entry -> calculateAverageForType(entry, request.getTimeUnit()))
@@ -45,28 +43,16 @@ public class GetAverageExecutionTimeUC {
         return averages;
     }
 
-    public ServiceAverageTime processById(UUID id, AverageTimeEnum request) {
-        logger.info("Calculando tempo médio de execução dos serviço...");
-
-        ServiceEntity service = serviceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Servico nao encontrado. ID: " + id));
-
-        return service.getServiceTypeName() != null
-                ? calculateAverageForType(Map.entry(service.getServiceTypeName(), List.of(service)), request)
-                : new ServiceAverageTime("Unknown", 0.0);
-    }
-
     private ServiceAverageTime calculateAverageForType(
             Map.Entry<String, List<ServiceEntity>> entry,
-            AverageTimeEnum request
+            AverageTimeEnum timeUnit
     ) {
         String type = entry.getKey();
         List<ServiceEntity> typeServices = entry.getValue();
 
-        // Calcular tempo de execução para cada serviço concluído e filtrar tempos válidos
         List<Double> times = typeServices.stream()
                 .filter(this::hasCompleted)
-                .map(service -> calculateExecutionTime(service, request))
+                .map(service -> calculateExecutionTime(service, timeUnit))
                 .filter(time -> time > 0)
                 .toList();
 
@@ -83,7 +69,7 @@ public class GetAverageExecutionTimeUC {
                 .anyMatch(status -> status.getStatus() == ServiceStatusEnum.DONE);
     }
 
-    private double calculateExecutionTime(ServiceEntity service, AverageTimeEnum request) {
+    private double calculateExecutionTime(ServiceEntity service, AverageTimeEnum timeUnit) {
         List<Status> status = service.getServiceStatus();
 
         LocalDateTime doingTime = findEarliestStatusTime(status, ServiceStatusEnum.DOING);
@@ -91,8 +77,7 @@ public class GetAverageExecutionTimeUC {
 
         if (doingTime != null && doneTime != null && doneTime.isAfter(doingTime)) {
             Duration duration = Duration.between(doingTime, doneTime);
-
-            return request.calculate(duration);
+            return timeUnit.calculate(duration);
         }
         return 0.0;
     }
