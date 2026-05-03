@@ -4,7 +4,7 @@ import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrd
 import com.os.workshop.features.budget.shared.domain.Budget;
 import com.os.workshop.features.budget.shared.domain.BudgetItem;
 import com.os.workshop.features.budget.shared.repository.BudgetRepository;
-import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.ProductType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,8 +1,9 @@
 package com.os.workshop.features.product.supply;
 
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.Supply;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.Supply;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.supply.create.CreateSupplyResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -26,7 +27,7 @@ class SupplyResponseTest {
         supply.setFractionalAllowed(true);
         supply.setPackageSize(new BigDecimal("1.00"));
 
-        SupplyResponse response = SupplyResponse.from(supply);
+        CreateSupplyResponse response = CreateSupplyResponse.from(supply);
 
         assertEquals("OIL-1", response.sku());
         assertTrue(response.fractionalAllowed());

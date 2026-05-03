@@ -1,11 +1,18 @@
 package com.os.workshop.features.product.supply;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.Supply;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.exception.GlobalExceptionHandler;
-import com.os.workshop.features.product.repository.SupplyRepository;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.Supply;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
+import com.os.workshop.features.product.shared.exception.GlobalExceptionHandler;
+import com.os.workshop.features.product.supply.create.CreateSupplyHandler;
+import com.os.workshop.features.product.supply.create.CreateSupplyRequest;
+import com.os.workshop.features.product.supply.deactivate.DeactivateSupplyHandler;
+import com.os.workshop.features.product.supply.findById.FindSupplyByIdHandler;
+import com.os.workshop.features.product.supply.findBySku.FindSupplyBySkuHandler;
+import com.os.workshop.features.product.supply.list.ListSuppliesHandler;
+import com.os.workshop.features.product.supply.update.UpdateSupplyHandler;
+import com.os.workshop.features.product.supply.update.UpdateSupplyRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,9 +25,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,13 +40,18 @@ class SupplyControllerE2ETest {
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Mock
-    private SupplyRepository supplyRepository;
+    @Mock private CreateSupplyHandler createSupplyHandler;
+    @Mock private FindSupplyByIdHandler findSupplyByIdHandler;
+    @Mock private FindSupplyBySkuHandler findSupplyBySkuHandler;
+    @Mock private ListSuppliesHandler listSuppliesHandler;
+    @Mock private UpdateSupplyHandler updateSupplyHandler;
+    @Mock private DeactivateSupplyHandler deactivateSupplyHandler;
 
     @BeforeEach
     void setUp() {
-        SupplyService supplyService = new SupplyService(supplyRepository);
-        SupplyController supplyController = new SupplyController(supplyService);
+        SupplyController supplyController = new SupplyController(
+                createSupplyHandler, findSupplyByIdHandler, findSupplyBySkuHandler,
+                listSuppliesHandler, updateSupplyHandler, deactivateSupplyHandler);
         mockMvc = MockMvcBuilders.standaloneSetup(supplyController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -65,14 +78,10 @@ class SupplyControllerE2ETest {
 
     @Test
     void whenCreatingSupplyWithValidData_thenReturns201() throws Exception {
-        when(supplyRepository.existsBySku("OIL-5W30")).thenReturn(false);
-        when(supplyRepository.save(any(Supply.class))).thenAnswer(i -> {
-            Supply s = i.getArgument(0);
-            s.setId(1L);
-            return s;
-        });
+        Supply supply = createSupply();
+        when(createSupplyHandler.handle(any(CreateSupplyRequest.class))).thenReturn(supply);
 
-        SupplyRequest request = new SupplyRequest("Engine Oil", "OIL-5W30", UnitOfMeasure.LITER,
+        CreateSupplyRequest request = new CreateSupplyRequest("Engine Oil", "OIL-5W30", UnitOfMeasure.LITER,
                 "Lubricants", "Mobil", new BigDecimal("25"), new BigDecimal("50"), true, new BigDecimal("1"));
 
         mockMvc.perform(post("/api/supplies")
@@ -84,7 +93,7 @@ class SupplyControllerE2ETest {
 
     @Test
     void whenFindingAllSupplies_thenReturns200WithList() throws Exception {
-        when(supplyRepository.findAllActive()).thenReturn(List.of(createSupply()));
+        when(listSuppliesHandler.handle()).thenReturn(List.of(createSupply()));
 
         mockMvc.perform(get("/api/supplies"))
                 .andExpect(status().isOk())
@@ -94,7 +103,7 @@ class SupplyControllerE2ETest {
     @Test
     void whenFindingSupplyByExistingSku_thenReturns200() throws Exception {
         Supply supply = createSupply();
-        when(supplyRepository.findBySku("OIL-5W30")).thenReturn(Optional.of(supply));
+        when(findSupplyBySkuHandler.handle("OIL-5W30")).thenReturn(supply);
 
         mockMvc.perform(get("/api/supplies/sku/{sku}", "OIL-5W30"))
                 .andExpect(status().isOk())
@@ -103,20 +112,16 @@ class SupplyControllerE2ETest {
 
     @Test
     void whenDeactivatingSupply_thenReturns204() throws Exception {
-        Supply supply = createSupply();
-        when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
-        when(supplyRepository.save(any(Supply.class))).thenAnswer(i -> i.getArgument(0));
+        doNothing().when(deactivateSupplyHandler).handle(1L);
 
         mockMvc.perform(delete("/api/supplies/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
 
-    // ==================== GET /api/supplies/{id} ====================
-
     @Test
     void whenFindingSupplyByExistingId_thenReturns200() throws Exception {
         Supply supply = createSupply();
-        when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
+        when(findSupplyByIdHandler.handle(1L)).thenReturn(supply);
 
         mockMvc.perform(get("/api/supplies/{id}", 1L))
                 .andExpect(status().isOk())
@@ -126,16 +131,14 @@ class SupplyControllerE2ETest {
                 .andExpect(jsonPath("$.fractionalAllowed").value(true));
     }
 
-    // ==================== PUT /api/supplies/{id} ====================
-
     @Test
     void whenUpdatingSupplyWithValidData_thenReturns200() throws Exception {
         Supply supply = createSupply();
-        when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
-        when(supplyRepository.existsBySku("OIL-10W40")).thenReturn(false);
-        when(supplyRepository.save(any(Supply.class))).thenAnswer(i -> i.getArgument(0));
+        supply.setName("Synthetic Oil");
+        supply.setSku("OIL-10W40");
+        when(updateSupplyHandler.handle(eq(1L), any(UpdateSupplyRequest.class))).thenReturn(supply);
 
-        SupplyRequest updateRequest = new SupplyRequest("Synthetic Oil", "OIL-10W40", UnitOfMeasure.LITER,
+        UpdateSupplyRequest updateRequest = new UpdateSupplyRequest("Synthetic Oil", "OIL-10W40", UnitOfMeasure.LITER,
                 "Lubricants", "Castrol", new BigDecimal("30"), new BigDecimal("60"), true, new BigDecimal("1"));
 
         mockMvc.perform(put("/api/supplies/{id}", 1L)

@@ -1,6 +1,6 @@
 package com.os.workshop.features.budget.shared.repository;
 
-import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.ProductType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
