@@ -140,4 +140,50 @@ class StockControllerE2ETest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].type").value("ENTRY"));
     }
+
+    // ==================== GET /api/stocks ====================
+
+    @Test
+    void whenFindingAllStocks_thenReturns200WithList() throws Exception {
+        Stock stock = createStock();
+        when(stockRepository.findAll()).thenReturn(List.of(stock));
+
+        mockMvc.perform(get("/api/stocks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].productId").value(2))
+                .andExpect(jsonPath("$[0].quantity").value(100))
+                .andExpect(jsonPath("$[0].availableQuantity").value(80));
+    }
+
+    // ==================== PATCH /api/stocks/product/{productId}/exit ====================
+
+    @Test
+    void whenRemovingStockWithValidQuantity_thenReturns200WithDecreasedQuantity() throws Exception {
+        Stock stock = createStock();
+        when(stockRepository.findByProductId(stock.getProductId())).thenReturn(Optional.of(stock));
+        when(stockRepository.save(any(Stock.class))).thenAnswer(i -> i.getArgument(0));
+
+        StockMovementRequest request = new StockMovementRequest(new BigDecimal("10"), "Sold");
+
+        mockMvc.perform(patch("/api/stocks/product/{productId}/exit", stock.getProductId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(90));
+    }
+
+    // ==================== PATCH /api/stocks/product/{productId}/minimum ====================
+
+    @Test
+    void whenUpdatingMinimumQuantity_thenReturns200WithUpdatedMinimum() throws Exception {
+        Stock stock = createStock();
+        when(stockRepository.findByProductId(stock.getProductId())).thenReturn(Optional.of(stock));
+        when(stockRepository.save(any(Stock.class))).thenAnswer(i -> i.getArgument(0));
+
+        mockMvc.perform(patch("/api/stocks/product/{productId}/minimum", stock.getProductId())
+                        .param("minimumQuantity", "25"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.minimumQuantity").value(25));
+    }
 }

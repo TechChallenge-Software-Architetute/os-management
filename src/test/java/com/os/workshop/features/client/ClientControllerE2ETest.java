@@ -46,7 +46,30 @@ class ClientControllerE2ETest {
     void setUp() {
         ClientService clientService = new ClientService(clientRepository, serviceOrderJpaRepository, budgetService);
         ClientController clientController = new ClientController(clientService);
-        mockMvc = MockMvcBuilders.standaloneSetup(clientController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(clientController)
+                .setCustomArgumentResolvers(new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
+                    @Override
+                    public boolean supportsParameter(org.springframework.core.MethodParameter parameter) {
+                        return parameter.getParameterType().equals(org.springframework.security.core.userdetails.UserDetails.class);
+                    }
+
+                    @Override
+                    public Object resolveArgument(org.springframework.core.MethodParameter parameter,
+                                                  org.springframework.web.method.support.ModelAndViewContainer mavContainer,
+                                                  org.springframework.web.context.request.NativeWebRequest webRequest,
+                                                  org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
+                        return mockUserDetails();
+                    }
+                })
+                .build();
+    }
+
+    private org.springframework.security.core.userdetails.UserDetails mockUserDetails() {
+        return org.springframework.security.core.userdetails.User.builder()
+                .username("joao@email.com")
+                .password("password")
+                .roles("USER")
+                .build();
     }
 
     private Client createClient() {
@@ -134,5 +157,70 @@ class ClientControllerE2ETest {
 
         mockMvc.perform(delete("/api/clients/{id}", 1L))
                 .andExpect(status().isNoContent());
+    }
+
+    // ==================== Client Portal E2E Tests ====================
+
+    private com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity createOrder(java.util.UUID id) {
+        var order = new com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity();
+        order.setId(id);
+        order.setCpfCnpj(VALID_CPF);
+        order.setServiceStatus("RECEBIDA");
+        order.setListService(List.of("TROCA_OLEO", "ALINHAMENTO"));
+        order.setPlacaVeiculo("ABC1234");
+        order.setServiceTypeName("[TROCA_OLEO, ALINHAMENTO]");
+        return order;
+    }
+
+    @Test
+    void whenFindingMyOrders_thenReturns200WithOrderList() throws Exception {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findByCpfCnpj(VALID_CPF)).thenReturn(List.of(createOrder(orderId)));
+
+        mockMvc.perform(get("/api/clients/my-orders"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].orderId").value(orderId.toString()))
+                .andExpect(jsonPath("$[0].placaVeiculo").value("ABC1234"))
+                .andExpect(jsonPath("$[0].serviceStatus").value("RECEBIDA"));
+    }
+
+    @Test
+    void whenFindingMyOrderDetail_thenReturns200WithBudget() throws Exception {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(createOrder(orderId)));
+        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/clients/my-orders/{orderId}", orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId.toString()))
+                .andExpect(jsonPath("$.placaVeiculo").value("ABC1234"))
+                .andExpect(jsonPath("$.budget").isEmpty());
+    }
+
+    @Test
+    void whenApprovingMyOrder_thenReturns200WithApprovedStatus() throws Exception {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        var order = createOrder(orderId);
+        order.setServiceStatus("AGUARDANDO_APROVACAO");
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(serviceOrderJpaRepository.save(any(com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity.class)))
+                .thenAnswer(i -> i.getArgument(0));
+        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
+
+        mockMvc.perform(patch("/api/clients/my-orders/{orderId}/approve", orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId.toString()))
+                .andExpect(jsonPath("$.serviceStatus").value("APROVADO"));
     }
 }
