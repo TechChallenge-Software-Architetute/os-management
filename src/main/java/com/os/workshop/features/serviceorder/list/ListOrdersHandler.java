@@ -1,7 +1,7 @@
 package com.os.workshop.features.serviceorder.list;
 
-import com.os.workshop.features.budget.BudgetResponse;
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
@@ -21,15 +21,15 @@ public class ListOrdersHandler {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Autowired
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     public List<ServiceOrder> handle() {
         logger.info("Consultando todas as ordens de servico.");
 
         return serviceOrderJpaRepository.findAll().stream()
                 .map(entity -> {
-                    var budget = budgetService.findByServiceOrderId(entity.getId())
-                            .map(BudgetResponse::from)
+                    var budget = findBudgetByServiceOrderHandler.handle(entity.getId())
+                            .map(FindBudgetByServiceOrderResponse::from)
                             .orElse(null);
                     return ServiceOrderMapper.toDomain(entity, budget);
                 })

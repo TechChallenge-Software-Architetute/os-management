@@ -4,8 +4,8 @@ import com.os.workshop.features.client.domain.Client;
 import com.os.workshop.features.client.dto.ClientRequest;
 import com.os.workshop.features.client.exception.ClientNotFoundException;
 import com.os.workshop.features.client.repository.ClientRepository;
-import com.os.workshop.features.budget.BudgetResponse;
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
@@ -29,7 +29,7 @@ public class ClientService {
 
     private final ClientRepository clientRepository;
     private final ServiceOrderJpaRepository serviceOrderJpaRepository;
-    private final BudgetService budgetService;
+    private final FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     /**
      * Cadastra um novo cliente após validar unicidade do CPF.
@@ -174,9 +174,9 @@ public class ClientService {
      * @return the budget response, or null if no budget exists
      */
     @Transactional(readOnly = true)
-    public BudgetResponse findBudgetForOrder(UUID serviceOrderId) {
-        return budgetService.findByServiceOrderId(serviceOrderId)
-                .map(BudgetResponse::from)
+    public FindBudgetByServiceOrderResponse findBudgetForOrder(UUID serviceOrderId) {
+        return findBudgetByServiceOrderHandler.handle(serviceOrderId)
+                .map(FindBudgetByServiceOrderResponse::from)
                 .orElse(null);
     }
 

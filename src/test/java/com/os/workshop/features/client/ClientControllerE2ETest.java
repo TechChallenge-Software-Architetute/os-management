@@ -40,11 +40,11 @@ class ClientControllerE2ETest {
     private com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Mock
-    private com.os.workshop.features.budget.BudgetService budgetService;
+    private com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @BeforeEach
     void setUp() {
-        ClientService clientService = new ClientService(clientRepository, serviceOrderJpaRepository, budgetService);
+        ClientService clientService = new ClientService(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
         ClientController clientController = new ClientController(clientService);
         mockMvc = MockMvcBuilders.standaloneSetup(clientController)
                 .setCustomArgumentResolvers(new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
@@ -195,7 +195,7 @@ class ClientControllerE2ETest {
 
         when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(createOrder(orderId)));
-        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(orderId)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/clients/my-orders/{orderId}", orderId))
                 .andExpect(status().isOk())
@@ -216,7 +216,7 @@ class ClientControllerE2ETest {
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(serviceOrderJpaRepository.save(any(com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity.class)))
                 .thenAnswer(i -> i.getArgument(0));
-        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(orderId)).thenReturn(Optional.empty());
 
         mockMvc.perform(patch("/api/clients/my-orders/{orderId}/approve", orderId))
                 .andExpect(status().isOk())

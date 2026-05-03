@@ -1,7 +1,6 @@
 package com.os.workshop.features.client.dto;
 
-import com.os.workshop.features.budget.BudgetItemResponse;
-import com.os.workshop.features.budget.BudgetResponse;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 
 import java.math.BigDecimal;
@@ -19,7 +18,7 @@ public record ClientOrderDetailResponse(
         List<String> services,
         BudgetSummary budget
 ) {
-    public static ClientOrderDetailResponse from(ServiceOrderEntity entity, BudgetResponse budget) {
+    public static ClientOrderDetailResponse from(ServiceOrderEntity entity, FindBudgetByServiceOrderResponse budget) {
         BudgetSummary budgetSummary = null;
         if (budget != null) {
             budgetSummary = new BudgetSummary(

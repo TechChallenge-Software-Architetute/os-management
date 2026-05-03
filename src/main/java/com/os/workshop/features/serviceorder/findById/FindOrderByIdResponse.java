@@ -1,6 +1,6 @@
 package com.os.workshop.features.serviceorder.findById;
 
-import com.os.workshop.features.budget.BudgetResponse;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 
 import java.util.List;
@@ -13,7 +13,7 @@ public record FindOrderByIdResponse(
         List<String> listService,
         String cpfCnpj,
         String placaVeiculo,
-        BudgetResponse budget
+        FindBudgetByServiceOrderResponse budget
 ) {
     public static FindOrderByIdResponse from(ServiceOrder order) {
         return new FindOrderByIdResponse(
