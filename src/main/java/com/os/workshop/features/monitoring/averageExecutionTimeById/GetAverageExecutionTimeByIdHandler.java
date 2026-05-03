@@ -2,10 +2,10 @@ package com.os.workshop.features.monitoring.averageExecutionTimeById;
 
 import com.os.workshop.features.monitoring.shared.domain.AverageTimeEnum;
 import com.os.workshop.features.monitoring.shared.domain.ServiceAverageTime;
-import com.os.workshop.features.service.adapter.database.ServiceRepository;
-import com.os.workshop.features.service.domain.ServiceEntity;
-import com.os.workshop.features.service.domain.Status;
-import com.os.workshop.features.service.domain.enums.ServiceStatusEnum;
+import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.features.service.shared.repository.ServiceEntity;
+import com.os.workshop.features.service.shared.domain.Status;
+import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

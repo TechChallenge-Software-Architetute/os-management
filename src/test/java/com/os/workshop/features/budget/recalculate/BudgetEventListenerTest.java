@@ -1,6 +1,6 @@
 package com.os.workshop.features.budget.recalculate;
 
-import com.os.workshop.features.stock.reservation.ReservationChangedEvent;
+import com.os.workshop.features.stock.shared.domain.ReservationChangedEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
