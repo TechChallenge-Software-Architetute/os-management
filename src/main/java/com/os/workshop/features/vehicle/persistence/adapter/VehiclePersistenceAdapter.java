@@ -1,7 +1,7 @@
 package com.os.workshop.features.vehicle.persistence.adapter;
 
-import com.os.workshop.features.client.persistence.entity.ClientEntity;
-import com.os.workshop.features.client.persistence.repository.ClientJpaRepository;
+import com.os.workshop.features.client.shared.repository.ClientEntity;
+import com.os.workshop.features.client.shared.repository.ClientJpaRepository;
 import com.os.workshop.features.vehicle.domain.Vehicle;
 import com.os.workshop.features.vehicle.persistence.entity.VehicleEntity;
 import com.os.workshop.features.vehicle.persistence.mapper.VehicleMapper;

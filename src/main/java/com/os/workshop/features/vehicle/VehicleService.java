@@ -1,7 +1,7 @@
 package com.os.workshop.features.vehicle;
 
-import com.os.workshop.features.client.exception.ClientNotFoundException;
-import com.os.workshop.features.client.repository.ClientRepository;
+import com.os.workshop.features.client.shared.exception.ClientNotFoundException;
+import com.os.workshop.features.client.shared.repository.ClientRepository;
 import com.os.workshop.features.vehicle.domain.Vehicle;
 import com.os.workshop.features.vehicle.dto.VehicleRequest;
 import com.os.workshop.features.vehicle.exception.VehicleNotFoundException;
