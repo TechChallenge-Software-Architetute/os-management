@@ -39,4 +39,6 @@ public interface ClientJpaRepository extends JpaRepository<ClientEntity, Long> {
      * @return {@code true} se o CPF já estiver cadastrado
      */
     boolean existsByCpf(String cpf);
+
+    Optional<ClientEntity> findByEmail(String email);
 }

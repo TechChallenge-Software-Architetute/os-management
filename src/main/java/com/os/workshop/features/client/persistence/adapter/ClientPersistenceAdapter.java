@@ -71,4 +71,9 @@ public class ClientPersistenceAdapter implements ClientRepository {
     public boolean existsByCpf(String normalizedCpf) {
         return jpaRepository.existsByCpf(normalizedCpf);
     }
+
+    @Override
+    public Optional<Client> findByEmail(String email) {
+        return jpaRepository.findByEmail(email).map(mapper::toDomain);
+    }
 }

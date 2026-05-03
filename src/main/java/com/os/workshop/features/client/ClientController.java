@@ -1,5 +1,7 @@
 package com.os.workshop.features.client;
 
+import com.os.workshop.features.client.dto.ClientOrderDetailResponse;
+import com.os.workshop.features.client.dto.ClientOrderSummaryResponse;
 import com.os.workshop.features.client.dto.ClientRequest;
 import com.os.workshop.features.client.dto.ClientResponse;
 import jakarta.validation.Valid;
@@ -7,9 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Controller REST para operações CRUD de clientes.
@@ -106,5 +111,60 @@ public class ClientController {
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         clientService.deactivate(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ==================== Client Portal Endpoints ====================
+
+    /**
+     * Lists all service orders for the logged-in client.
+     * The client is identified from the JWT token (email).
+     * Returns basic information: order ID, vehicle plate, status, and included services.
+     *
+     * @param userDetails the authenticated user (injected from JWT)
+     * @return list of order summaries
+     */
+    @GetMapping("/my-orders")
+    public ResponseEntity<List<ClientOrderSummaryResponse>> findMyOrders(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var orders = clientService.findMyOrders(userDetails.getUsername()).stream()
+                .map(ClientOrderSummaryResponse::from)
+                .toList();
+        return ResponseEntity.ok(orders);
+    }
+
+    /**
+     * Returns detailed information about a single service order for the logged-in client.
+     * Includes the budget with item-level price breakdown when available.
+     * Validates that the order belongs to the authenticated client.
+     *
+     * @param userDetails the authenticated user (injected from JWT)
+     * @param orderId     the service order UUID
+     * @return order details with budget
+     */
+    @GetMapping("/my-orders/{orderId}")
+    public ResponseEntity<ClientOrderDetailResponse> findMyOrderDetail(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID orderId) {
+        var order = clientService.findMyOrderById(userDetails.getUsername(), orderId);
+        var budget = clientService.findBudgetForOrder(orderId);
+        return ResponseEntity.ok(ClientOrderDetailResponse.from(order, budget));
+    }
+
+    /**
+     * Approves a service order on behalf of the logged-in client.
+     * The order must be in AGUARDANDO_APROVACAO status.
+     * Changes the order status to APROVADO.
+     *
+     * @param userDetails the authenticated user (injected from JWT)
+     * @param orderId     the service order UUID to approve
+     * @return the updated order detail with budget
+     */
+    @PatchMapping("/my-orders/{orderId}/approve")
+    public ResponseEntity<ClientOrderDetailResponse> approveMyOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID orderId) {
+        var order = clientService.approveMyOrder(userDetails.getUsername(), orderId);
+        var budget = clientService.findBudgetForOrder(orderId);
+        return ResponseEntity.ok(ClientOrderDetailResponse.from(order, budget));
     }
 }
