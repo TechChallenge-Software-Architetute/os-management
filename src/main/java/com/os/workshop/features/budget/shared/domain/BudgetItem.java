@@ -1,4 +1,4 @@
-package com.os.workshop.features.budget.domain;
+package com.os.workshop.features.budget.shared.domain;
 
 import com.os.workshop.features.product.domain.ProductType;
 

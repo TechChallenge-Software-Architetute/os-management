@@ -1,6 +1,5 @@
-package com.os.workshop.features.budget.persistence.repository;
+package com.os.workshop.features.budget.shared.repository;
 
-import com.os.workshop.features.budget.persistence.entity.BudgetEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

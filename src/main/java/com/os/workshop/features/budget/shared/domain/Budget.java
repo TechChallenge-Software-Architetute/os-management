@@ -1,4 +1,4 @@
-package com.os.workshop.features.budget.domain;
+package com.os.workshop.features.budget.shared.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

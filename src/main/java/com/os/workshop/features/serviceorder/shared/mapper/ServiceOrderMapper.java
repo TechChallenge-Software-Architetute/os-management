@@ -3,7 +3,7 @@ package com.os.workshop.features.serviceorder.shared.mapper;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 
-import com.os.workshop.features.budget.BudgetResponse;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 
 /**
  * Manual mapper between ServiceOrderEntity (JPA) and ServiceOrder (domain).
@@ -13,7 +13,7 @@ public class ServiceOrderMapper {
     private ServiceOrderMapper() {
     }
 
-    public static ServiceOrder toDomain(ServiceOrderEntity entity, BudgetResponse budget) {
+    public static ServiceOrder toDomain(ServiceOrderEntity entity, FindBudgetByServiceOrderResponse budget) {
         if (entity == null) {
             return null;
         }

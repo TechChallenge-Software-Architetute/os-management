@@ -1,6 +1,6 @@
 package com.os.workshop.features.serviceorder.findById;
 
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
@@ -26,7 +26,7 @@ class FindOrderByIdHandlerTest {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Mock
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @InjectMocks
     private FindOrderByIdHandler findOrderByIdHandler;
@@ -48,7 +48,7 @@ class FindOrderByIdHandlerTest {
         ServiceOrderEntity expected = createOrder(orderId);
 
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(expected));
-        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(orderId)).thenReturn(Optional.empty());
 
         ServiceOrder result = findOrderByIdHandler.handle(orderId);
 
@@ -79,7 +79,7 @@ class FindOrderByIdHandlerTest {
         ServiceOrderEntity expected = createOrder(orderId);
 
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(expected));
-        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(orderId)).thenReturn(Optional.empty());
 
         ServiceOrder result = findOrderByIdHandler.handle(orderId);
 

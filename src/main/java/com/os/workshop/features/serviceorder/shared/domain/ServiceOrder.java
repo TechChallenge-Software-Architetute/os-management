@@ -1,6 +1,6 @@
 package com.os.workshop.features.serviceorder.shared.domain;
 
-import com.os.workshop.features.budget.BudgetResponse;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import lombok.*;
 
 import java.util.List;
@@ -22,5 +22,5 @@ public class ServiceOrder {
     private List<String> listService;
     private String cpfCnpj;
     private String placaVeiculo;
-    private BudgetResponse budget;
+    private FindBudgetByServiceOrderResponse budget;
 }

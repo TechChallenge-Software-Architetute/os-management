@@ -1,8 +1,8 @@
-package com.os.workshop.features.budget;
+package com.os.workshop.features.budget.recalculate;
 
-import com.os.workshop.features.budget.domain.Budget;
-import com.os.workshop.features.budget.domain.BudgetItem;
-import com.os.workshop.features.budget.repository.BudgetRepository;
+import com.os.workshop.features.budget.shared.domain.Budget;
+import com.os.workshop.features.budget.shared.domain.BudgetItem;
+import com.os.workshop.features.budget.shared.repository.BudgetRepository;
 import com.os.workshop.features.product.domain.Part;
 import com.os.workshop.features.product.domain.Product;
 import com.os.workshop.features.product.repository.PartRepository;
@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Service responsible for budget calculation and management.
+ * Handles budget recalculation based on active stock reservations.
  * <p>
  * A budget is automatically derived from the active stock reservations of a service order.
  * Each budget item is a snapshot of the product's price at the time of calculation.
@@ -28,7 +28,7 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
-public class BudgetService {
+public class RecalculateBudgetHandler {
 
     private final BudgetRepository budgetRepository;
     private final StockReservationRepository reservationRepository;
@@ -44,7 +44,7 @@ public class BudgetService {
      * @return the recalculated budget
      */
     @Transactional
-    public Budget recalculate(UUID serviceOrderId) {
+    public Budget handle(UUID serviceOrderId) {
         List<StockReservation> activeReservations = reservationRepository
                 .findByServiceOrderIdAndStatus(serviceOrderId, StockReservationStatus.ACTIVE);
 
@@ -82,17 +82,6 @@ public class BudgetService {
         budget.recalculateTotalPrice();
 
         return budgetRepository.save(budget);
-    }
-
-    /**
-     * Retrieves the budget for a service order, if it exists.
-     *
-     * @param serviceOrderId the UUID of the service order
-     * @return the budget, or empty if no budget exists yet
-     */
-    @Transactional(readOnly = true)
-    public Optional<Budget> findByServiceOrderId(UUID serviceOrderId) {
-        return budgetRepository.findByServiceOrderId(serviceOrderId);
     }
 
     private Product findProduct(Long productId) {

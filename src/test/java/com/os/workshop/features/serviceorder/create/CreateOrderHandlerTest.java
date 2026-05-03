@@ -1,6 +1,6 @@
 package com.os.workshop.features.serviceorder.create;
 
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.client.ClientService;
 import com.os.workshop.features.client.domain.Client;
 import com.os.workshop.features.service.domain.ServiceEntity;
@@ -41,7 +41,7 @@ class CreateOrderHandlerTest {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Mock
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @InjectMocks
     private CreateOrderHandler createOrderHandler;
@@ -62,7 +62,7 @@ class CreateOrderHandlerTest {
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
-        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         ServiceOrder result = createOrderHandler.handle(request);
 
@@ -84,7 +84,7 @@ class CreateOrderHandlerTest {
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
-        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         createOrderHandler.handle(request);
 
@@ -122,7 +122,7 @@ class CreateOrderHandlerTest {
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
-        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         ServiceOrder result = createOrderHandler.handle(request);
 
@@ -137,7 +137,7 @@ class CreateOrderHandlerTest {
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
-        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         createOrderHandler.handle(request);
 

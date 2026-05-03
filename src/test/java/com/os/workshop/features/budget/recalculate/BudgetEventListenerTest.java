@@ -1,4 +1,4 @@
-package com.os.workshop.features.budget;
+package com.os.workshop.features.budget.recalculate;
 
 import com.os.workshop.features.stock.reservation.ReservationChangedEvent;
 import org.junit.jupiter.api.Test;
@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 class BudgetEventListenerTest {
 
     @Mock
-    private BudgetService budgetService;
+    private RecalculateBudgetHandler recalculateBudgetHandler;
 
     @InjectMocks
     private BudgetEventListener budgetEventListener;
@@ -27,6 +27,6 @@ class BudgetEventListenerTest {
 
         budgetEventListener.onReservationChanged(event);
 
-        verify(budgetService).recalculate(osId);
+        verify(recalculateBudgetHandler).handle(osId);
     }
 }

@@ -1,6 +1,6 @@
-package com.os.workshop.features.budget.repository;
+package com.os.workshop.features.budget.shared.repository;
 
-import com.os.workshop.features.budget.domain.Budget;
+import com.os.workshop.features.budget.shared.domain.Budget;
 
 import java.util.Optional;
 import java.util.UUID;

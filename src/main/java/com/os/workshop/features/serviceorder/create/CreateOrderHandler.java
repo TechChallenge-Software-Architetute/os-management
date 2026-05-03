@@ -1,7 +1,7 @@
 package com.os.workshop.features.serviceorder.create;
 
-import com.os.workshop.features.budget.BudgetResponse;
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.client.ClientService;
 import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
 import com.os.workshop.features.service.usecases.CreateServiceUC;
@@ -36,7 +36,7 @@ public class CreateOrderHandler {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Autowired
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     public ServiceOrder handle(CreateOrderRequest request) {
 
@@ -69,8 +69,8 @@ public class CreateOrderHandler {
 
         logger.info("Mecanico deve ser notificado!");
 
-        var budget = budgetService.findByServiceOrderId(order.getId())
-                .map(BudgetResponse::from)
+        var budget = findBudgetByServiceOrderHandler.handle(order.getId())
+                .map(FindBudgetByServiceOrderResponse::from)
                 .orElse(null);
 
         return ServiceOrderMapper.toDomain(order, budget);

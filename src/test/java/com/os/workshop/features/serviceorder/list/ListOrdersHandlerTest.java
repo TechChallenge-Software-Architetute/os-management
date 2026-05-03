@@ -1,6 +1,6 @@
 package com.os.workshop.features.serviceorder.list;
 
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
@@ -27,7 +27,7 @@ class ListOrdersHandlerTest {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Mock
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @InjectMocks
     private ListOrdersHandler listOrdersHandler;
@@ -50,8 +50,8 @@ class ListOrdersHandlerTest {
         List<ServiceOrderEntity> orders = List.of(createOrder(id1), createOrder(id2));
 
         when(serviceOrderJpaRepository.findAll()).thenReturn(orders);
-        when(budgetService.findByServiceOrderId(id1)).thenReturn(Optional.empty());
-        when(budgetService.findByServiceOrderId(id2)).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(id1)).thenReturn(Optional.empty());
+        when(findBudgetByServiceOrderHandler.handle(id2)).thenReturn(Optional.empty());
 
         List<ServiceOrder> result = listOrdersHandler.handle();
 

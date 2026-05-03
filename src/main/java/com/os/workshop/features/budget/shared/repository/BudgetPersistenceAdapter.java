@@ -1,16 +1,13 @@
-package com.os.workshop.features.budget.persistence.adapter;
+package com.os.workshop.features.budget.shared.repository;
 
-import com.os.workshop.features.budget.domain.Budget;
-import com.os.workshop.features.budget.domain.BudgetItem;
-import com.os.workshop.features.budget.persistence.entity.BudgetEntity;
-import com.os.workshop.features.budget.persistence.entity.BudgetItemEntity;
-import com.os.workshop.features.budget.persistence.repository.BudgetItemJpaRepository;
-import com.os.workshop.features.budget.persistence.repository.BudgetJpaRepository;
-import com.os.workshop.features.budget.repository.BudgetRepository;
+import com.os.workshop.features.budget.shared.domain.Budget;
+import com.os.workshop.features.budget.shared.domain.BudgetItem;
+import com.os.workshop.features.budget.shared.mapper.BudgetMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,13 +48,13 @@ public class BudgetPersistenceAdapter implements BudgetRepository {
             budgetItemJpaRepository.save(itemEntity);
         }
 
-        return toDomain(savedBudget);
+        return toDomainWithItems(savedBudget);
     }
 
     @Override
     public Optional<Budget> findByServiceOrderId(UUID serviceOrderId) {
         return budgetJpaRepository.findByServiceOrderId(serviceOrderId)
-                .map(this::toDomain);
+                .map(this::toDomainWithItems);
     }
 
     @Override
@@ -66,33 +63,14 @@ public class BudgetPersistenceAdapter implements BudgetRepository {
         budgetItemJpaRepository.deleteByBudgetId(budgetId);
     }
 
-    private Budget toDomain(BudgetEntity entity) {
-        Budget budget = new Budget();
-        budget.setId(entity.getId());
-        budget.setServiceOrderId(entity.getServiceOrderId());
-        budget.setTotalPrice(entity.getTotalPrice());
-        budget.setCreatedAt(entity.getCreatedAt());
-        budget.setUpdatedAt(entity.getUpdatedAt());
+    private Budget toDomainWithItems(BudgetEntity entity) {
+        Budget budget = BudgetMapper.toDomain(entity);
 
         List<BudgetItem> items = budgetItemJpaRepository.findByBudgetId(entity.getId()).stream()
-                .map(this::itemToDomain)
+                .map(BudgetMapper::itemToDomain)
                 .toList();
-        budget.setItems(new java.util.ArrayList<>(items));
+        budget.setItems(new ArrayList<>(items));
 
         return budget;
-    }
-
-    private BudgetItem itemToDomain(BudgetItemEntity entity) {
-        BudgetItem item = new BudgetItem();
-        item.setId(entity.getId());
-        item.setBudgetId(entity.getBudgetId());
-        item.setProductId(entity.getProductId());
-        item.setProductName(entity.getProductName());
-        item.setProductSku(entity.getProductSku());
-        item.setProductType(entity.getProductType());
-        item.setQuantity(entity.getQuantity());
-        item.setUnitPrice(entity.getUnitPrice());
-        item.setTotalPrice(entity.getTotalPrice());
-        return item;
     }
 }

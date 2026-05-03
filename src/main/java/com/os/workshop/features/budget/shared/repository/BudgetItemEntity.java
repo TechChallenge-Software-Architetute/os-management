@@ -1,4 +1,4 @@
-package com.os.workshop.features.budget.persistence.entity;
+package com.os.workshop.features.budget.shared.repository;
 
 import com.os.workshop.features.product.domain.ProductType;
 import jakarta.persistence.Column;

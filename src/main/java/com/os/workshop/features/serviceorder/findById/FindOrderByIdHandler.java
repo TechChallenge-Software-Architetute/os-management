@@ -1,7 +1,7 @@
 package com.os.workshop.features.serviceorder.findById;
 
-import com.os.workshop.features.budget.BudgetResponse;
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
@@ -21,7 +21,7 @@ public class FindOrderByIdHandler {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Autowired
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     public ServiceOrder handle(UUID id) {
         logger.info("Consultando ordem de servico por ID: {}", id);
@@ -29,8 +29,8 @@ public class FindOrderByIdHandler {
         var entity = serviceOrderJpaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ordem de servico nao encontrada. ID: " + id));
 
-        var budget = budgetService.findByServiceOrderId(entity.getId())
-                .map(BudgetResponse::from)
+        var budget = findBudgetByServiceOrderHandler.handle(entity.getId())
+                .map(FindBudgetByServiceOrderResponse::from)
                 .orElse(null);
 
         return ServiceOrderMapper.toDomain(entity, budget);

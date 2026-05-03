@@ -1,7 +1,7 @@
-package com.os.workshop.features.budget;
+package com.os.workshop.features.budget.recalculate;
 
-import com.os.workshop.features.budget.domain.Budget;
-import com.os.workshop.features.budget.repository.BudgetRepository;
+import com.os.workshop.features.budget.shared.domain.Budget;
+import com.os.workshop.features.budget.shared.repository.BudgetRepository;
 import com.os.workshop.features.product.domain.Part;
 import com.os.workshop.features.product.domain.ProductType;
 import com.os.workshop.features.product.domain.Supply;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class BudgetServiceTest {
+class RecalculateBudgetHandlerTest {
 
     @Mock
     private BudgetRepository budgetRepository;
@@ -44,7 +44,7 @@ class BudgetServiceTest {
     private SupplyRepository supplyRepository;
 
     @InjectMocks
-    private BudgetService budgetService;
+    private RecalculateBudgetHandler recalculateBudgetHandler;
 
     private Part createPart() {
         Part part = new Part();
@@ -100,7 +100,7 @@ class BudgetServiceTest {
             return b;
         });
 
-        Budget result = budgetService.recalculate(osId);
+        Budget result = recalculateBudgetHandler.handle(osId);
 
         // 2 × 90.00 + 3 × 50.00 = 180.00 + 150.00 = 330.00
         assertEquals(new BigDecimal("330.00"), result.getTotalPrice());
@@ -121,7 +121,7 @@ class BudgetServiceTest {
             return b;
         });
 
-        Budget result = budgetService.recalculate(osId);
+        Budget result = recalculateBudgetHandler.handle(osId);
 
         assertEquals(BigDecimal.ZERO, result.getTotalPrice());
         assertTrue(result.getItems().isEmpty());
@@ -142,7 +142,7 @@ class BudgetServiceTest {
         when(partRepository.findById(1L)).thenReturn(Optional.of(part));
         when(budgetRepository.save(any(Budget.class))).thenAnswer(i -> i.getArgument(0));
 
-        Budget result = budgetService.recalculate(osId);
+        Budget result = recalculateBudgetHandler.handle(osId);
 
         verify(budgetRepository).deleteItemsByBudgetId(10L);
         // 4 × 90.00 = 360.00
@@ -167,7 +167,7 @@ class BudgetServiceTest {
             return b;
         });
 
-        Budget result = budgetService.recalculate(osId);
+        Budget result = recalculateBudgetHandler.handle(osId);
 
         assertEquals(new BigDecimal("120.00"), result.getItems().get(0).getUnitPrice());
         assertEquals(new BigDecimal("120.00"), result.getTotalPrice());

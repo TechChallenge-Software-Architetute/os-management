@@ -1,4 +1,4 @@
-package com.os.workshop.features.budget;
+package com.os.workshop.features.budget.recalculate;
 
 import com.os.workshop.features.stock.reservation.ReservationChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +13,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BudgetEventListener {
 
-    private final BudgetService budgetService;
+    private final RecalculateBudgetHandler recalculateBudgetHandler;
 
     @EventListener
     public void onReservationChanged(ReservationChangedEvent event) {
-        budgetService.recalculate(event.serviceOrderId());
+        recalculateBudgetHandler.handle(event.serviceOrderId());
     }
 }
