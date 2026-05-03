@@ -1,12 +1,12 @@
 //package com.os.workshop.stock.reservation;
 //
-//import com.os.workshop.stock.domain.Stock;
-//import com.os.workshop.stock.domain.StockMovement;
-//import com.os.workshop.stock.domain.StockReservation;
-//import com.os.workshop.stock.domain.StockReservationStatus;
-//import com.os.workshop.stock.repository.StockMovementRepository;
-//import com.os.workshop.stock.repository.StockRepository;
-//import com.os.workshop.stock.repository.StockReservationRepository;
+//import com.os.workshop.features.stock.domain.Stock;
+//import com.os.workshop.features.stock.domain.StockMovement;
+//import com.os.workshop.features.stock.domain.StockReservation;
+//import com.os.workshop.features.stock.domain.StockReservationStatus;
+//import com.os.workshop.features.stock.repository.StockMovementRepository;
+//import com.os.workshop.features.stock.repository.StockRepository;
+//import com.os.workshop.features.stock.repository.StockReservationRepository;
 //import org.junit.jupiter.api.Test;
 //import org.junit.jupiter.api.extension.ExtendWith;
 //import org.mockito.InjectMocks;

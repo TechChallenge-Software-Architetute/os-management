@@ -1,7 +1,7 @@
 package com.os.workshop.features.serviceorder.update;
 
-import com.os.workshop.features.budget.BudgetResponse;
-import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
@@ -22,7 +22,7 @@ public class UpdateOrderHandler {
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Autowired
-    private BudgetService budgetService;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     public ServiceOrder handle(UUID id, UpdateOrderRequest request) {
         if (request == null || request.getStatus() == null) {
@@ -38,8 +38,8 @@ public class UpdateOrderHandler {
 
         logger.info("Ordem de servico atualizada para o status {}.", updatedOrder.getServiceStatus());
 
-        var budget = budgetService.findByServiceOrderId(updatedOrder.getId())
-                .map(BudgetResponse::from)
+        var budget = findBudgetByServiceOrderHandler.handle(updatedOrder.getId())
+                .map(FindBudgetByServiceOrderResponse::from)
                 .orElse(null);
 
         return ServiceOrderMapper.toDomain(updatedOrder, budget);

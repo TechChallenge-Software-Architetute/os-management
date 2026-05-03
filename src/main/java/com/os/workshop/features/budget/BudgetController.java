@@ -1,5 +1,7 @@
 package com.os.workshop.features.budget;
 
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BudgetController {
 
-    private final BudgetService budgetService;
+    private final FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     /**
      * Retrieves the budget for a service order.
@@ -30,9 +32,9 @@ public class BudgetController {
      * @return the budget with all items and total price
      */
     @GetMapping("/service-order/{serviceOrderId}")
-    public ResponseEntity<BudgetResponse> findByServiceOrder(@PathVariable UUID serviceOrderId) {
-        return budgetService.findByServiceOrderId(serviceOrderId)
-                .map(budget -> ResponseEntity.ok(BudgetResponse.from(budget)))
+    public ResponseEntity<FindBudgetByServiceOrderResponse> findByServiceOrder(@PathVariable UUID serviceOrderId) {
+        return findBudgetByServiceOrderHandler.handle(serviceOrderId)
+                .map(budget -> ResponseEntity.ok(FindBudgetByServiceOrderResponse.from(budget)))
                 .orElse(ResponseEntity.notFound().build());
     }
 }

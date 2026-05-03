@@ -31,7 +31,7 @@ class ClientServiceTest {
     private com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Mock
-    private com.os.workshop.features.budget.BudgetService budgetService;
+    private com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @InjectMocks
     private ClientService clientService;

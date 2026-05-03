@@ -1,12 +1,10 @@
 package com.os.workshop.features.budget;
 
-import com.os.workshop.features.budget.domain.Budget;
-import com.os.workshop.features.budget.domain.BudgetItem;
-import com.os.workshop.features.budget.repository.BudgetRepository;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.budget.shared.domain.Budget;
+import com.os.workshop.features.budget.shared.domain.BudgetItem;
+import com.os.workshop.features.budget.shared.repository.BudgetRepository;
 import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.repository.PartRepository;
-import com.os.workshop.features.product.repository.SupplyRepository;
-import com.os.workshop.features.stock.repository.StockReservationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,20 +32,10 @@ class BudgetControllerE2ETest {
     @Mock
     private BudgetRepository budgetRepository;
 
-    @Mock
-    private StockReservationRepository reservationRepository;
-
-    @Mock
-    private PartRepository partRepository;
-
-    @Mock
-    private SupplyRepository supplyRepository;
-
     @BeforeEach
     void setUp() {
-        BudgetService budgetService = new BudgetService(
-                budgetRepository, reservationRepository, partRepository, supplyRepository);
-        BudgetController controller = new BudgetController(budgetService);
+        FindBudgetByServiceOrderHandler handler = new FindBudgetByServiceOrderHandler(budgetRepository);
+        BudgetController controller = new BudgetController(handler);
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
