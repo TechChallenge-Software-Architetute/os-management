@@ -35,7 +35,8 @@ public class GetAverageExecutionTimeUC {
 
         // Agrupar serviços por tipo
         Map<String, List<ServiceEntity>> groupedByType = services.stream()
-                .collect(Collectors.groupingBy(ServiceEntity::getServiceTypeName));
+                .collect(Collectors.groupingBy(service -> service.getServiceTypeName() != null ? service.getServiceTypeName() : "Unknown"));
+
 
         List<ServiceAverageTime> averages = groupedByType.entrySet().stream()
                 .map(entry -> calculateAverageForType(entry, request.getTimeUnit()))
