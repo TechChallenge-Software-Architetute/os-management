@@ -1,7 +1,18 @@
 package com.os.workshop.features.stock.reservation;
 
+import com.os.workshop.features.common.api.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +43,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/stocks/reservations")
 @RequiredArgsConstructor
+@Tag(name = "Stock Reservations", description = "Reserve, confirm, release, and inspect stock reserved by service orders.")
 public class StockReservationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(StockReservationController.class);
 
     private final StockReservationService reservationService;
 
@@ -52,11 +66,21 @@ public class StockReservationController {
      * @throws IllegalStateException    if any product has insufficient available stock
      */
     @PostMapping
+    @Operation(summary = "Reserve stock", description = "Atomically reserves products for a service order. If any item lacks available stock, no reservations are created.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Stock reserved successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockReservationResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid reservation request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Stock record not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<List<StockReservationResponse>> reserve(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Reservation data to create.", required = true, content = @Content(schema = @Schema(implementation = StockReservationRequest.class)))
             @Valid @RequestBody StockReservationRequest request) {
+        logger.info("Reserving stock. serviceOrderId={}, itemCount={}", request.serviceOrderId(), request.items().size());
         var reservations = reservationService.reserveForServiceOrder(request).stream()
                 .map(StockReservationResponse::from)
                 .toList();
+        logger.info("Stock reserved. serviceOrderId={}, count={}", request.serviceOrderId(), reservations.size());
         return ResponseEntity.status(HttpStatus.CREATED).body(reservations);
     }
 
@@ -73,10 +97,21 @@ public class StockReservationController {
      * @throws IllegalArgumentException if no active reservations exist for the given OS
      */
     @PatchMapping("/service-order/{serviceOrderId}/confirm")
-    public ResponseEntity<List<StockReservationResponse>> confirm(@PathVariable UUID serviceOrderId) {
+    @Operation(summary = "Confirm reservations", description = "Confirms all active reservations for a completed service order and consumes the reserved quantities from stock.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservations confirmed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockReservationResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid service order identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Active reservations not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<List<StockReservationResponse>> confirm(
+            @Parameter(description = "Service order unique identifier.", example = "8d5d7f7f-2d6a-4f8f-9f10-444f20f87601", required = true)
+            @PathVariable UUID serviceOrderId) {
+        logger.info("Confirming reservations. serviceOrderId={}", serviceOrderId);
         var confirmed = reservationService.confirmReservations(serviceOrderId).stream()
                 .map(StockReservationResponse::from)
                 .toList();
+        logger.info("Reservations confirmed. serviceOrderId={}, count={}", serviceOrderId, confirmed.size());
         return ResponseEntity.ok(confirmed);
     }
 
@@ -92,10 +127,21 @@ public class StockReservationController {
      * @throws IllegalArgumentException if no active reservations exist for the given OS
      */
     @PatchMapping("/service-order/{serviceOrderId}/release")
-    public ResponseEntity<List<StockReservationResponse>> release(@PathVariable UUID serviceOrderId) {
+    @Operation(summary = "Release reservations", description = "Releases all active reservations for a cancelled service order and returns quantities to availability.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservations released successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockReservationResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid service order identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Active reservations not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<List<StockReservationResponse>> release(
+            @Parameter(description = "Service order unique identifier.", example = "8d5d7f7f-2d6a-4f8f-9f10-444f20f87601", required = true)
+            @PathVariable UUID serviceOrderId) {
+        logger.info("Releasing reservations. serviceOrderId={}", serviceOrderId);
         var released = reservationService.releaseReservations(serviceOrderId).stream()
                 .map(StockReservationResponse::from)
                 .toList();
+        logger.info("Reservations released. serviceOrderId={}, count={}", serviceOrderId, released.size());
         return ResponseEntity.ok(released);
     }
 
@@ -108,10 +154,21 @@ public class StockReservationController {
      * @return list of all reservations for the given OS
      */
     @GetMapping("/service-order/{serviceOrderId}")
-    public ResponseEntity<List<StockReservationResponse>> findByServiceOrder(@PathVariable UUID serviceOrderId) {
+    @Operation(summary = "List reservations by service order", description = "Lists the full reservation history for a service order, including active, confirmed, and released reservations.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reservations listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockReservationResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid service order identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Service order reservations not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<List<StockReservationResponse>> findByServiceOrder(
+            @Parameter(description = "Service order unique identifier.", example = "8d5d7f7f-2d6a-4f8f-9f10-444f20f87601", required = true)
+            @PathVariable UUID serviceOrderId) {
+        logger.info("Listing reservations by service order. serviceOrderId={}", serviceOrderId);
         var reservations = reservationService.findByServiceOrderId(serviceOrderId).stream()
                 .map(StockReservationResponse::from)
                 .toList();
+        logger.info("Reservations listed by service order. serviceOrderId={}, count={}", serviceOrderId, reservations.size());
         return ResponseEntity.ok(reservations);
     }
 }

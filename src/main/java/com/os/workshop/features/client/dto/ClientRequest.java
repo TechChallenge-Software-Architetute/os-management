@@ -1,6 +1,7 @@
 package com.os.workshop.features.client.dto;
 
 import com.os.workshop.features.utils.annotations.UpperCase;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -19,9 +20,17 @@ import jakarta.validation.constraints.NotBlank;
  * @param email e-mail de contato (opcional)
  * @param phone telefone de contato (opcional)
  */
+@Schema(description = "Request payload used to create or update a client.")
 public record ClientRequest(
+        @Schema(description = "Client full name.", example = "MARIA SILVA")
         @NotBlank @UpperCase String name,
+
+        @Schema(description = "Brazilian CPF with or without punctuation.", example = "123.456.789-09")
         @NotBlank String cpf,
+
+        @Schema(description = "Client contact email.", example = "maria.silva@example.com")
         @Email String email,
+
+        @Schema(description = "Client contact phone number.", example = "+55 11 99999-0000")
         String phone
 ) {}

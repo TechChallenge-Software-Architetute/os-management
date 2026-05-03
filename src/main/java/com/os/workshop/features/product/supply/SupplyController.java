@@ -1,7 +1,18 @@
 package com.os.workshop.features.product.supply;
 
+import com.os.workshop.features.common.api.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,7 +34,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/supplies")
 @RequiredArgsConstructor
+@Tag(name = "Supplies", description = "Manage consumable workshop supplies such as oils and lubricants.")
 public class SupplyController {
+
+    private static final Logger logger = LoggerFactory.getLogger(SupplyController.class);
 
     private final SupplyService supplyService;
 
@@ -37,9 +51,20 @@ public class SupplyController {
      * @throws IllegalArgumentException if a supply with the same SKU already exists
      */
     @PostMapping
-    public ResponseEntity<SupplyResponse> create(@Valid @RequestBody SupplyRequest request) {
+    @Operation(summary = "Create supply", description = "Creates a new consumable supply. The SKU must be unique.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Supply created successfully", content = @Content(schema = @Schema(implementation = SupplyResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or duplicated SKU", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<SupplyResponse> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Supply data to create.", required = true, content = @Content(schema = @Schema(implementation = SupplyRequest.class)))
+            @Valid @RequestBody SupplyRequest request) {
+        logger.info("Creating supply. sku={}", request.sku());
         var supply = supplyService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(SupplyResponse.from(supply));
+        var response = SupplyResponse.from(supply);
+        logger.info("Supply created. id={}", response.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -50,7 +75,17 @@ public class SupplyController {
      * @throws IllegalArgumentException if no supply is found with the given ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<SupplyResponse> findById(@PathVariable Long id) {
+    @Operation(summary = "Find supply by ID", description = "Retrieves an active consumable supply by its unique identifier.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Supply found", content = @Content(schema = @Schema(implementation = SupplyResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid supply identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Supply not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<SupplyResponse> findById(
+            @Parameter(description = "Supply unique identifier.", example = "1", required = true)
+            @PathVariable Long id) {
+        logger.info("Finding supply by id. id={}", id);
         return ResponseEntity.ok(SupplyResponse.from(supplyService.findById(id)));
     }
 
@@ -62,7 +97,17 @@ public class SupplyController {
      * @throws IllegalArgumentException if no supply is found with the given SKU
      */
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<SupplyResponse> findBySku(@PathVariable String sku) {
+    @Operation(summary = "Find supply by SKU", description = "Retrieves an active consumable supply by its unique SKU.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Supply found", content = @Content(schema = @Schema(implementation = SupplyResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid SKU", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Supply not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<SupplyResponse> findBySku(
+            @Parameter(description = "Supply unique SKU.", example = "SUP-OIL-5W30-001", required = true)
+            @PathVariable String sku) {
+        logger.info("Finding supply by SKU. sku={}", sku);
         return ResponseEntity.ok(SupplyResponse.from(supplyService.findBySku(sku)));
     }
 
@@ -73,8 +118,16 @@ public class SupplyController {
      * @return list of all active supplies
      */
     @GetMapping
+    @Operation(summary = "List supplies", description = "Lists all active consumable supplies. Deactivated supplies are not returned.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Supplies listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = SupplyResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<List<SupplyResponse>> findAll() {
+        logger.info("Listing active supplies.");
         var supplies = supplyService.findAll().stream().map(SupplyResponse::from).toList();
+        logger.info("Supplies listed. count={}", supplies.size());
         return ResponseEntity.ok(supplies);
     }
 
@@ -89,7 +142,19 @@ public class SupplyController {
      * @throws IllegalArgumentException if the supply is not found or the new SKU already exists
      */
     @PutMapping("/{id}")
-    public ResponseEntity<SupplyResponse> update(@PathVariable Long id, @Valid @RequestBody SupplyRequest request) {
+    @Operation(summary = "Update supply", description = "Updates an existing consumable supply and validates SKU uniqueness when it changes.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Supply updated successfully", content = @Content(schema = @Schema(implementation = SupplyResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or duplicated SKU", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Supply not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<SupplyResponse> update(
+            @Parameter(description = "Supply unique identifier.", example = "1", required = true)
+            @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Supply data to update.", required = true, content = @Content(schema = @Schema(implementation = SupplyRequest.class)))
+            @Valid @RequestBody SupplyRequest request) {
+        logger.info("Updating supply. id={}", id);
         return ResponseEntity.ok(SupplyResponse.from(supplyService.update(id, request)));
     }
 
@@ -103,8 +168,19 @@ public class SupplyController {
      * @throws IllegalArgumentException if the supply is not found
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+    @Operation(summary = "Deactivate supply", description = "Soft-deletes a supply so it no longer appears in active listings.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Supply deactivated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid supply identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Supply not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Void> deactivate(
+            @Parameter(description = "Supply unique identifier.", example = "1", required = true)
+            @PathVariable Long id) {
+        logger.info("Deactivating supply. id={}", id);
         supplyService.deactivate(id);
+        logger.info("Supply deactivated. id={}", id);
         return ResponseEntity.noContent().build();
     }
 }

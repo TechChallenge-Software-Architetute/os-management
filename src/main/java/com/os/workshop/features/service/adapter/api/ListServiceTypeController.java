@@ -1,7 +1,15 @@
 package com.os.workshop.features.service.adapter.api;
 
+import com.os.workshop.features.common.api.ErrorResponse;
 import com.os.workshop.features.service.domain.ServiceTypeEntity;
 import com.os.workshop.features.service.usecases.ListServiceTypeUC;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/service-types")
+@Tag(name = "Service Types", description = "Read the service type catalog available for workshop services.")
 public class ListServiceTypeController {
 
     private static final Logger logger = LoggerFactory.getLogger(ListServiceTypeController.class);
@@ -23,6 +32,12 @@ public class ListServiceTypeController {
     private ListServiceTypeUC listServiceTypeUC;
 
     @GetMapping
+    @Operation(summary = "List service types", description = "Lists all service types that can be assigned to services and service orders.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Service types listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = ServiceTypeEntity.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<List<ServiceTypeEntity>> listServices() {
         logger.info("Recebida requisição para listar serviços.");
 

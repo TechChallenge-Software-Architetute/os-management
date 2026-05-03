@@ -1,7 +1,18 @@
 package com.os.workshop.features.stock.management;
 
+import com.os.workshop.features.common.api.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +44,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/stocks")
 @RequiredArgsConstructor
+@Tag(name = "Stock", description = "Manage product stock, availability, thresholds, and stock movement history.")
 public class StockController {
+
+    private static final Logger logger = LoggerFactory.getLogger(StockController.class);
 
     private final StockService stockService;
 
@@ -47,9 +61,21 @@ public class StockController {
      * @throws IllegalArgumentException if a stock record already exists for the given product
      */
     @PostMapping
-    public ResponseEntity<StockResponse> create(@Valid @RequestBody StockRequest request) {
+    @Operation(summary = "Create stock record", description = "Creates the stock record for a product. Each product can have only one stock record.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Stock record created successfully", content = @Content(schema = @Schema(implementation = StockResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or stock already exists", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Product not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<StockResponse> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Stock data to create.", required = true, content = @Content(schema = @Schema(implementation = StockRequest.class)))
+            @Valid @RequestBody StockRequest request) {
+        logger.info("Creating stock. productId={}", request.productId());
         var stock = stockService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(StockResponse.from(stock));
+        var response = StockResponse.from(stock);
+        logger.info("Stock created. id={}", response.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -62,7 +88,17 @@ public class StockController {
      * @throws IllegalArgumentException if no stock record exists for the given product
      */
     @GetMapping("/product/{productId}")
-    public ResponseEntity<StockResponse> findByProductId(@PathVariable Long productId) {
+    @Operation(summary = "Find stock by product", description = "Retrieves stock availability and threshold information for a product.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stock record found", content = @Content(schema = @Schema(implementation = StockResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid product identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Stock record not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<StockResponse> findByProductId(
+            @Parameter(description = "Product unique identifier.", example = "10", required = true)
+            @PathVariable Long productId) {
+        logger.info("Finding stock by product. productId={}", productId);
         return ResponseEntity.ok(StockResponse.from(stockService.findByProductId(productId)));
     }
 
@@ -73,8 +109,16 @@ public class StockController {
      * @return list of all stock records
      */
     @GetMapping
+    @Operation(summary = "List stock records", description = "Lists all stock records with total, reserved, available, and minimum quantities.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stock records listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<List<StockResponse>> findAll() {
+        logger.info("Listing stock records.");
         var stocks = stockService.findAll().stream().map(StockResponse::from).toList();
+        logger.info("Stock records listed. count={}", stocks.size());
         return ResponseEntity.ok(stocks);
     }
 
@@ -85,8 +129,16 @@ public class StockController {
      * @return list of stock records with low available quantity
      */
     @GetMapping("/low")
+    @Operation(summary = "List low stock records", description = "Lists stock records whose available quantity is at or below the configured minimum quantity.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Low stock records listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<List<StockResponse>> findLowStock() {
+        logger.info("Listing low stock records.");
         var stocks = stockService.findLowStock().stream().map(StockResponse::from).toList();
+        logger.info("Low stock records listed. count={}", stocks.size());
         return ResponseEntity.ok(stocks);
     }
 
@@ -101,9 +153,19 @@ public class StockController {
      * @throws IllegalArgumentException if the quantity is not positive or stock is not found
      */
     @PatchMapping("/product/{productId}/entry")
+    @Operation(summary = "Register stock entry", description = "Adds quantity to stock and records an ENTRY movement for audit history.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stock entry registered successfully", content = @Content(schema = @Schema(implementation = StockResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid movement request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Stock record not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<StockResponse> addStock(
+            @Parameter(description = "Product unique identifier.", example = "10", required = true)
             @PathVariable Long productId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Entry movement data.", required = true, content = @Content(schema = @Schema(implementation = StockMovementRequest.class)))
             @Valid @RequestBody StockMovementRequest request) {
+        logger.info("Adding stock. productId={}, quantity={}", productId, request.quantity());
         return ResponseEntity.ok(StockResponse.from(stockService.addStock(productId, request)));
     }
 
@@ -119,9 +181,19 @@ public class StockController {
      * @throws IllegalStateException    if there is insufficient available stock
      */
     @PatchMapping("/product/{productId}/exit")
+    @Operation(summary = "Register stock exit", description = "Removes available quantity from stock and records an EXIT movement for audit history.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stock exit registered successfully", content = @Content(schema = @Schema(implementation = StockResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid movement request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Stock record not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<StockResponse> removeStock(
+            @Parameter(description = "Product unique identifier.", example = "10", required = true)
             @PathVariable Long productId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Exit movement data.", required = true, content = @Content(schema = @Schema(implementation = StockMovementRequest.class)))
             @Valid @RequestBody StockMovementRequest request) {
+        logger.info("Removing stock. productId={}, quantity={}", productId, request.quantity());
         return ResponseEntity.ok(StockResponse.from(stockService.removeStock(productId, request)));
     }
 
@@ -135,9 +207,19 @@ public class StockController {
      * @throws IllegalArgumentException if the minimum quantity is negative or stock is not found
      */
     @PatchMapping("/product/{productId}/minimum")
+    @Operation(summary = "Update minimum stock", description = "Updates the minimum quantity threshold used to flag low stock.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Minimum quantity updated successfully", content = @Content(schema = @Schema(implementation = StockResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid minimum quantity", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Stock record not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<StockResponse> updateMinimum(
+            @Parameter(description = "Product unique identifier.", example = "10", required = true)
             @PathVariable Long productId,
+            @Parameter(description = "New minimum quantity threshold.", example = "3.00", required = true)
             @RequestParam BigDecimal minimumQuantity) {
+        logger.info("Updating minimum stock. productId={}, minimumQuantity={}", productId, minimumQuantity);
         return ResponseEntity.ok(StockResponse.from(stockService.updateMinimumQuantity(productId, minimumQuantity)));
     }
 
@@ -151,10 +233,21 @@ public class StockController {
      * @throws IllegalArgumentException if no stock record exists for the given product
      */
     @GetMapping("/product/{productId}/movements")
-    public ResponseEntity<List<StockMovementResponse>> findMovements(@PathVariable Long productId) {
+    @Operation(summary = "List stock movements", description = "Retrieves the full stock movement history for a product, ordered by most recent first.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stock movements listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = StockMovementResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid product identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Stock record not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<List<StockMovementResponse>> findMovements(
+            @Parameter(description = "Product unique identifier.", example = "10", required = true)
+            @PathVariable Long productId) {
+        logger.info("Listing stock movements. productId={}", productId);
         var movements = stockService.findMovements(productId).stream()
                 .map(StockMovementResponse::from)
                 .toList();
+        logger.info("Stock movements listed. productId={}, count={}", productId, movements.size());
         return ResponseEntity.ok(movements);
     }
 }

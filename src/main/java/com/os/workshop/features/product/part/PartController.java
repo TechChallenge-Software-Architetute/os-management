@@ -1,7 +1,18 @@
 package com.os.workshop.features.product.part;
 
+import com.os.workshop.features.common.api.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,7 +33,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/parts")
 @RequiredArgsConstructor
+@Tag(name = "Parts", description = "Manage automotive parts used by workshop service orders.")
 public class PartController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PartController.class);
 
     private final PartService partService;
 
@@ -35,9 +49,20 @@ public class PartController {
      * @throws IllegalArgumentException if a part with the same SKU already exists
      */
     @PostMapping
-    public ResponseEntity<PartResponse> create(@Valid @RequestBody PartRequest request) {
+    @Operation(summary = "Create part", description = "Creates a new automotive part. The SKU must be unique.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Part created successfully", content = @Content(schema = @Schema(implementation = PartResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or duplicated SKU", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartResponse> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Part data to create.", required = true, content = @Content(schema = @Schema(implementation = PartRequest.class)))
+            @Valid @RequestBody PartRequest request) {
+        logger.info("Creating part. sku={}", request.sku());
         var part = partService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(PartResponse.from(part));
+        var response = PartResponse.from(part);
+        logger.info("Part created. id={}", response.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -48,7 +73,17 @@ public class PartController {
      * @throws IllegalArgumentException if no part is found with the given ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<PartResponse> findById(@PathVariable Long id) {
+    @Operation(summary = "Find part by ID", description = "Retrieves an active automotive part by its unique identifier.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Part found", content = @Content(schema = @Schema(implementation = PartResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid part identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Part not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartResponse> findById(
+            @Parameter(description = "Part unique identifier.", example = "1", required = true)
+            @PathVariable Long id) {
+        logger.info("Finding part by id. id={}", id);
         return ResponseEntity.ok(PartResponse.from(partService.findById(id)));
     }
 
@@ -60,7 +95,17 @@ public class PartController {
      * @throws IllegalArgumentException if no part is found with the given SKU
      */
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<PartResponse> findBySku(@PathVariable String sku) {
+    @Operation(summary = "Find part by SKU", description = "Retrieves an active automotive part by its unique SKU.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Part found", content = @Content(schema = @Schema(implementation = PartResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid SKU", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Part not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartResponse> findBySku(
+            @Parameter(description = "Part unique SKU.", example = "PART-OIL-FILTER-001", required = true)
+            @PathVariable String sku) {
+        logger.info("Finding part by SKU. sku={}", sku);
         return ResponseEntity.ok(PartResponse.from(partService.findBySku(sku)));
     }
 
@@ -71,8 +116,16 @@ public class PartController {
      * @return list of all active parts
      */
     @GetMapping
+    @Operation(summary = "List parts", description = "Lists all active automotive parts. Deactivated parts are not returned.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Parts listed successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = PartResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<List<PartResponse>> findAll() {
+        logger.info("Listing active parts.");
         var parts = partService.findAll().stream().map(PartResponse::from).toList();
+        logger.info("Parts listed. count={}", parts.size());
         return ResponseEntity.ok(parts);
     }
 
@@ -87,7 +140,19 @@ public class PartController {
      * @throws IllegalArgumentException if the part is not found or the new SKU already exists
      */
     @PutMapping("/{id}")
-    public ResponseEntity<PartResponse> update(@PathVariable Long id, @Valid @RequestBody PartRequest request) {
+    @Operation(summary = "Update part", description = "Updates an existing automotive part and validates SKU uniqueness when it changes.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Part updated successfully", content = @Content(schema = @Schema(implementation = PartResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or duplicated SKU", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Part not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<PartResponse> update(
+            @Parameter(description = "Part unique identifier.", example = "1", required = true)
+            @PathVariable Long id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Part data to update.", required = true, content = @Content(schema = @Schema(implementation = PartRequest.class)))
+            @Valid @RequestBody PartRequest request) {
+        logger.info("Updating part. id={}", id);
         return ResponseEntity.ok(PartResponse.from(partService.update(id, request)));
     }
 
@@ -101,8 +166,19 @@ public class PartController {
      * @throws IllegalArgumentException if the part is not found
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+    @Operation(summary = "Deactivate part", description = "Soft-deletes a part so it no longer appears in active listings.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Part deactivated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid part identifier", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Part not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Void> deactivate(
+            @Parameter(description = "Part unique identifier.", example = "1", required = true)
+            @PathVariable Long id) {
+        logger.info("Deactivating part. id={}", id);
         partService.deactivate(id);
+        logger.info("Part deactivated. id={}", id);
         return ResponseEntity.noContent().build();
     }
 }
