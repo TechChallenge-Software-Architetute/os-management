@@ -56,7 +56,7 @@ echo " - 2. Criando ordem de servico."
 echo "------------------------------------------------------------------------------"
 ORDER_RESPONSE="$(curl --silent --show-error --fail --request POST \
   --url "$APP_URL/order" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --header 'correlationid: d29797dd-0eca-4ee0-918d-466ed0c8886e' \
   --data '{
@@ -87,7 +87,7 @@ echo " - 3. Mecanico comecou a realizar diagnostico [EM_DIAGNOSTICO]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
   "status": "EM_DIAGNOSTICO"
@@ -101,7 +101,7 @@ echo " - 4. Mecanico consulta ordem de servico."
 echo "------------------------------------------------------------------------------"
 run_curl --request GET \
   --url "$APP_URL/order/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN"
+  --header "Authorization: Bearer $TOKEN"
 
 sleep 2
 echo " "
@@ -111,7 +111,7 @@ echo " - 5. Mecanico consulta pecas para ordem de servico."
 echo "------------------------------------------------------------------------------"
 run_curl --request GET \
   --url "$APP_URL/api/parts" \
-  --header "authorization: Bearer $TOKEN"
+  --header "Authorization: Bearer $TOKEN"
 
 sleep 2
 echo " "
@@ -121,7 +121,7 @@ echo " - 6. Mecanico consulta estoque para ordem de servico."
 echo "------------------------------------------------------------------------------"
 run_curl --request GET \
   --url "$APP_URL/api/stocks" \
-  --header "authorization: Bearer $TOKEN"
+  --header "Authorization: Bearer $TOKEN"
 
 sleep 2
 echo " "
@@ -131,7 +131,7 @@ echo " - 7. Mecanico reserva estoque para ordem de servico."
 echo "------------------------------------------------------------------------------"
 run_curl --request POST \
   --url "$APP_URL/api/stocks/reservations" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data "{
   \"serviceOrderId\": \"$ORDER_ID\",
@@ -151,7 +151,7 @@ echo " - 8. Mecanico termina avaliacao da ordem de servico [AGUARDANDO_APROVACAO
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
   "status": "AGUARDANDO_APROVACAO"
@@ -161,11 +161,21 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 9. Cliente aprova orcamento [APROVADO]."
+echo " - 9. Mecanico consulta orcamento da ordem de servico."
+echo "------------------------------------------------------------------------------"
+run_curl --request GET \
+  --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
+  --header "Authorization: Bearer $TOKEN"
+
+sleep 2
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 10. Cliente aprova Ordem de Serviço [APROVADO]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
   "status": "APROVADO"
@@ -175,11 +185,11 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 10. Mecanico visualiza servicos a serem feitos."
+echo " - 11. Mecanico visualiza servicos a serem feitos."
 echo "------------------------------------------------------------------------------"
 SERVICES_RESPONSE="$(curl --silent --show-error --fail --request GET \
   --url "$APP_URL/services/os/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN")"
+  --header "Authorization: Bearer $TOKEN")"
 
 echo "$SERVICES_RESPONSE"
 
@@ -206,11 +216,11 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 11. Mecanico inicia execucao do primeiro servico [DOING]."
+echo " - 12. Mecanico inicia execucao do primeiro servico [DOING]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data "{
   \"status\": \"DOING\",
@@ -221,11 +231,11 @@ sleep 5
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 12. Mecanico finaliza execucao do primeiro servico [DONE]."
+echo " - 13. Mecanico finaliza execucao do primeiro servico [DONE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data "{
   \"status\": \"DONE\",
@@ -236,11 +246,11 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 13. Mecanico inicia execucao do segundo servico [DOING]."
+echo " - 14. Mecanico inicia execucao do segundo servico [DOING]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data "{
   \"status\": \"DOING\",
@@ -251,11 +261,11 @@ sleep 7
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 14. Mecanico finaliza execucao do segundo servico [DONE]."
+echo " - 15. Mecanico finaliza execucao do segundo servico [DONE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data "{
   \"status\": \"DONE\",
@@ -266,11 +276,11 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 15. Finalizando ordem de servico [FINALIZADA]."
+echo " - 16. Finalizando ordem de servico [FINALIZADA]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
   "status": "FINALIZADA"
@@ -280,26 +290,25 @@ sleep 2
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 16. Entregando veiculo ao cliente [ENTREGUE]."
+echo " - 17. Entregando veiculo ao cliente [ENTREGUE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
   "status": "ENTREGUE"
 }'
 
-
 sleep 4
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 17. Monitoracao de tempo de execucao por servico."
+echo " - 18. Monitoracao de tempo de execucao por servico."
 echo "------------------------------------------------------------------------------"
-run_curl --request POST \
+curl --request POST \
   --url "$APP_URL/monitoring/all" \
-  --header "authorization: Bearer $TOKEN" \
+  --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
   "timeUnit": "SECONDS"
