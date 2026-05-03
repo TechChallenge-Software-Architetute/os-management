@@ -173,6 +173,13 @@ Isso irá iniciar:
 | Email | `superadmin@system.com` |
 | Senha | `coxinha123` |
 
+### Executar Script de Validação End-to-End
+
+```bash
+./validation.sh
+```
+
+
 ### Executar Testes
 
 ```bash

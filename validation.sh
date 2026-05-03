@@ -6,6 +6,7 @@ echo "Iniciando validacao de fluxo"
 echo "=========================================="
 
 APP_URL="${APP_URL:-http://localhost:8080}"
+TIMEOUT_CONST=2
 
 run_curl() {
   curl --silent --show-error --fail "$@"
@@ -79,7 +80,7 @@ fi
 
 echo "ORDER_ID=$ORDER_ID"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -93,7 +94,7 @@ run_curl --request PATCH \
   "status": "EM_DIAGNOSTICO"
 }'
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -103,7 +104,7 @@ run_curl --request GET \
   --url "$APP_URL/order/$ORDER_ID" \
   --header "Authorization: Bearer $TOKEN"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -113,7 +114,7 @@ run_curl --request GET \
   --url "$APP_URL/api/parts" \
   --header "Authorization: Bearer $TOKEN"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -123,7 +124,7 @@ run_curl --request GET \
   --url "$APP_URL/api/stocks" \
   --header "Authorization: Bearer $TOKEN"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -143,7 +144,7 @@ run_curl --request POST \
   ]
 }"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -157,24 +158,23 @@ run_curl --request PATCH \
   "status": "AGUARDANDO_APROVACAO"
 }'
 
-#TODO: descomentar quando a funcionalidade de orcamento estiver corrigida
-#sleep 2
-#echo " "
-#echo " "
-#echo "------------------------------------------------------------------------------"
-#echo " - 9. Mecanico consulta orcamento da ordem de servico."
-#echo "------------------------------------------------------------------------------"
-#run_curl --request GET \
-#  --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
-#  --header "Authorization: Bearer $TOKEN"
+sleep $TIMEOUT_CONST
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 9. Mecanico consulta orcamento da ordem de servico."
+echo "------------------------------------------------------------------------------"
+run_curl --request GET \
+  --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
+  --header "Authorization: Bearer $TOKEN"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
 echo " - 10. Cliente aprova Ordem de Serviço [APROVADO]."
 echo "------------------------------------------------------------------------------"
-run_curl --request PATCH \
+curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
   --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
@@ -182,7 +182,7 @@ run_curl --request PATCH \
   "status": "APROVADO"
 }'
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -213,7 +213,7 @@ fi
 echo "service1=$service1"
 echo "service2=$service2"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -243,7 +243,7 @@ run_curl --request PATCH \
   \"id\": \"$service1\"
 }"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -273,7 +273,7 @@ run_curl --request PATCH \
   \"id\": \"$service2\"
 }"
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -287,7 +287,7 @@ run_curl --request PATCH \
   "status": "FINALIZADA"
 }'
 
-sleep 2
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
@@ -301,7 +301,7 @@ run_curl --request PATCH \
   "status": "ENTREGUE"
 }'
 
-sleep 4
+sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
