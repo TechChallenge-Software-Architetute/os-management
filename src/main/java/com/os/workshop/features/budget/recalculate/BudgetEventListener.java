@@ -1,6 +1,6 @@
 package com.os.workshop.features.budget.recalculate;
 
-import com.os.workshop.features.stock.reservation.ReservationChangedEvent;
+import com.os.workshop.features.stock.shared.domain.ReservationChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

@@ -3,9 +3,9 @@ package com.os.workshop.features.serviceorder.create;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
 import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.service.domain.ServiceEntity;
-import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
-import com.os.workshop.features.service.usecases.CreateServiceUC;
+import com.os.workshop.features.service.shared.repository.ServiceEntity;
+import com.os.workshop.features.service.create.CreateServiceRequest;
+import com.os.workshop.features.service.create.CreateServiceHandler;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 class CreateOrderHandlerTest {
 
     @Mock
-    private CreateServiceUC createServiceUC;
+    private CreateServiceHandler createServiceHandler;
 
     @Mock
     private FindClientByCpfHandler findClientByCpfHandler;
@@ -60,7 +60,7 @@ class CreateOrderHandlerTest {
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
@@ -82,13 +82,13 @@ class CreateOrderHandlerTest {
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         createOrderHandler.handle(request);
 
-        verify(createServiceUC, times(3)).process(any(CreateServiceRequest.class));
+        verify(createServiceHandler, times(3)).handle(any(CreateServiceRequest.class));
     }
 
     @Test
@@ -120,7 +120,7 @@ class CreateOrderHandlerTest {
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
@@ -135,7 +135,7 @@ class CreateOrderHandlerTest {
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 

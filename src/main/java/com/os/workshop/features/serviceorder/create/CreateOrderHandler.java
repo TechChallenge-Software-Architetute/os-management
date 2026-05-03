@@ -3,8 +3,8 @@ package com.os.workshop.features.serviceorder.create;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
-import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
-import com.os.workshop.features.service.usecases.CreateServiceUC;
+import com.os.workshop.features.service.create.CreateServiceRequest;
+import com.os.workshop.features.service.create.CreateServiceHandler;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
@@ -24,7 +24,7 @@ public class CreateOrderHandler {
     private static final Logger logger = LoggerFactory.getLogger(CreateOrderHandler.class);
 
     @Autowired
-    private CreateServiceUC createServiceUC;
+    private CreateServiceHandler createServiceHandler;
 
     @Autowired
     private FindClientByCpfHandler findClientByCpfHandler;
@@ -51,7 +51,7 @@ public class CreateOrderHandler {
                     var serviceRequest = new CreateServiceRequest();
                     serviceRequest.setIdOS(idOrdemServico);
                     serviceRequest.setServiceType(service);
-                    createServiceUC.process(serviceRequest);
+                    createServiceHandler.handle(serviceRequest);
                 }
         );
 
