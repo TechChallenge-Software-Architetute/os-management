@@ -1,7 +1,9 @@
 package com.os.workshop.stock.persistence.mappers;
 
-import com.os.workshop.stock.domain.StockReservation;
-import com.os.workshop.stock.domain.StockReservationStatus;
+import com.os.workshop.features.stock.domain.StockReservation;
+import com.os.workshop.features.stock.domain.StockReservationStatus;
+import com.os.workshop.features.stock.persistence.mappers.StockReservationMapper;
+import com.os.workshop.features.stock.persistence.mappers.StockReservationMapperImpl;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

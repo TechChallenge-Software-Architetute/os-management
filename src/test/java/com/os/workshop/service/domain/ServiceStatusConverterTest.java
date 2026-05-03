@@ -1,14 +1,14 @@
 package com.os.workshop.service.domain;
 
-import com.os.workshop.service.domain.enums.ServiceStatusEnum;
+import com.os.workshop.features.service.domain.ServiceStatusConverter;
+import com.os.workshop.features.service.domain.Status;
+import com.os.workshop.features.service.domain.enums.ServiceStatusEnum;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ServiceStatusConverterTest {
 

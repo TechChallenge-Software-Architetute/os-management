@@ -1,11 +1,12 @@
 package com.os.workshop.product.persistence.adapter;
 
-import com.os.workshop.product.domain.ProductType;
-import com.os.workshop.product.domain.Supply;
-import com.os.workshop.product.domain.UnitOfMeasure;
-import com.os.workshop.product.persistence.entity.SupplyEntity;
-import com.os.workshop.product.persistence.mappers.SupplyMapper;
-import com.os.workshop.product.persistence.repository.SupplyJpaRepository;
+import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.domain.Supply;
+import com.os.workshop.features.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.persistence.adapter.SupplyPersistenceAdapter;
+import com.os.workshop.features.product.persistence.entity.SupplyEntity;
+import com.os.workshop.features.product.persistence.mappers.SupplyMapper;
+import com.os.workshop.features.product.persistence.repository.SupplyJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

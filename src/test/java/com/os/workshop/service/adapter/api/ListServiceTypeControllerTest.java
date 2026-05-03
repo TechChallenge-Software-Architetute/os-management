@@ -1,7 +1,8 @@
 package com.os.workshop.service.adapter.api;
 
-import com.os.workshop.service.domain.ServiceTypeEntity;
-import com.os.workshop.service.usecases.ListServiceTypeUC;
+import com.os.workshop.features.service.adapter.api.ListServiceTypeController;
+import com.os.workshop.features.service.domain.ServiceTypeEntity;
+import com.os.workshop.features.service.usecases.ListServiceTypeUC;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;

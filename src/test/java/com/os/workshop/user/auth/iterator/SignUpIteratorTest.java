@@ -1,8 +1,9 @@
 package com.os.workshop.user.auth.iterator;
 
-import com.os.workshop.user.dto.SignUpRequest;
-import com.os.workshop.user.dto.SignUpResponse;
-import com.os.workshop.user.repository.UserRepository;
+import com.os.workshop.features.user.auth.iterator.SignUpIterator;
+import com.os.workshop.features.user.dto.SignUpRequest;
+import com.os.workshop.features.user.dto.SignUpResponse;
+import com.os.workshop.features.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 

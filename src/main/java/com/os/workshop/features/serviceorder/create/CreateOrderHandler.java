@@ -6,15 +6,15 @@ import com.os.workshop.features.client.ClientService;
 import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
 import com.os.workshop.features.service.usecases.CreateServiceUC;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
-import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
-import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
+import com.os.workshop.features.vehicle.VehicleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.os.workshop.features.vehicle.VehicleService;
 
 import java.util.UUID;
 

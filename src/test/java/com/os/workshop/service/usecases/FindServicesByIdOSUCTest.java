@@ -1,7 +1,8 @@
 package com.os.workshop.service.usecases;
 
-import com.os.workshop.service.adapter.database.ServiceRepository;
-import com.os.workshop.service.domain.ServiceEntity;
+import com.os.workshop.features.service.adapter.database.ServiceRepository;
+import com.os.workshop.features.service.domain.ServiceEntity;
+import com.os.workshop.features.service.usecases.FindServicesByIdOSUC;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

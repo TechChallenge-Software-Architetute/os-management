@@ -1,9 +1,8 @@
 package com.os.workshop.features.serviceorder.shared.mapper;
 
+import com.os.workshop.features.budget.BudgetResponse;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
-
-import com.os.workshop.features.budget.BudgetResponse;
 
 /**
  * Manual mapper between ServiceOrderEntity (JPA) and ServiceOrder (domain).

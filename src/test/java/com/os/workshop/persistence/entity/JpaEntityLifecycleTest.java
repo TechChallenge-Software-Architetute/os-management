@@ -1,11 +1,11 @@
 package com.os.workshop.persistence.entity;
 
-import com.os.workshop.budget.persistence.entity.BudgetEntity;
-import com.os.workshop.client.persistence.entity.ClientEntity;
-import com.os.workshop.stock.persistence.entity.StockEntity;
-import com.os.workshop.stock.persistence.entity.StockMovementEntity;
-import com.os.workshop.stock.persistence.entity.StockReservationEntity;
-import com.os.workshop.vehicle.persistence.entity.VehicleEntity;
+import com.os.workshop.features.budget.persistence.entity.BudgetEntity;
+import com.os.workshop.features.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.stock.persistence.entity.StockEntity;
+import com.os.workshop.features.stock.persistence.entity.StockMovementEntity;
+import com.os.workshop.features.stock.persistence.entity.StockReservationEntity;
+import com.os.workshop.features.vehicle.persistence.entity.VehicleEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 

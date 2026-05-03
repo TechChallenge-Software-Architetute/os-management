@@ -1,11 +1,12 @@
 package com.os.workshop.product.persistence.adapter;
 
-import com.os.workshop.product.domain.Part;
-import com.os.workshop.product.domain.ProductType;
-import com.os.workshop.product.domain.UnitOfMeasure;
-import com.os.workshop.product.persistence.entity.PartEntity;
-import com.os.workshop.product.persistence.mappers.PartMapper;
-import com.os.workshop.product.persistence.repository.PartJpaRepository;
+import com.os.workshop.features.product.domain.Part;
+import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.persistence.adapter.PartPersistenceAdapter;
+import com.os.workshop.features.product.persistence.entity.PartEntity;
+import com.os.workshop.features.product.persistence.mappers.PartMapper;
+import com.os.workshop.features.product.persistence.repository.PartJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,8 +1,9 @@
 package com.os.workshop.user.security.service;
 
-import com.os.workshop.user.domain.Role;
-import com.os.workshop.user.domain.User;
-import com.os.workshop.user.repository.UserRepository;
+import com.os.workshop.features.user.domain.Role;
+import com.os.workshop.features.user.domain.User;
+import com.os.workshop.features.user.repository.UserRepository;
+import com.os.workshop.features.user.security.service.CustomUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
@@ -10,9 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

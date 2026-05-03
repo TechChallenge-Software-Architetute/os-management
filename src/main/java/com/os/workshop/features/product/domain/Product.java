@@ -1,13 +1,9 @@
 package com.os.workshop.features.product.domain;
 
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Setter

@@ -1,10 +1,11 @@
 package com.os.workshop.stock.persistence.adapter;
 
-import com.os.workshop.stock.domain.StockMovement;
-import com.os.workshop.stock.domain.StockMovementType;
-import com.os.workshop.stock.persistence.entity.StockMovementEntity;
-import com.os.workshop.stock.persistence.mappers.StockMovementMapper;
-import com.os.workshop.stock.persistence.repository.StockMovementJpaRepository;
+import com.os.workshop.features.stock.domain.StockMovement;
+import com.os.workshop.features.stock.domain.StockMovementType;
+import com.os.workshop.features.stock.persistence.adapter.StockMovementPersistenceAdapter;
+import com.os.workshop.features.stock.persistence.entity.StockMovementEntity;
+import com.os.workshop.features.stock.persistence.mappers.StockMovementMapper;
+import com.os.workshop.features.stock.persistence.repository.StockMovementJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -1,10 +1,11 @@
 package com.os.workshop.stock.persistence.adapter;
 
-import com.os.workshop.stock.domain.StockReservation;
-import com.os.workshop.stock.domain.StockReservationStatus;
-import com.os.workshop.stock.persistence.entity.StockReservationEntity;
-import com.os.workshop.stock.persistence.mappers.StockReservationMapper;
-import com.os.workshop.stock.persistence.repository.StockReservationJpaRepository;
+import com.os.workshop.features.stock.domain.StockReservation;
+import com.os.workshop.features.stock.domain.StockReservationStatus;
+import com.os.workshop.features.stock.persistence.adapter.StockReservationPersistenceAdapter;
+import com.os.workshop.features.stock.persistence.entity.StockReservationEntity;
+import com.os.workshop.features.stock.persistence.mappers.StockReservationMapper;
+import com.os.workshop.features.stock.persistence.repository.StockReservationJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

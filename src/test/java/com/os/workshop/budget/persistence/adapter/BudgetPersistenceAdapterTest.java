@@ -1,12 +1,13 @@
 package com.os.workshop.budget.persistence.adapter;
 
-import com.os.workshop.budget.domain.Budget;
-import com.os.workshop.budget.domain.BudgetItem;
-import com.os.workshop.budget.persistence.entity.BudgetEntity;
-import com.os.workshop.budget.persistence.entity.BudgetItemEntity;
-import com.os.workshop.budget.persistence.repository.BudgetItemJpaRepository;
-import com.os.workshop.budget.persistence.repository.BudgetJpaRepository;
-import com.os.workshop.product.domain.ProductType;
+import com.os.workshop.features.budget.domain.Budget;
+import com.os.workshop.features.budget.domain.BudgetItem;
+import com.os.workshop.features.budget.persistence.adapter.BudgetPersistenceAdapter;
+import com.os.workshop.features.budget.persistence.entity.BudgetEntity;
+import com.os.workshop.features.budget.persistence.entity.BudgetItemEntity;
+import com.os.workshop.features.budget.persistence.repository.BudgetItemJpaRepository;
+import com.os.workshop.features.budget.persistence.repository.BudgetJpaRepository;
+import com.os.workshop.features.product.domain.ProductType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

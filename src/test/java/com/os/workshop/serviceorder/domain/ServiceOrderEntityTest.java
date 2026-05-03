@@ -1,5 +1,7 @@
 package com.os.workshop.serviceorder.domain;
 
+import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

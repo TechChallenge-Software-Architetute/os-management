@@ -1,11 +1,14 @@
 package com.os.workshop.user.persistence.mapper;
 
-import com.os.workshop.user.domain.Group;
-import com.os.workshop.user.domain.Role;
-import com.os.workshop.user.domain.User;
-import com.os.workshop.user.persistence.entity.GroupEntity;
-import com.os.workshop.user.persistence.entity.RoleEntity;
-import com.os.workshop.user.persistence.entity.UserEntity;
+import com.os.workshop.features.user.domain.Group;
+import com.os.workshop.features.user.domain.Role;
+import com.os.workshop.features.user.domain.User;
+import com.os.workshop.features.user.persistence.entity.GroupEntity;
+import com.os.workshop.features.user.persistence.entity.RoleEntity;
+import com.os.workshop.features.user.persistence.entity.UserEntity;
+import com.os.workshop.features.user.persistence.mapper.GroupMapperImpl;
+import com.os.workshop.features.user.persistence.mapper.RoleMapperImpl;
+import com.os.workshop.features.user.persistence.mapper.UserMapperImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 

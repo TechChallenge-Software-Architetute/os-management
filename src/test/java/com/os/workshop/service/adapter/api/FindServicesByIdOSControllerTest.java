@@ -1,7 +1,8 @@
 package com.os.workshop.service.adapter.api;
 
-import com.os.workshop.service.domain.ServiceEntity;
-import com.os.workshop.service.usecases.FindServicesByIdOSUC;
+import com.os.workshop.features.service.adapter.api.FindServicesByIdOSController;
+import com.os.workshop.features.service.domain.ServiceEntity;
+import com.os.workshop.features.service.usecases.FindServicesByIdOSUC;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;

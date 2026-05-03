@@ -2,7 +2,6 @@ package com.os.workshop.features.serviceorder.shared.repository;
 
 import com.os.workshop.features.serviceorder.shared.domain.ListToJsonConverter;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
-
 import jakarta.persistence.*;
 import lombok.*;
 

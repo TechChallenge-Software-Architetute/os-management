@@ -1,5 +1,6 @@
 package com.os.workshop.service.domain.requests;
 
+import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;

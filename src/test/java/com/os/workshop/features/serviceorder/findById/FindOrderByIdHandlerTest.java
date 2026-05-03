@@ -1,8 +1,8 @@
 package com.os.workshop.features.serviceorder.findById;
 
 import com.os.workshop.features.budget.BudgetService;
-import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
+import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import org.junit.jupiter.api.Test;

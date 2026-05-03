@@ -1,6 +1,7 @@
 package com.os.workshop.client.dto;
 
-import com.os.workshop.client.domain.Client;
+import com.os.workshop.features.client.domain.Client;
+import com.os.workshop.features.client.dto.ClientResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;

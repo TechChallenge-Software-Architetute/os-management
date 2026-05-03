@@ -17,20 +17,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class VehicleServiceTest {
@@ -78,7 +68,9 @@ class VehicleServiceTest {
     void whenCreatingVehicleWithNonExistingClient_thenThrowsClientNotFound() {
         when(clientRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThrows(ClientNotFoundException.class, () -> vehicleService.create(createRequest()));
+        var result = createRequest();
+
+        assertThrows(ClientNotFoundException.class, () -> vehicleService.create(result));
     }
 
     @Test
@@ -86,7 +78,9 @@ class VehicleServiceTest {
         when(clientRepository.findById(1L)).thenReturn(Optional.of(createClient()));
         when(vehicleRepository.existsByPlate("ABC1234")).thenReturn(true);
 
-        assertThrows(IllegalStateException.class, () -> vehicleService.create(createRequest()));
+        var result = createRequest();
+
+        assertThrows(IllegalStateException.class, () -> vehicleService.create(result));
     }
 
     @Test
