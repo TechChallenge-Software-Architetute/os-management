@@ -23,17 +23,28 @@ Connection URL: `jdbc:postgresql://localhost:5432/workshop`
 
 The Docker Compose file also starts SonarQube at http://localhost:9000.
 
-Default login:
+To initialize SonarQube, create the `os-management` project, generate a token, and run the Maven analysis with coverage:
 
 ```
-admin
-admin
+docker compose up sonar_scan
 ```
 
-After the first login, create a user token in SonarQube and run the Maven analysis with coverage:
+The bootstrap service uses `Giovanni123*` as the SonarQube admin password, creates the project, stores the generated token in a Docker volume, and the Maven scanner uses it automatically.
+
+You can override the defaults when running the compose command:
 
 ```
-./mvnw clean verify sonar:sonar -Dsonar.token=<your-token>
+SONAR_ADMIN_PASSWORD=my-password SONAR_PROJECT_KEY=os-management docker compose --profile sonar up sonar_scan
+```
+
+If your local SonarQube volume was already configured manually, provide the current admin password or an existing token:
+
+```
+SONAR_ADMIN_PASSWORD=current-password docker compose up sonar_scan
+```
+
+```
+SONAR_TOKEN=sqp_xxx docker compose up sonar_scan
 ```
 
 JaCoCo generates the coverage XML at `target/site/jacoco/jacoco.xml`, and the Sonar Maven scanner sends it to SonarQube.

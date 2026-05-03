@@ -12,9 +12,38 @@ services:
     volumes:
       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
 
+  app:
+    build: .
+    container_name: os_management
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/workshop
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      JWT_SECRET: akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa
+      JWT_EXPIRATION: 86400000
+
+  validation:
+    image: curlimages/curl:8.10.1
+    container_name: os_management_validation
+    depends_on:
+      - postgres
+      - app
+    environment:
+      APP_URL: http://app:8080
+    volumes:
+      - ./validation.sh:/validation.sh
+    command: ["sh", "-c", "sleep 20 && sh /validation.sh"]
+
   sonarqube_db:
     image: postgres:16-alpine
     restart: unless-stopped
+    depends_on:
+      validation:
+        condition: service_completed_successfully
     environment:
       POSTGRES_DB: sonarqube
       POSTGRES_USER: sonar
@@ -26,7 +55,10 @@ services:
     image: sonarqube:community
     restart: unless-stopped
     depends_on:
-      - sonarqube_db
+      sonarqube_db:
+        condition: service_started
+      validation:
+        condition: service_completed_successfully
     environment:
       SONAR_JDBC_URL: jdbc:postgresql://sonarqube_db:5432/sonarqube
       SONAR_JDBC_USERNAME: sonar
@@ -38,20 +70,57 @@ services:
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
 
-#  app:
-#    build: .
-#    container_name: os_management
-#    depends_on:
-#      - postgres
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/workshop
-#      SPRING_DATASOURCE_USERNAME: user
-#      SPRING_DATASOURCE_PASSWORD: password
+  sonarqube_setup:
+    image: curlimages/curl:8.10.1
+    container_name: sonarqube_setup
+    user: "0:0"
+    depends_on:
+      sonarqube:
+        condition: service_started
+      validation:
+        condition: service_completed_successfully
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_ADMIN_USER: ${SONAR_ADMIN_USER:-admin}
+      SONAR_ADMIN_DEFAULT_PASSWORD: ${SONAR_ADMIN_DEFAULT_PASSWORD:-admin}
+      SONAR_ADMIN_PASSWORD: ${SONAR_ADMIN_PASSWORD:-Giovanni123*}
+      SONAR_PROJECT_KEY: ${SONAR_PROJECT_KEY:-os-management}
+      SONAR_PROJECT_NAME: ${SONAR_PROJECT_NAME:-os-management}
+      SONAR_TOKEN_NAME: ${SONAR_TOKEN_NAME:-os-management-token}
+      SONAR_TOKEN_FILE: /sonar/token
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+    volumes:
+      - ./sonar-init.sh:/sonar-init.sh
+      - sonarqube_token:/sonar
+    command: ["sh", "/sonar-init.sh"]
+
+  sonar_scan:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: os_management_sonar_scan
+    depends_on:
+      sonarqube_setup:
+        condition: service_completed_successfully
+      validation:
+        condition: service_completed_successfully
+    working_dir: /workspace
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_PUBLIC_URL: http://localhost:9000
+      SONAR_PROJECT_KEY: ${SONAR_PROJECT_KEY:-os-management}
+      SONAR_PROJECT_NAME: ${SONAR_PROJECT_NAME:-os-management}
+      SONAR_TOKEN_FILE: /sonar/token
+    volumes:
+      - .:/workspace
+      - maven_cache:/root/.m2
+      - ./sonar-scan.sh:/sonar-scan.sh
+      - sonarqube_token:/sonar
+    command: ["sh", "/sonar-scan.sh"]
+
 
 volumes:
   sonarqube_db_data:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
+  sonarqube_token:
+  maven_cache:
