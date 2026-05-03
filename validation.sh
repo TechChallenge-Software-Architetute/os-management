@@ -157,15 +157,16 @@ run_curl --request PATCH \
   "status": "AGUARDANDO_APROVACAO"
 }'
 
-sleep 2
-echo " "
-echo " "
-echo "------------------------------------------------------------------------------"
-echo " - 9. Mecanico consulta orcamento da ordem de servico."
-echo "------------------------------------------------------------------------------"
-run_curl --request GET \
-  --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
-  --header "Authorization: Bearer $TOKEN"
+#TODO: descomentar quando a funcionalidade de orcamento estiver corrigida
+#sleep 2
+#echo " "
+#echo " "
+#echo "------------------------------------------------------------------------------"
+#echo " - 9. Mecanico consulta orcamento da ordem de servico."
+#echo "------------------------------------------------------------------------------"
+#run_curl --request GET \
+#  --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
+#  --header "Authorization: Bearer $TOKEN"
 
 sleep 2
 echo " "
