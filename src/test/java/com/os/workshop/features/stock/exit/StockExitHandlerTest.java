@@ -13,9 +13,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class StockExitHandlerTest {
@@ -44,7 +46,8 @@ class StockExitHandlerTest {
     @Test
     void throwsWhenStockNotFound() {
         when(stockRepository.findByProductId(99L)).thenReturn(Optional.empty());
+        var result = new StockExitRequest(BigDecimal.ONE, "test");
         assertThrows(IllegalArgumentException.class,
-                () -> handler.handle(99L, new StockExitRequest(BigDecimal.ONE, "test")));
+                () -> handler.handle(99L, result));
     }
 }

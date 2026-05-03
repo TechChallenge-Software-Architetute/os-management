@@ -11,9 +11,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateMinimumHandlerTest {
@@ -32,8 +33,9 @@ class UpdateMinimumHandlerTest {
 
     @Test
     void throwsWhenNegativeMinimum() {
+        var result = new BigDecimal("-1");
         assertThrows(IllegalArgumentException.class,
-                () -> handler.handle(1L, new BigDecimal("-1")));
+                () -> handler.handle(1L, result));
     }
 
     @Test

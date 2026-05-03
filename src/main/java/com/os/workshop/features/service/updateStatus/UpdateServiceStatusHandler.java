@@ -1,7 +1,7 @@
 package com.os.workshop.features.service.updateStatus;
 
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.service.shared.domain.Status;
+import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.service.shared.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,9 @@
 package com.os.workshop.features.stock.reserve;
 
-import com.os.workshop.features.stock.shared.domain.*;
+import com.os.workshop.features.stock.shared.domain.ReservationChangedEvent;
+import com.os.workshop.features.stock.shared.domain.Stock;
+import com.os.workshop.features.stock.shared.domain.StockReservation;
+import com.os.workshop.features.stock.shared.domain.StockReservationStatus;
 import com.os.workshop.features.stock.shared.repository.StockMovementRepository;
 import com.os.workshop.features.stock.shared.repository.StockRepository;
 import com.os.workshop.features.stock.shared.repository.StockReservationRepository;
@@ -16,9 +19,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReserveStockHandlerTest {

@@ -1,8 +1,8 @@
 package com.os.workshop.features.service.findById;
 
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
 import com.os.workshop.features.service.shared.domain.Status;
+import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.service.shared.repository.ServiceRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,11 +1,13 @@
 package com.os.workshop.features.stock;
 
-import com.os.workshop.features.stock.entry.StockEntryHandler;
-import com.os.workshop.features.stock.entry.StockEntryRequest;
 import com.os.workshop.features.stock.confirmReservation.ConfirmReservationHandler;
 import com.os.workshop.features.stock.create.CreateStockHandler;
 import com.os.workshop.features.stock.create.CreateStockRequest;
 import com.os.workshop.features.stock.create.CreateStockResponse;
+import com.os.workshop.features.stock.entry.StockEntryHandler;
+import com.os.workshop.features.stock.entry.StockEntryRequest;
+import com.os.workshop.features.stock.exit.StockExitHandler;
+import com.os.workshop.features.stock.exit.StockExitRequest;
 import com.os.workshop.features.stock.findByProductId.FindStockByProductIdHandler;
 import com.os.workshop.features.stock.findByProductId.FindStockByProductIdResponse;
 import com.os.workshop.features.stock.findMovements.FindMovementsHandler;
@@ -14,8 +16,6 @@ import com.os.workshop.features.stock.findReservations.FindReservationsHandler;
 import com.os.workshop.features.stock.list.ListStocksHandler;
 import com.os.workshop.features.stock.list.ListStocksResponse;
 import com.os.workshop.features.stock.releaseReservation.ReleaseReservationHandler;
-import com.os.workshop.features.stock.exit.StockExitHandler;
-import com.os.workshop.features.stock.exit.StockExitRequest;
 import com.os.workshop.features.stock.reserve.ReserveStockHandler;
 import com.os.workshop.features.stock.reserve.ReserveStockRequest;
 import com.os.workshop.features.stock.reserve.ReserveStockResponse;

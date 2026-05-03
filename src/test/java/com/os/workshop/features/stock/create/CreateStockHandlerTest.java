@@ -35,8 +35,9 @@ class CreateStockHandlerTest {
     @Test
     void throwsWhenStockAlreadyExists() {
         when(stockRepository.existsByProductId(1L)).thenReturn(true);
+        var request = new CreateStockRequest(1L, BigDecimal.TEN, BigDecimal.ONE);
         assertThrows(IllegalArgumentException.class,
-                () -> handler.handle(new CreateStockRequest(1L, BigDecimal.TEN, BigDecimal.ONE)));
+                () -> handler.handle(request));
         verify(stockRepository, never()).save(any());
     }
 }

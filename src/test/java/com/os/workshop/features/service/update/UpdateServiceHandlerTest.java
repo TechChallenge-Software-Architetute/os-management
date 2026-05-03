@@ -1,8 +1,8 @@
 package com.os.workshop.features.service.update;
 
 import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceTypeEntity;
 import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.features.service.shared.repository.ServiceTypeEntity;
 import com.os.workshop.features.service.shared.repository.ServiceTypeRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
