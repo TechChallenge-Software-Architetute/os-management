@@ -289,3 +289,18 @@ run_curl --request PATCH \
   --data '{
   "status": "ENTREGUE"
 }'
+
+
+sleep 4
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 17. Monitoracao de tempo de execucao por servico."
+echo "------------------------------------------------------------------------------"
+run_curl --request POST \
+  --url "$APP_URL/monitoring/all" \
+  --header "authorization: Bearer $TOKEN" \
+  --header 'content-type: application/json' \
+  --data '{
+  "timeUnit": "SECONDS"
+}'

@@ -110,9 +110,27 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     );
 EOSQL
 
+echo "✓ Inserindo dados mock na tabela 'clients'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
+    SELECT 1, U&'JO\00C3O DA SILVA', '52998224725', 'joao.silva@email.com', '(11) 99999-1234', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '52998224725');
+
+    INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
+    SELECT 2, 'MARIA SOUZA', '07124632080', 'maria.souza@email.com', '(21) 98888-5678', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '07124632080');
+
+    INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
+    SELECT 3, 'CARLOS OLIVEIRA', '18746880011', 'carlos.oliveira@email.com', '(31) 97777-9012', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '18746880011');
+
+    SELECT setval('clients_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM clients), 1));
+EOSQL
+
 echo "✓ Verificando tabela clients..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     SELECT COUNT(*) as total_clients FROM clients;
+    SELECT id, name, cpf, email, phone, active FROM clients ORDER BY id;
 EOSQL
 
 
@@ -146,9 +164,33 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     );
 EOSQL
 
+echo "✓ Inserindo dados mock na tabela 'vehicles'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    INSERT INTO vehicles (id, client_id, plate, brand, model, year, color, type, active, created_at, updated_at)
+    SELECT 1, c.id, 'ABC1234', 'TOYOTA', 'COROLLA', 2020, 'PRATA', 'CAR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    FROM clients c
+    WHERE c.cpf = '52998224725'
+      AND NOT EXISTS (SELECT 1 FROM vehicles WHERE plate = 'ABC1234');
+
+    INSERT INTO vehicles (id, client_id, plate, brand, model, year, color, type, active, created_at, updated_at)
+    SELECT 2, c.id, 'XYZ1A23', 'HONDA', 'CIVIC', 2021, 'PRETO', 'CAR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    FROM clients c
+    WHERE c.cpf = '52998224725'
+      AND NOT EXISTS (SELECT 1 FROM vehicles WHERE plate = 'XYZ1A23');
+
+    INSERT INTO vehicles (id, client_id, plate, brand, model, year, color, type, active, created_at, updated_at)
+    SELECT 3, c.id, 'DEF5678', 'VOLKSWAGEN', 'GOL', 2019, 'BRANCO', 'CAR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    FROM clients c
+    WHERE c.cpf = '07124632080'
+      AND NOT EXISTS (SELECT 1 FROM vehicles WHERE plate = 'DEF5678');
+
+    SELECT setval('vehicles_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM vehicles), 1));
+EOSQL
+
 echo "✓ Verificando tabela vehicles..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     SELECT COUNT(*) as total_vehicles FROM vehicles;
+    SELECT id, client_id, plate, brand, model, year, color, type, active FROM vehicles ORDER BY id;
 EOSQL
 
 
