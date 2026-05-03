@@ -5,6 +5,7 @@ import com.os.workshop.features.client.shared.repository.ClientJpaRepository;
 import com.os.workshop.features.vehicle.shared.domain.VehicleType;
 import com.os.workshop.features.vehicle.shared.repository.VehicleEntity;
 import com.os.workshop.features.vehicle.shared.repository.VehicleJpaRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,12 @@ class VehicleRepositoryIT extends BaseIntegrationTest {
         client.setCpf("33344455566");
         client.setActive(true);
         savedClient = clientJpaRepository.save(client);
+    }
+
+    @AfterEach
+    void tearDown() {
+        vehicleJpaRepository.deleteAll();
+        clientJpaRepository.deleteAll();
     }
 
     @Test

@@ -41,7 +41,7 @@ class StockRepositoryIT extends BaseIntegrationTest {
 
         var found = stockJpaRepository.findByProductId(1001L);
         assertTrue(found.isPresent());
-        assertEquals(new BigDecimal("100"), found.get().getQuantity());
+        assertEquals(new BigDecimal("100.00"), found.get().getQuantity());
         assertTrue(stockJpaRepository.existsByProductId(1001L));
     }
 
