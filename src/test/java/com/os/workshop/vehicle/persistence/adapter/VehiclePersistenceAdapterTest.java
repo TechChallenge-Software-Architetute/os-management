@@ -1,12 +1,13 @@
 package com.os.workshop.vehicle.persistence.adapter;
 
-import com.os.workshop.client.persistence.entity.ClientEntity;
-import com.os.workshop.client.persistence.repository.ClientJpaRepository;
-import com.os.workshop.vehicle.domain.Vehicle;
-import com.os.workshop.vehicle.domain.VehicleType;
-import com.os.workshop.vehicle.persistence.entity.VehicleEntity;
-import com.os.workshop.vehicle.persistence.mapper.VehicleMapper;
-import com.os.workshop.vehicle.persistence.repository.VehicleJpaRepository;
+import com.os.workshop.features.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.client.persistence.repository.ClientJpaRepository;
+import com.os.workshop.features.vehicle.domain.Vehicle;
+import com.os.workshop.features.vehicle.domain.VehicleType;
+import com.os.workshop.features.vehicle.persistence.adapter.VehiclePersistenceAdapter;
+import com.os.workshop.features.vehicle.persistence.entity.VehicleEntity;
+import com.os.workshop.features.vehicle.persistence.mapper.VehicleMapper;
+import com.os.workshop.features.vehicle.persistence.repository.VehicleJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,9 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)

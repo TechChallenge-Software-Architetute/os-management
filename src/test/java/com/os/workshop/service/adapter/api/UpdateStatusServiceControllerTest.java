@@ -1,8 +1,9 @@
 package com.os.workshop.service.adapter.api;
 
-import com.os.workshop.service.domain.ServiceEntity;
-import com.os.workshop.service.domain.requests.UpdateStatusServiceRequest;
-import com.os.workshop.service.usecases.UpdateServiceStatusUC;
+import com.os.workshop.features.service.adapter.api.UpdateStatusServiceController;
+import com.os.workshop.features.service.domain.ServiceEntity;
+import com.os.workshop.features.service.domain.requests.UpdateStatusServiceRequest;
+import com.os.workshop.features.service.usecases.UpdateServiceStatusUC;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;

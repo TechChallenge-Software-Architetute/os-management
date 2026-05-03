@@ -1,10 +1,11 @@
 package com.os.workshop.service.usecases;
 
-import com.os.workshop.service.adapter.database.ServiceRepository;
-import com.os.workshop.service.adapter.database.ServiceTypeRepository;
-import com.os.workshop.service.domain.ServiceEntity;
-import com.os.workshop.service.domain.ServiceTypeEntity;
-import com.os.workshop.service.domain.requests.UpdateServiceRequest;
+import com.os.workshop.features.service.adapter.database.ServiceRepository;
+import com.os.workshop.features.service.adapter.database.ServiceTypeRepository;
+import com.os.workshop.features.service.domain.ServiceEntity;
+import com.os.workshop.features.service.domain.ServiceTypeEntity;
+import com.os.workshop.features.service.domain.requests.UpdateServiceRequest;
+import com.os.workshop.features.service.usecases.UpdateServiceUC;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

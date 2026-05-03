@@ -1,8 +1,9 @@
 package com.os.workshop.serviceorder.adapter.api;
 
-import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
-import com.os.workshop.serviceorder.domain.UpdateOrderRequest;
-import com.os.workshop.serviceorder.usecases.UpdateOrderUC;
+import com.os.workshop.features.serviceorder.adapter.api.UpdateOSController;
+import com.os.workshop.features.serviceorder.domain.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.domain.UpdateOrderRequest;
+import com.os.workshop.features.serviceorder.usecases.UpdateOrderUC;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.when;
 class UpdateOSControllerTest {
 
     private final UpdateOrderUC useCase = mock(UpdateOrderUC.class);
-    private final UpdateOSController controller = new UpdateOSController();
+    private final UpdateOSController controller = new UpdateOSController(useCase);
 
     UpdateOSControllerTest() {
         ReflectionTestUtils.setField(controller, "updateOrderUC", useCase);

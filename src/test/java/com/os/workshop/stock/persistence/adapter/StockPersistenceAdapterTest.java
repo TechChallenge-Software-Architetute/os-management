@@ -1,9 +1,10 @@
 package com.os.workshop.stock.persistence.adapter;
 
-import com.os.workshop.stock.domain.Stock;
-import com.os.workshop.stock.persistence.entity.StockEntity;
-import com.os.workshop.stock.persistence.mappers.StockMapper;
-import com.os.workshop.stock.persistence.repository.StockJpaRepository;
+import com.os.workshop.features.stock.domain.Stock;
+import com.os.workshop.features.stock.persistence.adapter.StockPersistenceAdapter;
+import com.os.workshop.features.stock.persistence.entity.StockEntity;
+import com.os.workshop.features.stock.persistence.mappers.StockMapper;
+import com.os.workshop.features.stock.persistence.repository.StockJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

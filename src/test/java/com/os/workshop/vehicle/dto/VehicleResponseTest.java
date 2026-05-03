@@ -1,7 +1,8 @@
 package com.os.workshop.vehicle.dto;
 
-import com.os.workshop.vehicle.domain.Vehicle;
-import com.os.workshop.vehicle.domain.VehicleType;
+import com.os.workshop.features.vehicle.domain.Vehicle;
+import com.os.workshop.features.vehicle.domain.VehicleType;
+import com.os.workshop.features.vehicle.dto.VehicleResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;

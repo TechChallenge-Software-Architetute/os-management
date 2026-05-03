@@ -1,7 +1,9 @@
 package com.os.workshop.client.persistence.mapper;
 
-import com.os.workshop.client.domain.Client;
-import com.os.workshop.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.client.domain.Client;
+import com.os.workshop.features.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.client.persistence.mapper.ClientMapper;
+import com.os.workshop.features.client.persistence.mapper.ClientMapperImpl;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;

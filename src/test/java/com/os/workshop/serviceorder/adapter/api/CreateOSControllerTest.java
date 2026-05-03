@@ -1,8 +1,9 @@
 package com.os.workshop.serviceorder.adapter.api;
 
-import com.os.workshop.serviceorder.domain.CreateOrderRequest;
-import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
-import com.os.workshop.serviceorder.usecases.CreateOrderUC;
+import com.os.workshop.features.serviceorder.adapter.api.CreateOSController;
+import com.os.workshop.features.serviceorder.domain.CreateOrderRequest;
+import com.os.workshop.features.serviceorder.domain.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.usecases.CreateOrderUC;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;

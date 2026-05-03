@@ -1,7 +1,8 @@
 package com.os.workshop.budget;
 
-import com.os.workshop.budget.domain.BudgetItem;
-import com.os.workshop.product.domain.ProductType;
+import com.os.workshop.features.budget.BudgetItemResponse;
+import com.os.workshop.features.budget.domain.BudgetItem;
+import com.os.workshop.features.product.domain.ProductType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

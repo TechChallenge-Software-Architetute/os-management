@@ -1,9 +1,10 @@
 package com.os.workshop.serviceorder.usecases;
 
-import com.os.workshop.serviceorder.adapter.database.OrderRepository;
-import com.os.workshop.serviceorder.domain.OrderServiceStatusEnum;
-import com.os.workshop.serviceorder.domain.ServiceOrderEntity;
-import com.os.workshop.serviceorder.domain.UpdateOrderRequest;
+import com.os.workshop.features.serviceorder.adapter.database.OrderRepository;
+import com.os.workshop.features.serviceorder.domain.OrderServiceStatusEnum;
+import com.os.workshop.features.serviceorder.domain.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.domain.UpdateOrderRequest;
+import com.os.workshop.features.serviceorder.usecases.UpdateOrderUC;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 

@@ -1,8 +1,10 @@
 package com.os.workshop.product.persistence.mappers;
 
-import com.os.workshop.product.domain.ProductType;
-import com.os.workshop.product.domain.Supply;
-import com.os.workshop.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.domain.Supply;
+import com.os.workshop.features.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.persistence.mappers.SupplyMapper;
+import com.os.workshop.features.product.persistence.mappers.SupplyMapperImpl;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

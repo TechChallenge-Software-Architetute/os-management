@@ -1,6 +1,8 @@
 package com.os.workshop.stock.persistence.mappers;
 
-import com.os.workshop.stock.domain.Stock;
+import com.os.workshop.features.stock.domain.Stock;
+import com.os.workshop.features.stock.persistence.mappers.StockMapper;
+import com.os.workshop.features.stock.persistence.mappers.StockMapperImpl;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

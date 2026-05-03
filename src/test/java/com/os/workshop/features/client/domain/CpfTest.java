@@ -3,9 +3,7 @@ package com.os.workshop.features.client.domain;
 import com.os.workshop.features.client.domain.valueobject.Cpf;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CpfTest {
 

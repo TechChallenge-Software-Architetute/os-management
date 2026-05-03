@@ -1,8 +1,9 @@
 package com.os.workshop.product.supply;
 
-import com.os.workshop.product.domain.ProductType;
-import com.os.workshop.product.domain.Supply;
-import com.os.workshop.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.domain.Supply;
+import com.os.workshop.features.product.domain.UnitOfMeasure;
+import com.os.workshop.features.product.supply.SupplyResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

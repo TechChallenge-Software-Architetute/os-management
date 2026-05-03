@@ -1,11 +1,12 @@
 package com.os.workshop.user.auth.controller;
 
-import com.os.workshop.user.auth.iterator.AuthIterator;
-import com.os.workshop.user.domain.Role;
-import com.os.workshop.user.domain.User;
-import com.os.workshop.user.dto.LoginRequest;
-import com.os.workshop.user.security.config.JwtProperties;
-import com.os.workshop.user.security.jwt.JwtService;
+import com.os.workshop.features.user.auth.controller.AuthController;
+import com.os.workshop.features.user.auth.iterator.AuthIterator;
+import com.os.workshop.features.user.domain.Role;
+import com.os.workshop.features.user.domain.User;
+import com.os.workshop.features.user.dto.LoginRequest;
+import com.os.workshop.features.user.security.config.JwtProperties;
+import com.os.workshop.features.user.security.jwt.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,9 +17,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class AuthControllerTest {
 

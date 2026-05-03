@@ -1,9 +1,10 @@
 package com.os.workshop.client.persistence.adapter;
 
-import com.os.workshop.client.domain.Client;
-import com.os.workshop.client.persistence.entity.ClientEntity;
-import com.os.workshop.client.persistence.mapper.ClientMapper;
-import com.os.workshop.client.persistence.repository.ClientJpaRepository;
+import com.os.workshop.features.client.domain.Client;
+import com.os.workshop.features.client.persistence.adapter.ClientPersistenceAdapter;
+import com.os.workshop.features.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.client.persistence.mapper.ClientMapper;
+import com.os.workshop.features.client.persistence.repository.ClientJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

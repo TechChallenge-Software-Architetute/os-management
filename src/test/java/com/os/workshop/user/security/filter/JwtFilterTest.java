@@ -1,7 +1,8 @@
 package com.os.workshop.user.security.filter;
 
-import com.os.workshop.user.security.jwt.JwtService;
-import com.os.workshop.user.security.service.CustomUserDetailsService;
+import com.os.workshop.features.user.security.filter.JwtFilter;
+import com.os.workshop.features.user.security.jwt.JwtService;
+import com.os.workshop.features.user.security.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -10,9 +11,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class JwtFilterTest {
 

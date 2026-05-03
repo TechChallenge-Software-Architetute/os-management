@@ -1,5 +1,6 @@
 package com.os.workshop.client.exception;
 
+import com.os.workshop.features.client.exception.ClientNotFoundException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -1,8 +1,8 @@
 package com.os.workshop.features.client.persistence.mapper;
 
 import com.os.workshop.features.client.domain.Client;
-import com.os.workshop.features.client.persistence.entity.ClientEntity;
 import com.os.workshop.features.client.domain.valueobject.Cpf;
+import com.os.workshop.features.client.persistence.entity.ClientEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

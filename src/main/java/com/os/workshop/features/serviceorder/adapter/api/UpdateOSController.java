@@ -3,23 +3,19 @@ package com.os.workshop.features.serviceorder.adapter.api;
 import com.os.workshop.features.serviceorder.domain.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.domain.UpdateOrderRequest;
 import com.os.workshop.features.serviceorder.usecases.UpdateOrderUC;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/order")
+@AllArgsConstructor
 public class UpdateOSController {
 
-    @Autowired
     private UpdateOrderUC updateOrderUC;
 
     @PatchMapping("/{id}")

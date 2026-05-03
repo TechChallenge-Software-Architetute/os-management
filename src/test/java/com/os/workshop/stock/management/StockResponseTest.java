@@ -1,6 +1,7 @@
 package com.os.workshop.stock.management;
 
-import com.os.workshop.stock.domain.Stock;
+import com.os.workshop.features.stock.domain.Stock;
+import com.os.workshop.features.stock.management.StockResponse;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

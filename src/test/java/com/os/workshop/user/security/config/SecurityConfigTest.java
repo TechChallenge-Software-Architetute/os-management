@@ -1,6 +1,7 @@
 package com.os.workshop.user.security.config;
 
-import com.os.workshop.user.security.filter.JwtFilter;
+import com.os.workshop.features.user.security.config.SecurityConfig;
+import com.os.workshop.features.user.security.filter.JwtFilter;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;

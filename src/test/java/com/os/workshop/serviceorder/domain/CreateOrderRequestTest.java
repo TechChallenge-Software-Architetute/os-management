@@ -1,5 +1,6 @@
 package com.os.workshop.serviceorder.domain;
 
+import com.os.workshop.features.serviceorder.domain.CreateOrderRequest;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
