@@ -1,10 +1,11 @@
-package com.os.workshop.features.monitoring.adapter.api;
+package com.os.workshop.features.monitoring;
 
-import com.os.workshop.features.monitoring.domain.ServiceAverageTime;
-import com.os.workshop.features.monitoring.domain.requests.AverageExecutionTimeByIdRequest;
-import com.os.workshop.features.monitoring.domain.requests.AverageExecutionTimeRequest;
-import com.os.workshop.features.monitoring.usecases.GetAverageExecutionTimeUC;
-import lombok.AllArgsConstructor;
+import com.os.workshop.features.monitoring.averageExecutionTime.GetAverageExecutionTimeHandler;
+import com.os.workshop.features.monitoring.averageExecutionTime.GetAverageExecutionTimeRequest;
+import com.os.workshop.features.monitoring.averageExecutionTimeById.GetAverageExecutionTimeByIdHandler;
+import com.os.workshop.features.monitoring.averageExecutionTimeById.GetAverageExecutionTimeByIdRequest;
+import com.os.workshop.features.monitoring.shared.domain.ServiceAverageTime;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -17,21 +18,22 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/monitoring")
-@AllArgsConstructor
-public class GetAverageExecutionTimeController {
+@RequiredArgsConstructor
+public class MonitoringController {
 
-    private static final Logger logger = LoggerFactory.getLogger(GetAverageExecutionTimeController.class);
+    private static final Logger logger = LoggerFactory.getLogger(MonitoringController.class);
 
-    private GetAverageExecutionTimeUC getAverageExecutionTimeUC;
+    private final GetAverageExecutionTimeHandler getAverageExecutionTimeHandler;
+    private final GetAverageExecutionTimeByIdHandler getAverageExecutionTimeByIdHandler;
 
     @PostMapping("/all")
     public ResponseEntity<List<ServiceAverageTime>> getAverageExecutionTime(
-            @RequestBody AverageExecutionTimeRequest request
+            @RequestBody GetAverageExecutionTimeRequest request
     ) {
         logger.info("Recebida requisição para obter tempo médio de execução dos serviços.");
 
         try {
-            List<ServiceAverageTime> averages = getAverageExecutionTimeUC.process(request);
+            List<ServiceAverageTime> averages = getAverageExecutionTimeHandler.handle(request);
             logger.info("Tempos médios calculados com sucesso. Total de tipos de serviço: {}", averages.size());
             return ResponseEntity.ok(averages);
         } catch (Exception e) {
@@ -42,12 +44,13 @@ public class GetAverageExecutionTimeController {
 
     @PostMapping("/by-id")
     public ResponseEntity<ServiceAverageTime> getAverageExecutionTimeById(
-            @RequestBody AverageExecutionTimeByIdRequest request
+            @RequestBody GetAverageExecutionTimeByIdRequest request
     ) {
         logger.info("Recebida requisição para obter tempo médio de execução do serviço.");
 
         try {
-            ServiceAverageTime average = getAverageExecutionTimeUC.processById(request.getId(), request.getTimeUnit());
+            ServiceAverageTime average = getAverageExecutionTimeByIdHandler.handle(
+                    request.getId(), request.getTimeUnit());
             logger.info("Tempos médios calculados com sucesso.");
             return ResponseEntity.ok(average);
         } catch (Exception e) {

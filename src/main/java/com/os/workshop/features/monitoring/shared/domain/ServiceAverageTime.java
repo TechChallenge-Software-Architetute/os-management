@@ -1,4 +1,4 @@
-package com.os.workshop.features.monitoring.domain;
+package com.os.workshop.features.monitoring.shared.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

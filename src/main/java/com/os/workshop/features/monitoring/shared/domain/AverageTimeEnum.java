@@ -1,4 +1,4 @@
-package com.os.workshop.features.monitoring.domain.enums;
+package com.os.workshop.features.monitoring.shared.domain;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -35,4 +35,3 @@ public enum AverageTimeEnum {
 
     public abstract double calculate(Duration duration);
 }
-

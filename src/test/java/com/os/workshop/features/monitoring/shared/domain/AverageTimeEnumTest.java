@@ -1,6 +1,5 @@
-package com.os.workshop.features.monitoring.domain.enums;
+package com.os.workshop.features.monitoring.shared.domain;
 
-import com.os.workshop.features.monitoring.domain.enums.AverageTimeEnum;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

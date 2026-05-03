@@ -1,9 +1,10 @@
-package com.os.workshop.features.monitoring.adapter.api;
+package com.os.workshop.features.monitoring;
 
-import com.os.workshop.features.monitoring.adapter.api.GetAverageExecutionTimeController;
-import com.os.workshop.features.monitoring.domain.ServiceAverageTime;
-import com.os.workshop.features.monitoring.domain.enums.AverageTimeEnum;
-import com.os.workshop.features.monitoring.usecases.GetAverageExecutionTimeUC;
+import com.os.workshop.features.monitoring.averageExecutionTime.GetAverageExecutionTimeHandler;
+import com.os.workshop.features.monitoring.averageExecutionTime.GetAverageExecutionTimeRequest;
+import com.os.workshop.features.monitoring.averageExecutionTimeById.GetAverageExecutionTimeByIdHandler;
+import com.os.workshop.features.monitoring.shared.domain.AverageTimeEnum;
+import com.os.workshop.features.monitoring.shared.domain.ServiceAverageTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,19 +25,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-class GetAverageExecutionTimeControllerTest {
+class MonitoringControllerTest {
 
     private MockMvc mockMvc;
 
     @Mock
-    private GetAverageExecutionTimeUC getAverageExecutionTimeUC;
+    private GetAverageExecutionTimeHandler getAverageExecutionTimeHandler;
+
+    @Mock
+    private GetAverageExecutionTimeByIdHandler getAverageExecutionTimeByIdHandler;
 
     @InjectMocks
-    private GetAverageExecutionTimeController getAverageExecutionTimeController;
+    private MonitoringController monitoringController;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(getAverageExecutionTimeController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(monitoringController).build();
     }
 
     @Test
@@ -45,7 +49,8 @@ class GetAverageExecutionTimeControllerTest {
                 new ServiceAverageTime("ServiceType1", 10.5),
                 new ServiceAverageTime("ServiceType2", 20.0)
         );
-        when(getAverageExecutionTimeUC.process(any())).thenReturn(mockAverages);
+        when(getAverageExecutionTimeHandler.handle(any(GetAverageExecutionTimeRequest.class)))
+                .thenReturn(mockAverages);
 
         String requestJson = "{\"timeUnit\":\"SECONDS\"}";
 
@@ -62,7 +67,8 @@ class GetAverageExecutionTimeControllerTest {
 
     @Test
     void whenGettingAverageExecutionTimeThrowsException_thenReturns500() throws Exception {
-        when(getAverageExecutionTimeUC.process(any())).thenThrow(new RuntimeException("Test exception"));
+        when(getAverageExecutionTimeHandler.handle(any(GetAverageExecutionTimeRequest.class)))
+                .thenThrow(new RuntimeException("Test exception"));
 
         String requestJson = "{\"timeUnit\":\"MINUTES\"}";
 
@@ -76,7 +82,8 @@ class GetAverageExecutionTimeControllerTest {
     void whenGettingAverageExecutionTimeByIdWithValidRequest_thenReturns200() throws Exception {
         ServiceAverageTime mockAverage = new ServiceAverageTime("ServiceType1", 15.0);
         UUID testId = UUID.randomUUID();
-        when(getAverageExecutionTimeUC.processById(testId, AverageTimeEnum.HOURS)).thenReturn(mockAverage);
+        when(getAverageExecutionTimeByIdHandler.handle(testId, AverageTimeEnum.HOURS))
+                .thenReturn(mockAverage);
 
         String requestJson = "{\"timeUnit\":\"HOURS\",\"id\":\"" + testId + "\"}";
 
@@ -91,7 +98,8 @@ class GetAverageExecutionTimeControllerTest {
     @Test
     void whenGettingAverageExecutionTimeByIdThrowsException_thenReturns500() throws Exception {
         UUID testId = UUID.randomUUID();
-        when(getAverageExecutionTimeUC.processById(testId, AverageTimeEnum.SECONDS)).thenThrow(new RuntimeException("Test exception"));
+        when(getAverageExecutionTimeByIdHandler.handle(testId, AverageTimeEnum.SECONDS))
+                .thenThrow(new RuntimeException("Test exception"));
 
         String requestJson = "{\"timeUnit\":\"SECONDS\",\"id\":\"" + testId + "\"}";
 
