@@ -1,4 +1,4 @@
-package com.os.workshop.features.serviceorder.domain;
+package com.os.workshop.features.serviceorder.shared.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,7 +37,7 @@ public class ListToJsonConverter implements AttributeConverter<List<String>, Str
             return new ArrayList<>();
         }
         try {
-            return objectMapper.readValue(dbData, 
+            return objectMapper.readValue(dbData,
                 objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
         } catch (JsonProcessingException e) {
             logger.error("Erro ao converter JSON para List<String>", e);

@@ -1,15 +1,16 @@
-package com.os.workshop.features.serviceorder.usecases;
+package com.os.workshop.features.serviceorder.findById;
 
-import com.os.workshop.features.serviceorder.adapter.database.OrderRepository;
-import com.os.workshop.features.serviceorder.domain.OrderServiceStatusEnum;
-import com.os.workshop.features.serviceorder.domain.ServiceOrderEntity;
+import com.os.workshop.features.budget.BudgetService;
+import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
+import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,13 +20,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ConsultOrderUCTest {
+class FindOrderByIdHandlerTest {
 
     @Mock
-    private OrderRepository orderRepository;
+    private ServiceOrderJpaRepository serviceOrderJpaRepository;
+
+    @Mock
+    private BudgetService budgetService;
 
     @InjectMocks
-    private ConsultOrderUC consultOrderUC;
+    private FindOrderByIdHandler findOrderByIdHandler;
 
     private ServiceOrderEntity createOrder(UUID id) {
         ServiceOrderEntity order = new ServiceOrderEntity();
@@ -39,58 +43,34 @@ class ConsultOrderUCTest {
     }
 
     @Test
-    void whenConsultingAllOrders_thenReturnsOrderList() {
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-        List<ServiceOrderEntity> orders = List.of(createOrder(id1), createOrder(id2));
-
-        when(orderRepository.findAll()).thenReturn(orders);
-
-        List<ServiceOrderEntity> result = consultOrderUC.process();
-
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(orderRepository).findAll();
-    }
-
-    @Test
-    void whenConsultingAllOrdersWithEmptyDatabase_thenReturnsEmptyList() {
-        when(orderRepository.findAll()).thenReturn(Collections.emptyList());
-
-        List<ServiceOrderEntity> result = consultOrderUC.process();
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
     void whenConsultingOrderByExistingId_thenReturnsOrder() {
         UUID orderId = UUID.randomUUID();
         ServiceOrderEntity expected = createOrder(orderId);
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(expected));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(expected));
+        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
 
-        ServiceOrderEntity result = consultOrderUC.process(orderId);
+        ServiceOrder result = findOrderByIdHandler.handle(orderId);
 
         assertNotNull(result);
         assertEquals(orderId, result.getId());
         assertEquals("12345678900", result.getCpfCnpj());
         assertEquals("ABC1234", result.getPlacaVeiculo());
         assertEquals(OrderServiceStatusEnum.RECEBIDA.getStatus(), result.getServiceStatus());
-        verify(orderRepository).findById(orderId);
+        verify(serviceOrderJpaRepository).findById(orderId);
     }
 
     @Test
     void whenConsultingOrderByNonExistingId_thenThrowsRuntimeException() {
         UUID orderId = UUID.randomUUID();
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> consultOrderUC.process(orderId));
+                () -> findOrderByIdHandler.handle(orderId));
 
         assertEquals("Ordem de servico nao encontrada. ID: " + orderId, exception.getMessage());
-        verify(orderRepository).findById(orderId);
+        verify(serviceOrderJpaRepository).findById(orderId);
     }
 
     @Test
@@ -98,9 +78,10 @@ class ConsultOrderUCTest {
         UUID orderId = UUID.randomUUID();
         ServiceOrderEntity expected = createOrder(orderId);
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(expected));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(expected));
+        when(budgetService.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
 
-        ServiceOrderEntity result = consultOrderUC.process(orderId);
+        ServiceOrder result = findOrderByIdHandler.handle(orderId);
 
         assertEquals(List.of("TROCA_OLEO"), result.getListService());
     }

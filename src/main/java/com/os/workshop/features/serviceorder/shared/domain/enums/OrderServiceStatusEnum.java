@@ -1,4 +1,4 @@
-package com.os.workshop.features.serviceorder.domain;
+package com.os.workshop.features.serviceorder.shared.domain.enums;
 
 import lombok.AccessLevel;
 import lombok.Getter;

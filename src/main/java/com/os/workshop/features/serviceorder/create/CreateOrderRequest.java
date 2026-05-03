@@ -1,4 +1,4 @@
-package com.os.workshop.features.serviceorder.domain;
+package com.os.workshop.features.serviceorder.create;
 
 import com.os.workshop.features.utils.annotations.UpperCase;
 import lombok.Data;

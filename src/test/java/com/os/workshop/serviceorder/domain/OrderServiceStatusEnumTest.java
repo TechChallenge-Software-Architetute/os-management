@@ -1,6 +1,6 @@
 package com.os.workshop.serviceorder.domain;
 
-import com.os.workshop.features.serviceorder.domain.OrderServiceStatusEnum;
+import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
