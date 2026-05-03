@@ -110,4 +110,39 @@ class SupplyControllerE2ETest {
         mockMvc.perform(delete("/api/supplies/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
+
+    // ==================== GET /api/supplies/{id} ====================
+
+    @Test
+    void whenFindingSupplyByExistingId_thenReturns200() throws Exception {
+        Supply supply = createSupply();
+        when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
+
+        mockMvc.perform(get("/api/supplies/{id}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("Engine Oil"))
+                .andExpect(jsonPath("$.sku").value("OIL-5W30"))
+                .andExpect(jsonPath("$.fractionalAllowed").value(true));
+    }
+
+    // ==================== PUT /api/supplies/{id} ====================
+
+    @Test
+    void whenUpdatingSupplyWithValidData_thenReturns200() throws Exception {
+        Supply supply = createSupply();
+        when(supplyRepository.findById(1L)).thenReturn(Optional.of(supply));
+        when(supplyRepository.existsBySku("OIL-10W40")).thenReturn(false);
+        when(supplyRepository.save(any(Supply.class))).thenAnswer(i -> i.getArgument(0));
+
+        SupplyRequest updateRequest = new SupplyRequest("Synthetic Oil", "OIL-10W40", UnitOfMeasure.LITER,
+                "Lubricants", "Castrol", new BigDecimal("30"), new BigDecimal("60"), true, new BigDecimal("1"));
+
+        mockMvc.perform(put("/api/supplies/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Synthetic Oil"))
+                .andExpect(jsonPath("$.sku").value("OIL-10W40"));
+    }
 }
