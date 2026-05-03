@@ -1,0 +1,17 @@
+﻿meta {
+  name: Confirm Reservations
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/api/stocks/reservations/service-order/{{serviceOrderId}}/confirm
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

@@ -1,0 +1,25 @@
+﻿meta {
+  name: Create Stock
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/stocks
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "productId": 1,
+    "quantity": 100.00,
+    "minimumQuantity": 10.00
+  }
+}
+

@@ -1,0 +1,17 @@
+﻿meta {
+  name: Release Reservations
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/api/stocks/reservations/service-order/{{serviceOrderId}}/release
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

@@ -699,12 +699,20 @@ O [Bruno](https://www.usebruno.com/) é um cliente HTTP open-source para testar 
 2. Baixe a versão compatível com seu sistema operacional (Windows, macOS ou Linux)
 3. Instale e abra o Bruno
 
-### 2. Criar uma Collection
+### 2. Importar a Collection
 
-1. Na tela inicial do Bruno, clique em **"Create Collection"**
-2. Dê o nome **"OS Management API"**
-3. Escolha uma pasta local para salvar a collection
-4. Clique em **"Create"**
+1. Na tela inicial do Bruno, clique em **"Import Collection"** ou **"Import"**
+2. Na tela **"Drop file(s) to import or choose file(s)"**, clique em **"choose file(s)"**
+3. Navegue até a pasta `bruno` na raiz do projeto:
+   ```text
+   os-management/bruno/
+   ```
+4. Selecione o arquivo:
+   ```text
+   os-management-api.bruno.auto.json
+   ```
+5. Confirme a importação com o **"File Format Bruno**"
+6. O Bruno criará a collection **"os-management-api"** com as chamadas HTTP prontas para testar
 
 ### 3. Primeira Chamada: Login para Obter o Token
 

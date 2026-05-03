@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Vehicles By Client
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/vehicles/client/{{clientId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

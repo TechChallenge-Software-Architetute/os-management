@@ -1,0 +1,26 @@
+﻿meta {
+  name: Update Client
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/clients/{{clientId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Maria Souza",
+    "cpf": "52998224725",
+    "email": "maria@email.com",
+    "phone": "11888887777"
+  }
+}
+

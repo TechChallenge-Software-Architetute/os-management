@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Low Stock
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/stocks/low
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

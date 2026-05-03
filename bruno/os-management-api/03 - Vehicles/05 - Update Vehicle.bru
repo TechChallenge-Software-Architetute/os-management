@@ -1,0 +1,29 @@
+﻿meta {
+  name: Update Vehicle
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/vehicles/{{vehicleId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "clientId": 1,
+    "plate": "ABC-1234",
+    "brand": "Toyota",
+    "model": "Corolla XEI",
+    "year": 2021,
+    "color": "Preto",
+    "type": "CAR"
+  }
+}
+

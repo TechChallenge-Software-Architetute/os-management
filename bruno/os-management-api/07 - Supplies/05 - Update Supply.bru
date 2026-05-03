@@ -1,0 +1,31 @@
+﻿meta {
+  name: Update Supply
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/api/supplies/{{supplyId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Oleo Motor 5W30 Sintetico Premium",
+    "sku": "OIL-5W30-SINT",
+    "unit": "LITER",
+    "category": "Lubrificantes",
+    "brand": "Mobil 1",
+    "costPrice": 32.00,
+    "salePrice": 62.90,
+    "fractionalAllowed": true,
+    "packageSize": 1.0
+  }
+}
+
