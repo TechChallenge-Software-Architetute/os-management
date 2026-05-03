@@ -1,5 +1,18 @@
 package com.os.workshop.features.product.supply;
 
+import com.os.workshop.features.product.supply.create.CreateSupplyHandler;
+import com.os.workshop.features.product.supply.create.CreateSupplyRequest;
+import com.os.workshop.features.product.supply.create.CreateSupplyResponse;
+import com.os.workshop.features.product.supply.deactivate.DeactivateSupplyHandler;
+import com.os.workshop.features.product.supply.findById.FindSupplyByIdHandler;
+import com.os.workshop.features.product.supply.findById.FindSupplyByIdResponse;
+import com.os.workshop.features.product.supply.findBySku.FindSupplyBySkuHandler;
+import com.os.workshop.features.product.supply.findBySku.FindSupplyBySkuResponse;
+import com.os.workshop.features.product.supply.list.ListSuppliesHandler;
+import com.os.workshop.features.product.supply.list.ListSuppliesResponse;
+import com.os.workshop.features.product.supply.update.UpdateSupplyHandler;
+import com.os.workshop.features.product.supply.update.UpdateSupplyRequest;
+import com.os.workshop.features.product.supply.update.UpdateSupplyResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,86 +31,43 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SupplyController {
 
-    private final SupplyService supplyService;
+    private final CreateSupplyHandler createSupplyHandler;
+    private final FindSupplyByIdHandler findSupplyByIdHandler;
+    private final FindSupplyBySkuHandler findSupplyBySkuHandler;
+    private final ListSuppliesHandler listSuppliesHandler;
+    private final UpdateSupplyHandler updateSupplyHandler;
+    private final DeactivateSupplyHandler deactivateSupplyHandler;
 
-    /**
-     * Creates a new supply in the system.
-     * The SKU must be unique across all supplies. The ID is auto-generated.
-     * Supplies can optionally allow fractional quantities (e.g., 3.5 liters of oil).
-     *
-     * @param request the supply data including name, SKU, unit, prices, fractional flag and package size
-     * @return the created supply with HTTP 201
-     * @throws IllegalArgumentException if a supply with the same SKU already exists
-     */
     @PostMapping
-    public ResponseEntity<SupplyResponse> create(@Valid @RequestBody SupplyRequest request) {
-        var supply = supplyService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(SupplyResponse.from(supply));
+    public ResponseEntity<CreateSupplyResponse> create(@Valid @RequestBody CreateSupplyRequest request) {
+        var supply = createSupplyHandler.handle(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CreateSupplyResponse.from(supply));
     }
 
-    /**
-     * Retrieves a supply by its unique identifier.
-     *
-     * @param id the UUID of the supply
-     * @return the supply data
-     * @throws IllegalArgumentException if no supply is found with the given ID
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<SupplyResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(SupplyResponse.from(supplyService.findById(id)));
+    public ResponseEntity<FindSupplyByIdResponse> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(FindSupplyByIdResponse.from(findSupplyByIdHandler.handle(id)));
     }
 
-    /**
-     * Retrieves a supply by its SKU code.
-     *
-     * @param sku the unique SKU identifier
-     * @return the supply data
-     * @throws IllegalArgumentException if no supply is found with the given SKU
-     */
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<SupplyResponse> findBySku(@PathVariable String sku) {
-        return ResponseEntity.ok(SupplyResponse.from(supplyService.findBySku(sku)));
+    public ResponseEntity<FindSupplyBySkuResponse> findBySku(@PathVariable String sku) {
+        return ResponseEntity.ok(FindSupplyBySkuResponse.from(findSupplyBySkuHandler.handle(sku)));
     }
 
-    /**
-     * Lists all active supplies in the system.
-     * Deactivated supplies are excluded from the results.
-     *
-     * @return list of all active supplies
-     */
     @GetMapping
-    public ResponseEntity<List<SupplyResponse>> findAll() {
-        var supplies = supplyService.findAll().stream().map(SupplyResponse::from).toList();
+    public ResponseEntity<List<ListSuppliesResponse>> findAll() {
+        var supplies = listSuppliesHandler.handle().stream().map(ListSuppliesResponse::from).toList();
         return ResponseEntity.ok(supplies);
     }
 
-    /**
-     * Updates an existing supply.
-     * All fields are replaced with the provided values. The SKU uniqueness is validated
-     * if it differs from the current value.
-     *
-     * @param id      the UUID of the supply to update
-     * @param request the updated supply data
-     * @return the updated supply
-     * @throws IllegalArgumentException if the supply is not found or the new SKU already exists
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<SupplyResponse> update(@PathVariable Long id, @Valid @RequestBody SupplyRequest request) {
-        return ResponseEntity.ok(SupplyResponse.from(supplyService.update(id, request)));
+    public ResponseEntity<UpdateSupplyResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateSupplyRequest request) {
+        return ResponseEntity.ok(UpdateSupplyResponse.from(updateSupplyHandler.handle(id, request)));
     }
 
-    /**
-     * Deactivates a supply (soft delete).
-     * The supply is not physically removed from the database, but marked as inactive
-     * and will no longer appear in active listings.
-     *
-     * @param id the UUID of the supply to deactivate
-     * @return HTTP 204 No Content on success
-     * @throws IllegalArgumentException if the supply is not found
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        supplyService.deactivate(id);
+        deactivateSupplyHandler.handle(id);
         return ResponseEntity.noContent().build();
     }
 }

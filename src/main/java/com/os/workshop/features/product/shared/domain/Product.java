@@ -1,0 +1,26 @@
+package com.os.workshop.features.product.shared.domain;
+
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+public abstract class Product {
+
+    protected Long id;
+    protected String name;
+    protected String sku;
+    protected ProductType type;
+    protected UnitOfMeasure unit;
+    protected String category;
+    protected String brand;
+    protected BigDecimal costPrice;
+    protected BigDecimal salePrice;
+    protected boolean active = true;
+    protected LocalDateTime createdAt;
+    protected LocalDateTime updatedAt;
+}

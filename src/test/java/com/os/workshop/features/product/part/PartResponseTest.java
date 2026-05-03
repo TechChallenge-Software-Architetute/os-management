@@ -1,9 +1,9 @@
 package com.os.workshop.features.product.part;
 
-import com.os.workshop.features.product.domain.Part;
-import com.os.workshop.features.product.domain.ProductType;
-import com.os.workshop.features.product.domain.UnitOfMeasure;
-import com.os.workshop.features.product.part.PartResponse;
+import com.os.workshop.features.product.part.create.CreatePartResponse;
+import com.os.workshop.features.product.shared.domain.Part;
+import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -26,7 +26,7 @@ class PartResponseTest {
         part.setManufacturerCode("M1");
         part.setWarrantyMonths(12);
 
-        PartResponse response = PartResponse.from(part);
+        CreatePartResponse response = CreatePartResponse.from(part);
 
         assertEquals("PST-1", response.sku());
         assertEquals("M1", response.manufacturerCode());

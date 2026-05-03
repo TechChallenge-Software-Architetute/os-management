@@ -1,7 +1,7 @@
 package com.os.workshop.features.stock.management;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.os.workshop.features.product.exception.GlobalExceptionHandler;
+import com.os.workshop.features.product.shared.exception.GlobalExceptionHandler;
 import com.os.workshop.features.stock.domain.Stock;
 import com.os.workshop.features.stock.domain.StockMovement;
 import com.os.workshop.features.stock.domain.StockMovementType;

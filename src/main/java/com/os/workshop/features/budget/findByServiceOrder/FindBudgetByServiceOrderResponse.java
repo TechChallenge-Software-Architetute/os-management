@@ -2,7 +2,7 @@ package com.os.workshop.features.budget.findByServiceOrder;
 
 import com.os.workshop.features.budget.shared.domain.Budget;
 import com.os.workshop.features.budget.shared.domain.BudgetItem;
-import com.os.workshop.features.product.domain.ProductType;
+import com.os.workshop.features.product.shared.domain.ProductType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

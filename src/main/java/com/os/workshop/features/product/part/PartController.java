@@ -1,5 +1,18 @@
 package com.os.workshop.features.product.part;
 
+import com.os.workshop.features.product.part.create.CreatePartHandler;
+import com.os.workshop.features.product.part.create.CreatePartRequest;
+import com.os.workshop.features.product.part.create.CreatePartResponse;
+import com.os.workshop.features.product.part.deactivate.DeactivatePartHandler;
+import com.os.workshop.features.product.part.findById.FindPartByIdHandler;
+import com.os.workshop.features.product.part.findById.FindPartByIdResponse;
+import com.os.workshop.features.product.part.findBySku.FindPartBySkuHandler;
+import com.os.workshop.features.product.part.findBySku.FindPartBySkuResponse;
+import com.os.workshop.features.product.part.list.ListPartsHandler;
+import com.os.workshop.features.product.part.list.ListPartsResponse;
+import com.os.workshop.features.product.part.update.UpdatePartHandler;
+import com.os.workshop.features.product.part.update.UpdatePartRequest;
+import com.os.workshop.features.product.part.update.UpdatePartResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,85 +30,43 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PartController {
 
-    private final PartService partService;
+    private final CreatePartHandler createPartHandler;
+    private final FindPartByIdHandler findPartByIdHandler;
+    private final FindPartBySkuHandler findPartBySkuHandler;
+    private final ListPartsHandler listPartsHandler;
+    private final UpdatePartHandler updatePartHandler;
+    private final DeactivatePartHandler deactivatePartHandler;
 
-    /**
-     * Creates a new part in the system.
-     * The SKU must be unique across all parts. The ID is auto-generated.
-     *
-     * @param request the part data including name, SKU, unit, prices, manufacturer code and warranty
-     * @return the created part with HTTP 201
-     * @throws IllegalArgumentException if a part with the same SKU already exists
-     */
     @PostMapping
-    public ResponseEntity<PartResponse> create(@Valid @RequestBody PartRequest request) {
-        var part = partService.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(PartResponse.from(part));
+    public ResponseEntity<CreatePartResponse> create(@Valid @RequestBody CreatePartRequest request) {
+        var part = createPartHandler.handle(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CreatePartResponse.from(part));
     }
 
-    /**
-     * Retrieves a part by its unique identifier.
-     *
-     * @param id the UUID of the part
-     * @return the part data
-     * @throws IllegalArgumentException if no part is found with the given ID
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<PartResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(PartResponse.from(partService.findById(id)));
+    public ResponseEntity<FindPartByIdResponse> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(FindPartByIdResponse.from(findPartByIdHandler.handle(id)));
     }
 
-    /**
-     * Retrieves a part by its SKU code.
-     *
-     * @param sku the unique SKU identifier
-     * @return the part data
-     * @throws IllegalArgumentException if no part is found with the given SKU
-     */
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<PartResponse> findBySku(@PathVariable String sku) {
-        return ResponseEntity.ok(PartResponse.from(partService.findBySku(sku)));
+    public ResponseEntity<FindPartBySkuResponse> findBySku(@PathVariable String sku) {
+        return ResponseEntity.ok(FindPartBySkuResponse.from(findPartBySkuHandler.handle(sku)));
     }
 
-    /**
-     * Lists all active parts in the system.
-     * Deactivated parts are excluded from the results.
-     *
-     * @return list of all active parts
-     */
     @GetMapping
-    public ResponseEntity<List<PartResponse>> findAll() {
-        var parts = partService.findAll().stream().map(PartResponse::from).toList();
+    public ResponseEntity<List<ListPartsResponse>> findAll() {
+        var parts = listPartsHandler.handle().stream().map(ListPartsResponse::from).toList();
         return ResponseEntity.ok(parts);
     }
 
-    /**
-     * Updates an existing part.
-     * All fields are replaced with the provided values. The SKU uniqueness is validated
-     * if it differs from the current value.
-     *
-     * @param id      the UUID of the part to update
-     * @param request the updated part data
-     * @return the updated part
-     * @throws IllegalArgumentException if the part is not found or the new SKU already exists
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<PartResponse> update(@PathVariable Long id, @Valid @RequestBody PartRequest request) {
-        return ResponseEntity.ok(PartResponse.from(partService.update(id, request)));
+    public ResponseEntity<UpdatePartResponse> update(@PathVariable Long id, @Valid @RequestBody UpdatePartRequest request) {
+        return ResponseEntity.ok(UpdatePartResponse.from(updatePartHandler.handle(id, request)));
     }
 
-    /**
-     * Deactivates a part (soft delete).
-     * The part is not physically removed from the database, but marked as inactive
-     * and will no longer appear in active listings.
-     *
-     * @param id the UUID of the part to deactivate
-     * @return HTTP 204 No Content on success
-     * @throws IllegalArgumentException if the part is not found
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        partService.deactivate(id);
+        deactivatePartHandler.handle(id);
         return ResponseEntity.noContent().build();
     }
 }
