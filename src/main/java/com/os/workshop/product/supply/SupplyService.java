@@ -99,11 +99,14 @@ public class SupplyService {
      * The supply remains in the database but is excluded from active listings.
      *
      * @param id the UUID of the supply to deactivate
-     * @throws IllegalArgumentException if the supply is not found
+     * @throws IllegalArgumentException if the supply is not found or already inactive
      */
     @Transactional
     public void deactivate(Long id) {
         Supply supply = findById(id);
+        if (!supply.isActive()) {
+            throw new IllegalArgumentException("Supply with id " + id + " is already inactive");
+        }
         supply.setActive(false);
         supplyRepository.save(supply);
     }

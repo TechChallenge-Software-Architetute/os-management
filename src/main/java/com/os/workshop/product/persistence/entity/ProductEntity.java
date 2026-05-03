@@ -3,8 +3,6 @@ package com.os.workshop.product.persistence.entity;
 import com.os.workshop.product.domain.ProductType;
 import com.os.workshop.product.domain.UnitOfMeasure;
 import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorColumn;
-import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -32,8 +30,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "products")
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "product_type", discriminatorType = DiscriminatorType.STRING)
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class ProductEntity {
 
     @Id
@@ -48,7 +45,7 @@ public abstract class ProductEntity {
     private String sku;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "product_type", insertable = false, updatable = false)
+    @Column(name = "product_type", nullable = false)
     private ProductType type;
 
     @Enumerated(EnumType.STRING)

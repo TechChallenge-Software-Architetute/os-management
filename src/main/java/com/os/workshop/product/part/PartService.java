@@ -99,11 +99,14 @@ public class PartService {
      * The part remains in the database but is excluded from active listings.
      *
      * @param id the UUID of the part to deactivate
-     * @throws IllegalArgumentException if the part is not found
+     * @throws IllegalArgumentException if the part is not found or already inactive
      */
     @Transactional
     public void deactivate(Long id) {
         Part part = findById(id);
+        if (!part.isActive()) {
+            throw new IllegalArgumentException("Part with id " + id + " is already inactive");
+        }
         part.setActive(false);
         partRepository.save(part);
     }

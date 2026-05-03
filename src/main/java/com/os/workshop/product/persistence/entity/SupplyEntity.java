@@ -1,7 +1,7 @@
 package com.os.workshop.product.persistence.entity;
 
-import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@DiscriminatorValue("SUPPLY")
+@Table(name = "supplies")
 public class SupplyEntity extends ProductEntity {
 
     private boolean fractionalAllowed;

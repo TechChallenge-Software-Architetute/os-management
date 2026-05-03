@@ -1,6 +1,5 @@
 package com.os.workshop.serviceorder.domain;
 
-import com.os.workshop.service.domain.enums.ServiceStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,10 +23,16 @@ public class ServiceOrderEntity {
     private String serviceTypeName;
 
     @Column(name = "service_status", nullable = false)
-    private String serviceStatus = ServiceStatusEnum.TO_DO.getStatus();
+    private String serviceStatus = OrderServiceStatusEnum.RECEBIDA.getStatus();
 
     @Column(name = "list_service", nullable = false)
     @Convert(converter = ListToJsonConverter.class)
     private List<String> listService;
+
+    @Column(name = "cpf_cnpj", nullable = false)
+    private String cpfCnpj;
+
+    @Column(name = "placa", nullable = false)
+    private String placaVeiculo;
 
 }

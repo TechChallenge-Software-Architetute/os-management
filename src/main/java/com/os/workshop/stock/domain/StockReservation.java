@@ -2,6 +2,7 @@ package com.os.workshop.stock.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,7 +18,7 @@ public class StockReservation {
     private Long id;
     private Long stockId;
     private Long productId;
-    private Long serviceOrderId;
+    private UUID serviceOrderId;
     private BigDecimal quantity;
     private StockReservationStatus status;
     private LocalDateTime createdAt;
