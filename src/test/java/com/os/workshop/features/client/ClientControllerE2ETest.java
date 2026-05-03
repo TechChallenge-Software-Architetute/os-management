@@ -2,9 +2,21 @@ package com.os.workshop.features.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.os.workshop.features.client.domain.Client;
-import com.os.workshop.features.client.dto.ClientRequest;
-import com.os.workshop.features.client.repository.ClientRepository;
+import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
+import com.os.workshop.features.client.approveOrder.ApproveMyOrderHandler;
+import com.os.workshop.features.client.create.CreateClientHandler;
+import com.os.workshop.features.client.create.CreateClientRequest;
+import com.os.workshop.features.client.deactivate.DeactivateClientHandler;
+import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
+import com.os.workshop.features.client.findById.FindClientByIdHandler;
+import com.os.workshop.features.client.list.ListClientsHandler;
+import com.os.workshop.features.client.myOrderDetail.FindMyOrderDetailHandler;
+import com.os.workshop.features.client.myOrders.FindMyOrdersHandler;
+import com.os.workshop.features.client.shared.domain.Client;
+import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.features.client.update.UpdateClientHandler;
+import com.os.workshop.features.client.update.UpdateClientRequest;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,15 +49,27 @@ class ClientControllerE2ETest {
     private ClientRepository clientRepository;
 
     @Mock
-    private com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository serviceOrderJpaRepository;
+    private ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     @Mock
-    private com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
+    private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @BeforeEach
     void setUp() {
-        ClientService clientService = new ClientService(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
-        ClientController clientController = new ClientController(clientService);
+        CreateClientHandler createClientHandler = new CreateClientHandler(clientRepository);
+        ListClientsHandler listClientsHandler = new ListClientsHandler(clientRepository);
+        FindClientByIdHandler findClientByIdHandler = new FindClientByIdHandler(clientRepository);
+        FindClientByCpfHandler findClientByCpfHandler = new FindClientByCpfHandler(clientRepository);
+        UpdateClientHandler updateClientHandler = new UpdateClientHandler(clientRepository);
+        DeactivateClientHandler deactivateClientHandler = new DeactivateClientHandler(clientRepository);
+        FindMyOrdersHandler findMyOrdersHandler = new FindMyOrdersHandler(clientRepository, serviceOrderJpaRepository);
+        FindMyOrderDetailHandler findMyOrderDetailHandler = new FindMyOrderDetailHandler(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
+        ApproveMyOrderHandler approveMyOrderHandler = new ApproveMyOrderHandler(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
+
+        ClientController clientController = new ClientController(
+                createClientHandler, listClientsHandler, findClientByIdHandler,
+                findClientByCpfHandler, updateClientHandler, deactivateClientHandler,
+                findMyOrdersHandler, findMyOrderDetailHandler, approveMyOrderHandler);
         mockMvc = MockMvcBuilders.standaloneSetup(clientController)
                 .setCustomArgumentResolvers(new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
                     @Override
@@ -78,8 +102,8 @@ class ClientControllerE2ETest {
                 true, LocalDateTime.now(), LocalDateTime.now());
     }
 
-    private ClientRequest createRequest() {
-        return new ClientRequest("João Silva", VALID_CPF, "joao@email.com", "11999998888");
+    private CreateClientRequest createRequest() {
+        return new CreateClientRequest("João Silva", VALID_CPF, "joao@email.com", "11999998888");
     }
 
     @Test
@@ -139,7 +163,7 @@ class ClientControllerE2ETest {
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(clientRepository.save(any(Client.class))).thenAnswer(i -> i.getArgument(0));
 
-        ClientRequest updateRequest = new ClientRequest("Maria Souza", VALID_CPF, "maria@email.com", "11888887777");
+        UpdateClientRequest updateRequest = new UpdateClientRequest("Maria Souza", VALID_CPF, "maria@email.com", "11888887777");
 
         mockMvc.perform(put("/api/clients/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)

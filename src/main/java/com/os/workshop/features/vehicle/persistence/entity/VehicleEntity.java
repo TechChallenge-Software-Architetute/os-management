@@ -1,6 +1,6 @@
 package com.os.workshop.features.vehicle.persistence.entity;
 
-import com.os.workshop.features.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.client.shared.repository.ClientEntity;
 import com.os.workshop.features.vehicle.domain.VehicleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

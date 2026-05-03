@@ -1,9 +1,24 @@
 package com.os.workshop.features.client;
 
-import com.os.workshop.features.client.dto.ClientOrderDetailResponse;
-import com.os.workshop.features.client.dto.ClientOrderSummaryResponse;
-import com.os.workshop.features.client.dto.ClientRequest;
-import com.os.workshop.features.client.dto.ClientResponse;
+import com.os.workshop.features.client.approveOrder.ApproveMyOrderHandler;
+import com.os.workshop.features.client.approveOrder.ApproveMyOrderResponse;
+import com.os.workshop.features.client.create.CreateClientHandler;
+import com.os.workshop.features.client.create.CreateClientRequest;
+import com.os.workshop.features.client.create.CreateClientResponse;
+import com.os.workshop.features.client.deactivate.DeactivateClientHandler;
+import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
+import com.os.workshop.features.client.findByCpf.FindClientByCpfResponse;
+import com.os.workshop.features.client.findById.FindClientByIdHandler;
+import com.os.workshop.features.client.findById.FindClientByIdResponse;
+import com.os.workshop.features.client.list.ListClientsHandler;
+import com.os.workshop.features.client.list.ListClientsResponse;
+import com.os.workshop.features.client.myOrderDetail.FindMyOrderDetailHandler;
+import com.os.workshop.features.client.myOrderDetail.FindMyOrderDetailResponse;
+import com.os.workshop.features.client.myOrders.FindMyOrdersHandler;
+import com.os.workshop.features.client.myOrders.FindMyOrdersResponse;
+import com.os.workshop.features.client.update.UpdateClientHandler;
+import com.os.workshop.features.client.update.UpdateClientRequest;
+import com.os.workshop.features.client.update.UpdateClientResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,12 +36,15 @@ import java.util.UUID;
  *
  * <p>Endpoints disponíveis:
  * <ul>
- *   <li>{@code POST   /api/clients}           — cadastra um novo cliente</li>
- *   <li>{@code GET    /api/clients}            — lista todos os clientes ativos</li>
- *   <li>{@code GET    /api/clients/{id}}       — busca cliente por ID</li>
- *   <li>{@code GET    /api/clients/cpf/{cpf}}  — busca cliente por CPF</li>
- *   <li>{@code PUT    /api/clients/{id}}       — atualiza dados de contato do cliente</li>
- *   <li>{@code DELETE /api/clients/{id}}       — desativa o cliente (soft delete)</li>
+ *   <li>{@code POST   /api/clients}                          — cadastra um novo cliente</li>
+ *   <li>{@code GET    /api/clients}                           — lista todos os clientes ativos</li>
+ *   <li>{@code GET    /api/clients/{id}}                      — busca cliente por ID</li>
+ *   <li>{@code GET    /api/clients/cpf/{cpf}}                 — busca cliente por CPF</li>
+ *   <li>{@code PUT    /api/clients/{id}}                      — atualiza dados de contato do cliente</li>
+ *   <li>{@code DELETE /api/clients/{id}}                      — desativa o cliente (soft delete)</li>
+ *   <li>{@code GET    /api/clients/my-orders}                 — lista ordens do cliente logado</li>
+ *   <li>{@code GET    /api/clients/my-orders/{orderId}}       — detalhe de uma ordem do cliente logado</li>
+ *   <li>{@code PATCH  /api/clients/my-orders/{orderId}/approve} — aprova uma ordem do cliente logado</li>
  * </ul>
  */
 @RestController
@@ -34,137 +52,77 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ClientController {
 
-    private final ClientService clientService;
+    private final CreateClientHandler createClientHandler;
+    private final ListClientsHandler listClientsHandler;
+    private final FindClientByIdHandler findClientByIdHandler;
+    private final FindClientByCpfHandler findClientByCpfHandler;
+    private final UpdateClientHandler updateClientHandler;
+    private final DeactivateClientHandler deactivateClientHandler;
+    private final FindMyOrdersHandler findMyOrdersHandler;
+    private final FindMyOrderDetailHandler findMyOrderDetailHandler;
+    private final ApproveMyOrderHandler approveMyOrderHandler;
 
-    /**
-     * Cadastra um novo cliente.
-     * O CPF deve ser único no sistema.
-     *
-     * @param request dados do cliente
-     * @return cliente criado com HTTP 201
-     */
     @PostMapping
-    public ResponseEntity<ClientResponse> create(@Valid @RequestBody ClientRequest request) {
+    public ResponseEntity<CreateClientResponse> create(@Valid @RequestBody CreateClientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ClientResponse.from(clientService.create(request)));
+                .body(CreateClientResponse.from(createClientHandler.handle(request)));
     }
 
-    /**
-     * Lista todos os clientes ativos cadastrados no sistema.
-     *
-     * @return lista de clientes com HTTP 200
-     */
     @GetMapping
     @PreAuthorize("ROLE_ADMIN")
-    public ResponseEntity<List<ClientResponse>> findAll() {
-        List<ClientResponse> response = clientService.findAll().stream()
-                .map(ClientResponse::from)
+    public ResponseEntity<List<ListClientsResponse>> findAll() {
+        List<ListClientsResponse> response = listClientsHandler.handle().stream()
+                .map(ListClientsResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Busca um cliente pelo seu identificador único.
-     *
-     * @param id ID do cliente
-     * @return dados do cliente com HTTP 200, ou 404 se não encontrado
-     */
     @GetMapping("/{id}")
-    public ResponseEntity<ClientResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(ClientResponse.from(clientService.findById(id)));
+    public ResponseEntity<FindClientByIdResponse> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(FindClientByIdResponse.from(findClientByIdHandler.handle(id)));
     }
 
-    /**
-     * Busca um cliente pelo CPF.
-     * Aceita CPF com ou sem formatação no path (ex: {@code 12345678909} ou {@code 123.456.789-09}).
-     *
-     * @param cpf CPF do cliente
-     * @return dados do cliente com HTTP 200, ou 404 se não encontrado
-     */
     @GetMapping("/cpf/{cpf}")
-    public ResponseEntity<ClientResponse> findByCpf(@PathVariable String cpf) {
-        return ResponseEntity.ok(ClientResponse.from(clientService.findByCpf(cpf)));
+    public ResponseEntity<FindClientByCpfResponse> findByCpf(@PathVariable String cpf) {
+        return ResponseEntity.ok(FindClientByCpfResponse.from(findClientByCpfHandler.handle(cpf)));
     }
 
-    /**
-     * Atualiza os dados de contato de um cliente existente.
-     * O CPF não pode ser alterado.
-     *
-     * @param id      ID do cliente
-     * @param request novos dados do cliente
-     * @return cliente atualizado com HTTP 200, ou 404 se não encontrado
-     */
     @PutMapping("/{id}")
-    public ResponseEntity<ClientResponse> update(@PathVariable Long id,
-                                                  @Valid @RequestBody ClientRequest request) {
-        return ResponseEntity.ok(ClientResponse.from(clientService.update(id, request)));
+    public ResponseEntity<UpdateClientResponse> update(@PathVariable Long id,
+                                                        @Valid @RequestBody UpdateClientRequest request) {
+        return ResponseEntity.ok(UpdateClientResponse.from(updateClientHandler.handle(id, request)));
     }
 
-    /**
-     * Desativa um cliente (soft delete).
-     * O cliente permanece no banco mas não aparece mais nas listagens ativas.
-     *
-     * @param id ID do cliente
-     * @return HTTP 204 em caso de sucesso, ou 404 se não encontrado
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        clientService.deactivate(id);
+        deactivateClientHandler.handle(id);
         return ResponseEntity.noContent().build();
     }
 
     // ==================== Client Portal Endpoints ====================
 
-    /**
-     * Lists all service orders for the logged-in client.
-     * The client is identified from the JWT token (email).
-     * Returns basic information: order ID, vehicle plate, status, and included services.
-     *
-     * @param userDetails the authenticated user (injected from JWT)
-     * @return list of order summaries
-     */
     @GetMapping("/my-orders")
-    public ResponseEntity<List<ClientOrderSummaryResponse>> findMyOrders(
+    public ResponseEntity<List<FindMyOrdersResponse>> findMyOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
-        var orders = clientService.findMyOrders(userDetails.getUsername()).stream()
-                .map(ClientOrderSummaryResponse::from)
+        var orders = findMyOrdersHandler.handle(userDetails.getUsername()).stream()
+                .map(FindMyOrdersResponse::from)
                 .toList();
         return ResponseEntity.ok(orders);
     }
 
-    /**
-     * Returns detailed information about a single service order for the logged-in client.
-     * Includes the budget with item-level price breakdown when available.
-     * Validates that the order belongs to the authenticated client.
-     *
-     * @param userDetails the authenticated user (injected from JWT)
-     * @param orderId     the service order UUID
-     * @return order details with budget
-     */
     @GetMapping("/my-orders/{orderId}")
-    public ResponseEntity<ClientOrderDetailResponse> findMyOrderDetail(
+    public ResponseEntity<FindMyOrderDetailResponse> findMyOrderDetail(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID orderId) {
-        var order = clientService.findMyOrderById(userDetails.getUsername(), orderId);
-        var budget = clientService.findBudgetForOrder(orderId);
-        return ResponseEntity.ok(ClientOrderDetailResponse.from(order, budget));
+        var result = findMyOrderDetailHandler.handle(userDetails.getUsername(), orderId);
+        return ResponseEntity.ok(FindMyOrderDetailResponse.from(result.order(), result.budget()));
     }
 
-    /**
-     * Approves a service order on behalf of the logged-in client.
-     * The order must be in AGUARDANDO_APROVACAO status.
-     * Changes the order status to APROVADO.
-     *
-     * @param userDetails the authenticated user (injected from JWT)
-     * @param orderId     the service order UUID to approve
-     * @return the updated order detail with budget
-     */
     @PatchMapping("/my-orders/{orderId}/approve")
-    public ResponseEntity<ClientOrderDetailResponse> approveMyOrder(
+    public ResponseEntity<ApproveMyOrderResponse> approveMyOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID orderId) {
-        var order = clientService.approveMyOrder(userDetails.getUsername(), orderId);
-        var budget = clientService.findBudgetForOrder(orderId);
-        return ResponseEntity.ok(ClientOrderDetailResponse.from(order, budget));
+        var result = approveMyOrderHandler.handle(userDetails.getUsername(), orderId);
+        return ResponseEntity.ok(ApproveMyOrderResponse.from(result.order(), result.budget()));
     }
 }

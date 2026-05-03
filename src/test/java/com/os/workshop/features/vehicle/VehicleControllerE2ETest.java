@@ -1,8 +1,8 @@
 package com.os.workshop.features.vehicle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.os.workshop.features.client.domain.Client;
-import com.os.workshop.features.client.repository.ClientRepository;
+import com.os.workshop.features.client.shared.domain.Client;
+import com.os.workshop.features.client.shared.repository.ClientRepository;
 import com.os.workshop.features.vehicle.domain.Vehicle;
 import com.os.workshop.features.vehicle.domain.VehicleType;
 import com.os.workshop.features.vehicle.dto.VehicleRequest;

@@ -1,7 +1,7 @@
 package com.os.workshop.features.persistence.entity;
 
 import com.os.workshop.features.budget.shared.repository.BudgetEntity;
-import com.os.workshop.features.client.persistence.entity.ClientEntity;
+import com.os.workshop.features.client.shared.repository.ClientEntity;
 import com.os.workshop.features.stock.persistence.entity.StockEntity;
 import com.os.workshop.features.stock.persistence.entity.StockMovementEntity;
 import com.os.workshop.features.stock.persistence.entity.StockReservationEntity;
