@@ -36,9 +36,15 @@ class ClientControllerE2ETest {
     @Mock
     private ClientRepository clientRepository;
 
+    @Mock
+    private com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository serviceOrderJpaRepository;
+
+    @Mock
+    private com.os.workshop.features.budget.BudgetService budgetService;
+
     @BeforeEach
     void setUp() {
-        ClientService clientService = new ClientService(clientRepository);
+        ClientService clientService = new ClientService(clientRepository, serviceOrderJpaRepository, budgetService);
         ClientController clientController = new ClientController(clientService);
         mockMvc = MockMvcBuilders.standaloneSetup(clientController).build();
     }

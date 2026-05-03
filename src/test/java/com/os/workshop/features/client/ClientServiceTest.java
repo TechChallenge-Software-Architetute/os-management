@@ -27,6 +27,12 @@ class ClientServiceTest {
     @Mock
     private ClientRepository clientRepository;
 
+    @Mock
+    private com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository serviceOrderJpaRepository;
+
+    @Mock
+    private com.os.workshop.features.budget.BudgetService budgetService;
+
     @InjectMocks
     private ClientService clientService;
 
@@ -154,5 +160,106 @@ class ClientServiceTest {
         when(clientRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThrows(ClientNotFoundException.class, () -> clientService.deactivate(999L));
+    }
+
+    // ==================== Client Portal Tests ====================
+
+    @Test
+    void whenFindingMyOrders_thenReturnsOrdersForClientEmail() {
+        Client client = createClient();
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+
+        var order = new com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity();
+        order.setId(java.util.UUID.randomUUID());
+        order.setCpfCnpj(VALID_CPF);
+        order.setServiceStatus("RECEBIDA");
+        order.setListService(java.util.List.of("TROCA_OLEO"));
+        order.setPlacaVeiculo("ABC1234");
+        order.setServiceTypeName("TROCA_OLEO");
+
+        when(serviceOrderJpaRepository.findByCpfCnpj(VALID_CPF)).thenReturn(java.util.List.of(order));
+
+        var result = clientService.findMyOrders("joao@email.com");
+
+        assertEquals(1, result.size());
+        assertEquals(VALID_CPF, result.get(0).getCpfCnpj());
+    }
+
+    @Test
+    void whenFindingMyOrdersWithNonExistingEmail_thenThrowsClientNotFound() {
+        when(clientRepository.findByEmail("unknown@email.com")).thenReturn(Optional.empty());
+
+        assertThrows(ClientNotFoundException.class, () -> clientService.findMyOrders("unknown@email.com"));
+    }
+
+    @Test
+    void whenFindingMyOrderById_thenReturnsOrderIfBelongsToClient() {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        var order = new com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity();
+        order.setId(orderId);
+        order.setCpfCnpj(VALID_CPF);
+        order.setServiceStatus("RECEBIDA");
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        var result = clientService.findMyOrderById("joao@email.com", orderId);
+
+        assertEquals(orderId, result.getId());
+    }
+
+    @Test
+    void whenFindingMyOrderByIdThatBelongsToAnotherClient_thenThrowsIllegalArgument() {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        var order = new com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity();
+        order.setId(orderId);
+        order.setCpfCnpj("99999999999");
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> clientService.findMyOrderById("joao@email.com", orderId));
+    }
+
+    @Test
+    void whenApprovingMyOrder_thenStatusChangesToAprovado() {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        var order = new com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity();
+        order.setId(orderId);
+        order.setCpfCnpj(VALID_CPF);
+        order.setServiceStatus("AGUARDANDO_APROVACAO");
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(serviceOrderJpaRepository.save(any(com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity.class)))
+                .thenAnswer(i -> i.getArgument(0));
+
+        var result = clientService.approveMyOrder("joao@email.com", orderId);
+
+        assertEquals("APROVADO", result.getServiceStatus());
+    }
+
+    @Test
+    void whenApprovingOrderNotInAguardandoAprovacao_thenThrowsIllegalState() {
+        Client client = createClient();
+        java.util.UUID orderId = java.util.UUID.randomUUID();
+
+        var order = new com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity();
+        order.setId(orderId);
+        order.setCpfCnpj(VALID_CPF);
+        order.setServiceStatus("RECEBIDA");
+
+        when(clientRepository.findByEmail("joao@email.com")).thenReturn(Optional.of(client));
+        when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        assertThrows(IllegalStateException.class,
+                () -> clientService.approveMyOrder("joao@email.com", orderId));
     }
 }

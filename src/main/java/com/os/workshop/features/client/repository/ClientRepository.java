@@ -54,4 +54,12 @@ public interface ClientRepository {
      * @return {@code true} se o CPF já estiver cadastrado
      */
     boolean existsByCpf(String normalizedCpf);
+
+    /**
+     * Busca um cliente pelo e-mail.
+     *
+     * @param email e-mail do cliente
+     * @return {@code Optional} com o cliente ou vazio se não existir
+     */
+    Optional<Client> findByEmail(String email);
 }
