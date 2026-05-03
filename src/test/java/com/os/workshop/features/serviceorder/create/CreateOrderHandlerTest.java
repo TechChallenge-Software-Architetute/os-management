@@ -1,14 +1,15 @@
-package com.os.workshop.features.serviceorder.usecases;
+package com.os.workshop.features.serviceorder.create;
 
+import com.os.workshop.features.budget.BudgetService;
 import com.os.workshop.features.client.ClientService;
 import com.os.workshop.features.client.domain.Client;
 import com.os.workshop.features.service.domain.ServiceEntity;
 import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
 import com.os.workshop.features.service.usecases.CreateServiceUC;
-import com.os.workshop.features.serviceorder.adapter.database.OrderRepository;
-import com.os.workshop.features.serviceorder.domain.CreateOrderRequest;
-import com.os.workshop.features.serviceorder.domain.OrderServiceStatusEnum;
-import com.os.workshop.features.serviceorder.domain.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
+import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import com.os.workshop.features.vehicle.VehicleService;
 import com.os.workshop.features.vehicle.domain.Vehicle;
 import org.junit.jupiter.api.Test;
@@ -18,19 +19,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CreateOrderUCTest {
+class CreateOrderHandlerTest {
 
     @Mock
     private CreateServiceUC createServiceUC;
@@ -42,10 +38,13 @@ class CreateOrderUCTest {
     private VehicleService vehicleService;
 
     @Mock
-    private OrderRepository orderRepository;
+    private ServiceOrderJpaRepository serviceOrderJpaRepository;
+
+    @Mock
+    private BudgetService budgetService;
 
     @InjectMocks
-    private CreateOrderUC createOrderUC;
+    private CreateOrderHandler createOrderHandler;
 
     private CreateOrderRequest createRequest(String cpf, String placa, List<String> serviceTypes) {
         CreateOrderRequest request = new CreateOrderRequest();
@@ -62,9 +61,10 @@ class CreateOrderUCTest {
         when(clientService.findByCpf("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
-        when(orderRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
 
-        ServiceOrderEntity result = createOrderUC.process(request);
+        ServiceOrder result = createOrderHandler.handle(request);
 
         assertNotNull(result);
         assertNotNull(result.getId());
@@ -72,7 +72,7 @@ class CreateOrderUCTest {
         assertEquals("12345678900", result.getCpfCnpj());
         assertEquals("ABC1234", result.getPlacaVeiculo());
         assertEquals(List.of("TROCA_OLEO", "ALINHAMENTO"), result.getListService());
-        verify(orderRepository).save(any(ServiceOrderEntity.class));
+        verify(serviceOrderJpaRepository).save(any(ServiceOrderEntity.class));
     }
 
     @Test
@@ -83,9 +83,10 @@ class CreateOrderUCTest {
         when(clientService.findByCpf("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
-        when(orderRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
 
-        createOrderUC.process(request);
+        createOrderHandler.handle(request);
 
         verify(createServiceUC, times(3)).process(any(CreateServiceRequest.class));
     }
@@ -96,9 +97,9 @@ class CreateOrderUCTest {
 
         when(clientService.findByCpf("00000000000")).thenThrow(new RuntimeException("Client not found"));
 
-        assertThrows(RuntimeException.class, () -> createOrderUC.process(request));
+        assertThrows(RuntimeException.class, () -> createOrderHandler.handle(request));
 
-        verify(orderRepository, never()).save(any(ServiceOrderEntity.class));
+        verify(serviceOrderJpaRepository, never()).save(any(ServiceOrderEntity.class));
     }
 
     @Test
@@ -108,9 +109,9 @@ class CreateOrderUCTest {
         when(clientService.findByCpf("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("INVALID")).thenThrow(new RuntimeException("Vehicle not found"));
 
-        assertThrows(RuntimeException.class, () -> createOrderUC.process(request));
+        assertThrows(RuntimeException.class, () -> createOrderHandler.handle(request));
 
-        verify(orderRepository, never()).save(any(ServiceOrderEntity.class));
+        verify(serviceOrderJpaRepository, never()).save(any(ServiceOrderEntity.class));
     }
 
     @Test
@@ -120,9 +121,10 @@ class CreateOrderUCTest {
         when(clientService.findByCpf("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
-        when(orderRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
 
-        ServiceOrderEntity result = createOrderUC.process(request);
+        ServiceOrder result = createOrderHandler.handle(request);
 
         assertEquals(OrderServiceStatusEnum.RECEBIDA.getStatus(), result.getServiceStatus());
     }
@@ -134,9 +136,10 @@ class CreateOrderUCTest {
         when(clientService.findByCpf("12345678900")).thenReturn(mock(Client.class));
         when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
-        when(orderRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(budgetService.findByServiceOrderId(any())).thenReturn(Optional.empty());
 
-        createOrderUC.process(request);
+        createOrderHandler.handle(request);
 
         verify(clientService).findByCpf("12345678900");
         verify(vehicleService).findByPlate("ABC1234");
