@@ -307,7 +307,7 @@ echo " "
 echo "------------------------------------------------------------------------------"
 echo " - 18. Monitoracao de tempo de execucao por servico."
 echo "------------------------------------------------------------------------------"
-curl --request POST \
+run_curl --request POST \
   --url "$APP_URL/monitoring/all" \
   --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
