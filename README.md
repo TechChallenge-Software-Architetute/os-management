@@ -138,14 +138,21 @@ git clone <url-do-repositorio>
 cd os-management
 ```
 
-**2. Suba o banco de dados com Docker Compose:**
+**2. Suba a aplicacao com Docker Compose:**
 
 ```bash
 docker compose up -d
 ```
 
+Para garantir que a API rode com o codigo mais recente antes do `validation.sh`, reconstrua a imagem:
+
+```bash
+docker compose up -d --build app
+```
+
 Isso irá iniciar:
 - **PostgreSQL 16** na porta `5432` (usuário: `user`, senha: `password`, banco: `workshop`)
+- **API OS Management** na porta `8080`
 - **SonarQube** na porta `9000` (opcional, para análise de código)
 
 > O script `init.sh` é executado automaticamente pelo PostgreSQL na primeira inicialização, criando todas as tabelas e inserindo dados de exemplo (usuários, clientes, veículos, tipos de serviço, peças, insumos e estoques).

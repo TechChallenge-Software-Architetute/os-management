@@ -12,7 +12,10 @@ services:
     volumes:
       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: build
     container_name: os_management
     depends_on:
       - postgres
