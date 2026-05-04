@@ -158,15 +158,15 @@ run_curl --request PATCH \
   "status": "AGUARDANDO_APROVACAO"
 }'
 
-# sleep $TIMEOUT_CONST
-# echo " "
-# echo " "
-# echo "------------------------------------------------------------------------------"
-# echo " - 9. Mecanico consulta orcamento da ordem de servico."
-# echo "------------------------------------------------------------------------------"
-# run_curl --request GET \
-#   --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
-#   --header "Authorization: Bearer $TOKEN"
+sleep $TIMEOUT_CONST
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 9. Mecanico consulta orcamento da ordem de servico."
+echo "------------------------------------------------------------------------------"
+run_curl --request GET \
+  --url "$APP_URL/api/budgets/service-order/$ORDER_ID" \
+  --header "Authorization: Bearer $TOKEN"
 
 sleep $TIMEOUT_CONST
 echo " "
@@ -174,30 +174,13 @@ echo " "
 echo "------------------------------------------------------------------------------"
 echo " - 10. Criando acesso do cliente Joao."
 echo "------------------------------------------------------------------------------"
-SIGNUP_RESPONSE_FILE="/tmp/os-management-signup-response.json"
-SIGNUP_STATUS="$(curl --silent --show-error --request POST \
+run_curl --request POST \
   --url "$APP_URL/signup" \
   --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
-  --output "$SIGNUP_RESPONSE_FILE" \
-  --write-out '%{http_code}' \
   --data '{
-  "email": "joao.silva@email.com",
-  "password": "Coxinha321",
-  "roles": [
-    "USER"
-  ]
-}')"
-
-cat "$SIGNUP_RESPONSE_FILE"
-echo
-
-case "$SIGNUP_STATUS" in
-  2*) ;;
-  *)
-    echo "Cadastro do cliente Joao nao retornou sucesso (HTTP $SIGNUP_STATUS). Tentando login com usuario existente."
-    ;;
-esac
+  "status": "AGUARDANDO_APROVACAO"
+}'
 
 sleep $TIMEOUT_CONST
 echo " "
@@ -267,6 +250,7 @@ SERVICES_RESPONSE="$(curl --silent --show-error --fail --request GET \
 echo "$SERVICES_RESPONSE"
 
 SERVICE_IDS="$(printf '%s' "$SERVICES_RESPONSE" \
+  | tr -d '\n' \
   | sed 's/[{}]/\
 /g' \
   | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
