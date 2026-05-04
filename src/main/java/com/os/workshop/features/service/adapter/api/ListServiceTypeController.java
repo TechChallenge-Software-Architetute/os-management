@@ -1,5 +1,17 @@
 package com.os.workshop.features.service.adapter.api;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import com.os.workshop.features.service.domain.ServiceTypeEntity;
 import com.os.workshop.features.service.usecases.ListServiceTypeUC;
 import org.slf4j.Logger;
@@ -13,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "Service Types", description = "List available service types.")
 @RestController
 @RequestMapping("/service-types")
 public class ListServiceTypeController {
@@ -22,6 +35,12 @@ public class ListServiceTypeController {
     @Autowired
     private ListServiceTypeUC listServiceTypeUC;
 
+    @Operation(summary = "List resources", description = "List resources endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping
     public ResponseEntity<List<ServiceTypeEntity>> listServices() {
         logger.info("Recebida requisição para listar serviços.");

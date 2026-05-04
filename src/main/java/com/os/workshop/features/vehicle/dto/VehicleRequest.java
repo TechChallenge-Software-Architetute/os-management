@@ -1,5 +1,7 @@
 package com.os.workshop.features.vehicle.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import com.os.workshop.features.utils.annotations.UpperCase;
 import com.os.workshop.features.vehicle.domain.VehicleType;
 import jakarta.validation.constraints.Min;
@@ -27,12 +29,13 @@ import jakarta.validation.constraints.Positive;
  * @param color    cor do veículo (opcional)
  * @param type     tipo do veículo — um dos valores de {@link VehicleType}
  */
+@Schema(description = "Vehicle request payload.")
 public record VehicleRequest(
-        @NotNull @Positive Long clientId,
-        @NotBlank @UpperCase String plate,
-        @NotBlank @UpperCase String brand,
-        @NotBlank @UpperCase String model,
-        @Min(1886) int year,
-        String color,
-        @NotNull VehicleType type
+        @Schema(description = "Client identifier.", example = "1") @NotNull @Positive Long clientId,
+        @Schema(description = "Plate.", example = "ABC-1234") @NotBlank @UpperCase String plate,
+        @Schema(description = "Brand.", example = "Toyota") @NotBlank @UpperCase String brand,
+        @Schema(description = "Model.", example = "Corolla") @NotBlank @UpperCase String model,
+        @Schema(description = "Year.", example = "2020") @Min(1886) int year,
+        @Schema(description = "Color.", example = "Silver") String color,
+        @Schema(description = "Type.", example = "CAR") @NotNull VehicleType type
 ) {}

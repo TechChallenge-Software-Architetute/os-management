@@ -1,5 +1,17 @@
 package com.os.workshop.features.serviceorder;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import com.os.workshop.features.serviceorder.create.CreateOrderHandler;
 import com.os.workshop.features.serviceorder.create.CreateOrderRequest;
 import com.os.workshop.features.serviceorder.create.CreateOrderResponse;
@@ -21,6 +33,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+@Tag(name = "Service Orders", description = "Manage service orders.")
 @RestController
 @RequestMapping("/order")
 public class ServiceOrderController {
@@ -39,8 +52,19 @@ public class ServiceOrderController {
     @Autowired
     private ListOrdersHandler listOrdersHandler;
 
+    @Operation(summary = "Create service order", description = "Create service order endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping
-    public ResponseEntity<CreateOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
+    public ResponseEntity<CreateOrderResponse> createOrder(@io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "Request payload for this operation",
+        required = true,
+        content = @Content(schema = @Schema(implementation = CreateOrderRequest.class))
+)
+@RequestBody CreateOrderRequest request) {
         try {
             var serviceOrder = createOrderHandler.handle(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(CreateOrderResponse.from(serviceOrder));
@@ -50,6 +74,12 @@ public class ServiceOrderController {
         }
     }
 
+    @Operation(summary = "List service orders", description = "List service orders endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping
     public ResponseEntity<List<ListOrdersResponse>> listOrders() {
         logger.info("Recebida requisicao para consultar ordens de servico.");
@@ -66,6 +96,12 @@ public class ServiceOrderController {
         }
     }
 
+    @Operation(summary = "Find service order by id", description = "Find service order by id endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<FindOrderByIdResponse> findOrderById(@PathVariable UUID id) {
         logger.info("Recebida requisicao para consultar ordem de servico por ID: {}", id);
@@ -82,9 +118,25 @@ public class ServiceOrderController {
         }
     }
 
+    @Operation(summary = "Update service order", description = "Update service order endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PatchMapping("/{id}")
     public ResponseEntity<UpdateOrderResponse> updateOrder(
             @PathVariable UUID id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+
+                    description = "Request payload for this operation",
+
+                    required = true,
+
+                    content = @Content(schema = @Schema(implementation = UpdateOrderRequest.class))
+
+            )
+
             @RequestBody UpdateOrderRequest request
     ) {
         try {

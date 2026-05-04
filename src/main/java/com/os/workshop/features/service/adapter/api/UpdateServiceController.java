@@ -1,5 +1,17 @@
 package com.os.workshop.features.service.adapter.api;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import com.os.workshop.features.service.domain.ServiceEntity;
 import com.os.workshop.features.service.domain.requests.UpdateServiceRequest;
 import com.os.workshop.features.service.usecases.UpdateServiceUC;
@@ -12,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Tag(name = "Services", description = "Update services linked to service orders.")
 @RestController
 @RequestMapping("/services")
 @AllArgsConstructor
@@ -21,9 +34,25 @@ public class UpdateServiceController {
 
     private UpdateServiceUC updateServiceUC;
 
+    @Operation(summary = "Update resource", description = "Update resource endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<ServiceEntity> update(
             @PathVariable UUID id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+
+                    description = "Request payload for this operation",
+
+                    required = true,
+
+                    content = @Content(schema = @Schema(implementation = UpdateServiceRequest.class))
+
+            )
+
             @RequestBody UpdateServiceRequest request
     ) {
         logger.info("Recebida requisicao para atualizar servico. ID: {}", id);

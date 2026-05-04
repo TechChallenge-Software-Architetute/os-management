@@ -1,5 +1,17 @@
 package com.os.workshop.features.service.adapter.api;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import com.os.workshop.features.service.domain.ServiceEntity;
 import com.os.workshop.features.service.usecases.FindServiceByIdUC;
 import org.slf4j.Logger;
@@ -14,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Tag(name = "Services", description = "Find services by identifier.")
 @RestController
 @RequestMapping("/services")
 public class FindServiceByIdController {
@@ -23,6 +36,12 @@ public class FindServiceByIdController {
     @Autowired
     private FindServiceByIdUC findServiceByIdUC;
 
+    @Operation(summary = "Find resource by id", description = "Find resource by id endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<ServiceEntity> findById(@PathVariable UUID id) {
         logger.info("Recebida requisicao para buscar servico por ID: {}", id);

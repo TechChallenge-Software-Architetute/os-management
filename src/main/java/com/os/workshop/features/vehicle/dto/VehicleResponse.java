@@ -1,5 +1,7 @@
 package com.os.workshop.features.vehicle.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import com.os.workshop.features.vehicle.domain.Vehicle;
 import com.os.workshop.features.vehicle.domain.VehicleType;
 import com.os.workshop.features.vehicle.domain.valueobject.LicensePlate;
@@ -25,18 +27,19 @@ import java.time.LocalDateTime;
  * @param createdAt data/hora de criação do registro
  * @param updatedAt data/hora da última atualização
  */
+@Schema(description = "Vehicle response payload.")
 public record VehicleResponse(
-        Long id,
-        Long clientId,
-        String plate,
-        String brand,
-        String model,
-        int year,
-        String color,
-        VehicleType type,
-        boolean active,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        @Schema(description = "Identifier.", example = "1") Long id,
+        @Schema(description = "Client identifier.", example = "1") Long clientId,
+        @Schema(description = "Plate.", example = "ABC-1234") String plate,
+        @Schema(description = "Brand.", example = "Toyota") String brand,
+        @Schema(description = "Model.", example = "Corolla") String model,
+        @Schema(description = "Year.", example = "2020") int year,
+        @Schema(description = "Color.", example = "Silver") String color,
+        @Schema(description = "Type.", example = "CAR") VehicleType type,
+        @Schema(description = "Active.", example = "true") boolean active,
+        @Schema(description = "Created At.", example = "2026-05-03T10:00:00") LocalDateTime createdAt,
+        @Schema(description = "Updated At.", example = "2026-05-03T10:00:00") LocalDateTime updatedAt
 ) {
 
     /**
