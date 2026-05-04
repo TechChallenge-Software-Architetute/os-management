@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,6 +44,7 @@ public class UserPersistenceAdapter implements UserRepository {
         Set<RoleEntity> roles = request.roles() != null
                 ? request.roles().stream()
                 .map(roleName -> jpaRoleRepository.findByName(normalizeRole(roleName)))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet())
                 : Set.of();
 

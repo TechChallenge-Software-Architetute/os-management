@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,13 +57,9 @@ public class ServiceController {
                     required = true,
                     content = @Content(schema = @Schema(implementation = CreateServiceRequest.class))
             )
-            @RequestBody CreateServiceRequest request) {
-        try {
-            var createdService = createServiceHandler.handle(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+            @Valid @RequestBody CreateServiceRequest request) {
+        var createdService = createServiceHandler.handle(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
     }
 
     @Operation(summary = "Find service by ID", description = "Returns a service by its identifier.")

@@ -1,17 +1,5 @@
 package com.os.workshop.features.product.supply;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import io.swagger.v3.oas.annotations.media.Content;
-
-import io.swagger.v3.oas.annotations.Operation;
-
 import com.os.workshop.features.product.supply.create.CreateSupplyHandler;
 import com.os.workshop.features.product.supply.create.CreateSupplyRequest;
 import com.os.workshop.features.product.supply.create.CreateSupplyResponse;
@@ -25,10 +13,18 @@ import com.os.workshop.features.product.supply.list.ListSuppliesResponse;
 import com.os.workshop.features.product.supply.update.UpdateSupplyHandler;
 import com.os.workshop.features.product.supply.update.UpdateSupplyRequest;
 import com.os.workshop.features.product.supply.update.UpdateSupplyResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,6 +35,7 @@ import java.util.List;
  * consumables used in mechanic service orders.
  */
 @Tag(name = "Supplies", description = "Manage consumable supplies.")
+@Validated
 @RestController
 @RequestMapping("/api/supplies")
 @RequiredArgsConstructor
@@ -58,12 +55,13 @@ public class SupplyController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping
-    public ResponseEntity<CreateSupplyResponse> create(@io.swagger.v3.oas.annotations.parameters.RequestBody(
-        description = "Request payload for this operation",
-        required = true,
-        content = @Content(schema = @Schema(implementation = CreateSupplyRequest.class))
-)
-@Valid @RequestBody CreateSupplyRequest request) {
+    public ResponseEntity<CreateSupplyResponse> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Request payload for this operation",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = CreateSupplyRequest.class))
+            )
+            @Valid @RequestBody CreateSupplyRequest request) {
         var supply = createSupplyHandler.handle(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(CreateSupplyResponse.from(supply));
     }
@@ -86,7 +84,9 @@ public class SupplyController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<FindSupplyBySkuResponse> findBySku(@PathVariable String sku) {
+    public ResponseEntity<FindSupplyBySkuResponse> findBySku(
+            @Pattern(regexp = "^[A-Za-z0-9]+[\\-_][A-Za-z0-9\\-_]+$", message = "SKU deve seguir o formato prefixo-sufixo (ex: BRK-PAD-001)")
+            @PathVariable String sku) {
         return ResponseEntity.ok(FindSupplyBySkuResponse.from(findSupplyBySkuHandler.handle(sku)));
     }
 
@@ -110,11 +110,11 @@ public class SupplyController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<UpdateSupplyResponse> update(@PathVariable Long id, @io.swagger.v3.oas.annotations.parameters.RequestBody(
-         description = "Request payload for this operation",
-         required = true,
-         content = @Content(schema = @Schema(implementation = UpdateSupplyRequest.class))
- )
- @Valid @RequestBody UpdateSupplyRequest request) {
+            description = "Request payload for this operation",
+            required = true,
+            content = @Content(schema = @Schema(implementation = UpdateSupplyRequest.class))
+    )
+    @Valid @RequestBody UpdateSupplyRequest request) {
         return ResponseEntity.ok(UpdateSupplyResponse.from(updateSupplyHandler.handle(id, request)));
     }
 

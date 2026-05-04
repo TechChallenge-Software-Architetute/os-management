@@ -35,7 +35,7 @@ services:
       JWT_SECRET: akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa
       JWT_EXPIRATION: 86400000
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/v3/api-docs || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v3/api-docs > /dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
