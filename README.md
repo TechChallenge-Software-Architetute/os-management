@@ -125,7 +125,6 @@ RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → APROVADO → FINALIZADA
 | **SpringDoc OpenAPI** | 3.0.2 | Documentação Swagger UI |
 | **JaCoCo** | 0.8.14 | Cobertura de testes |
 | **SonarQube** | Community | Análise estática de código |
-| **OWASP ZAP** | Stable | Análise dinâmica de segurança (DAST) |
 
 ### Banco de Dados
 
@@ -163,6 +162,7 @@ Isso irá iniciar, em ordem:
 | `os-management-sonarqube_db-1` | PostgreSQL para o SonarQube | — |
 | `os-management-sonarqube-1` | SonarQube | 9000 |
 | `zap_security_scan` | OWASP ZAP (DAST) | — |
+**2. Suba a aplicacao com Docker Compose:**
 
 > O `init.sh` é executado automaticamente pelo PostgreSQL na primeira inicialização, criando todas as tabelas e inserindo dados de exemplo.
 
@@ -180,6 +180,21 @@ Isso irá iniciar, em ordem:
 ```bash
 docker compose up postgres -d
 ```
+
+Para garantir que a API rode com o codigo mais recente antes do `validation.sh`, reconstrua a imagem:
+
+```bash
+docker compose up -d --build app
+```
+
+Isso irá iniciar:
+- **PostgreSQL 16** na porta `5432` (usuário: `user`, senha: `password`, banco: `workshop`)
+- **API OS Management** na porta `8080`
+- **SonarQube** na porta `9000` (opcional, para análise de código)
+
+> O script `init.sh` é executado automaticamente pelo PostgreSQL na primeira inicialização, criando todas as tabelas e inserindo dados de exemplo (usuários, clientes, veículos, tipos de serviço, peças, insumos e estoques).
+
+**3. Execute a aplicação:**
 
 **2. Execute a aplicação:**
 ```bash
