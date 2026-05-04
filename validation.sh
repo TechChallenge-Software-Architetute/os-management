@@ -179,7 +179,11 @@ run_curl --request POST \
   --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
-  "status": "AGUARDANDO_APROVACAO"
+  "email": "joao.silva@email.com",
+  "password": "Coxinha321",
+  "roles": [
+    "USER"
+  ]
 }'
 
 sleep $TIMEOUT_CONST
@@ -250,7 +254,6 @@ SERVICES_RESPONSE="$(curl --silent --show-error --fail --request GET \
 echo "$SERVICES_RESPONSE"
 
 SERVICE_IDS="$(printf '%s' "$SERVICES_RESPONSE" \
-  | tr -d '\n' \
   | sed 's/[{}]/\
 /g' \
   | sed -n 's/.*"id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
