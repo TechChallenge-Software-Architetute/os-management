@@ -173,6 +173,15 @@ Isso irá iniciar:
 | Email | `superadmin@system.com` |
 | Senha | `coxinha123` |
 
+### Executar Script de Validação End-to-End
+
+Com a aplicação rodando, você pode executar o script de validação para simular um fluxo completo da oficina, desde o recebimento do veículo até a entrega, passando por diagnóstico, reserva de estoque, aprovação de orçamento e execução dos serviços.
+
+```bash
+./validation.sh
+```
+
+
 ### Executar Testes
 
 ```bash

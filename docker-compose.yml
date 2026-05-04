@@ -25,24 +25,9 @@ services:
       JWT_SECRET: akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa
       JWT_EXPIRATION: 86400000
 
-  validation:
-    image: curlimages/curl:8.10.1
-    container_name: os_management_validation
-    depends_on:
-      - postgres
-      - app
-    environment:
-      APP_URL: http://app:8080
-    volumes:
-      - ./validation.sh:/validation.sh
-    command: ["sh", "-c", "sleep 20 && sh /validation.sh"]
-
   sonarqube_db:
     image: postgres:16-alpine
     restart: unless-stopped
-    depends_on:
-      validation:
-        condition: service_completed_successfully
     environment:
       POSTGRES_DB: sonarqube
       POSTGRES_USER: sonar
@@ -54,8 +39,6 @@ services:
     image: sonarqube:community
     restart: unless-stopped
     depends_on:
-      validation:
-        condition: service_completed_successfully
       sonarqube_db:
         condition: service_started
     environment:
