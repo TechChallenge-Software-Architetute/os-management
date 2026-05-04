@@ -1,5 +1,17 @@
 package com.os.workshop.features.budget;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+import io.swagger.v3.oas.annotations.media.Content;
+
+import io.swagger.v3.oas.annotations.Operation;
+
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +28,7 @@ import java.util.UUID;
  * Budgets are automatically calculated when stock reservations change.
  * This controller only exposes read operations.
  */
+@Tag(name = "Budgets", description = "Read budgets generated from service order stock reservations.")
 @RestController
 @RequestMapping("/api/budgets")
 @RequiredArgsConstructor
@@ -31,6 +44,12 @@ public class BudgetController {
      * @param serviceOrderId the UUID of the service order
      * @return the budget with all items and total price
      */
+    @Operation(summary = "Find budget by service order", description = "Find budget by service order endpoint.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/service-order/{serviceOrderId}")
     public ResponseEntity<FindBudgetByServiceOrderResponse> findByServiceOrder(@PathVariable UUID serviceOrderId) {
         return findBudgetByServiceOrderHandler.handle(serviceOrderId)
