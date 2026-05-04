@@ -3,14 +3,14 @@ package com.os.workshop.features.serviceorder.create;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
 import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
-import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
-import com.os.workshop.features.service.usecases.CreateServiceUC;
+import com.os.workshop.features.service.create.CreateServiceHandler;
+import com.os.workshop.features.service.create.CreateServiceRequest;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
-import com.os.workshop.features.vehicle.VehicleService;
+import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +24,13 @@ public class CreateOrderHandler {
     private static final Logger logger = LoggerFactory.getLogger(CreateOrderHandler.class);
 
     @Autowired
-    private CreateServiceUC createServiceUC;
+    private CreateServiceHandler createServiceHandler;
 
     @Autowired
     private FindClientByCpfHandler findClientByCpfHandler;
 
     @Autowired
-    private VehicleService vehicleService;
+    private FindVehicleByPlateHandler findVehicleByPlateHandler;
 
     @Autowired
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
@@ -44,14 +44,14 @@ public class CreateOrderHandler {
 
         findClientByCpfHandler.handle(request.getCpfCnpj());
 
-        vehicleService.findByPlate(request.getPlacaVeiculo());
+        findVehicleByPlateHandler.handle(request.getPlacaVeiculo());
 
         request.getServiceTypes().forEach(
                 service -> {
                     var serviceRequest = new CreateServiceRequest();
                     serviceRequest.setIdOS(idOrdemServico);
                     serviceRequest.setServiceType(service);
-                    createServiceUC.process(serviceRequest);
+                    createServiceHandler.handle(serviceRequest);
                 }
         );
 

@@ -173,11 +173,48 @@ Isso irá iniciar:
 | Email | `superadmin@system.com` |
 | Senha | `coxinha123` |
 
+### Executar Script de Validação End-to-End
+
+Com a aplicação rodando, você pode executar o script de validação para simular um fluxo completo da oficina, desde o recebimento do veículo até a entrega, passando por diagnóstico, reserva de estoque, aprovação de orçamento e execução dos serviços.
+
+```bash
+./validation.sh
+```
+
+
 ### Executar Testes
 
 ```bash
-./mvnw test
+./mvnw clean package
 ```
+
+Este comando compila o projeto, executa todos os **testes unitários** e gera o JAR. Os testes de integração não são executados nesta etapa.
+
+### Executar Testes de Integração
+
+Os testes de integração validam o mapeamento das entidades JPA contra um banco PostgreSQL real, utilizando [Testcontainers](https://testcontainers.com/). Eles verificam:
+
+- Mapeamento correto de `@Entity`, `@Column`, `@ManyToOne`, `@Inheritance(JOINED)`
+- Conversores customizados (`ServiceStatusConverter`, `ListToJsonConverter`) com round-trip real no PostgreSQL
+- Queries derivadas do Spring Data (`findByCpf`, `findByClient_IdAndActiveTrue`, etc.)
+- Constraints de unicidade e not-null
+- Persistência de enums com `@Enumerated(EnumType.STRING)`
+
+**Pré-requisito:** Docker precisa estar rodando na máquina.
+
+```bash
+./mvnw clean verify
+```
+
+Este comando executa os testes unitários (`*Test.java` via Surefire) **e** os testes de integração (`*IT.java` via Failsafe).
+
+Para executar **apenas** os testes de integração:
+
+```bash
+./mvnw failsafe:integration-test failsafe:verify
+```
+
+> Os testes de integração ficam em `src/test/java/com/os/workshop/features/integration/` e seguem a convenção `*IT.java` para que o Maven Failsafe os identifique automaticamente.
 
 ### Gerar Relatório de Cobertura (JaCoCo)
 

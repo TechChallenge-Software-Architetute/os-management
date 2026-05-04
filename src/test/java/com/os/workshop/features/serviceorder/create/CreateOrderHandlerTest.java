@@ -3,15 +3,15 @@ package com.os.workshop.features.serviceorder.create;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
 import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.service.domain.ServiceEntity;
-import com.os.workshop.features.service.domain.requests.CreateServiceRequest;
-import com.os.workshop.features.service.usecases.CreateServiceUC;
+import com.os.workshop.features.service.create.CreateServiceHandler;
+import com.os.workshop.features.service.create.CreateServiceRequest;
+import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
-import com.os.workshop.features.vehicle.VehicleService;
-import com.os.workshop.features.vehicle.domain.Vehicle;
+import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateHandler;
+import com.os.workshop.features.vehicle.shared.domain.Vehicle;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,13 +29,13 @@ import static org.mockito.Mockito.*;
 class CreateOrderHandlerTest {
 
     @Mock
-    private CreateServiceUC createServiceUC;
+    private CreateServiceHandler createServiceHandler;
 
     @Mock
     private FindClientByCpfHandler findClientByCpfHandler;
 
     @Mock
-    private VehicleService vehicleService;
+    private FindVehicleByPlateHandler findVehicleByPlateHandler;
 
     @Mock
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
@@ -59,8 +59,8 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", List.of("TROCA_OLEO", "ALINHAMENTO"));
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
-        when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
@@ -81,14 +81,14 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", serviceTypes);
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
-        when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         createOrderHandler.handle(request);
 
-        verify(createServiceUC, times(3)).process(any(CreateServiceRequest.class));
+        verify(createServiceHandler, times(3)).handle(any(CreateServiceRequest.class));
     }
 
     @Test
@@ -107,7 +107,7 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "INVALID", List.of("TROCA_OLEO"));
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
-        when(vehicleService.findByPlate("INVALID")).thenThrow(new RuntimeException("Vehicle not found"));
+        when(findVehicleByPlateHandler.handle("INVALID")).thenThrow(new RuntimeException("Vehicle not found"));
 
         assertThrows(RuntimeException.class, () -> createOrderHandler.handle(request));
 
@@ -119,8 +119,8 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", List.of("TROCA_OLEO"));
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
-        when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
@@ -134,14 +134,14 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", List.of("TROCA_OLEO"));
 
         when(findClientByCpfHandler.handle("12345678900")).thenReturn(mock(Client.class));
-        when(vehicleService.findByPlate("ABC1234")).thenReturn(mock(Vehicle.class));
-        when(createServiceUC.process(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
+        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
 
         createOrderHandler.handle(request);
 
         verify(findClientByCpfHandler).handle("12345678900");
-        verify(vehicleService).findByPlate("ABC1234");
+        verify(findVehicleByPlateHandler).handle("ABC1234");
     }
 }
