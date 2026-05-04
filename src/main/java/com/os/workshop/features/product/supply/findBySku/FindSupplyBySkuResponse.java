@@ -1,28 +1,25 @@
 package com.os.workshop.features.product.supply.findBySku;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import com.os.workshop.features.product.shared.domain.Supply;
 import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Schema(description = "Find Supply By Sku response payload.")
 public record FindSupplyBySkuResponse(
-        @Schema(description = "Identifier.", example = "1") Long id,
-        @Schema(description = "Name.", example = "John Doe") String name,
-        @Schema(description = "Sku.", example = "BRK-PAD-001") String sku,
-        @Schema(description = "Unit.", example = "UNIT") UnitOfMeasure unit,
-        @Schema(description = "Category.", example = "Brakes") String category,
-        @Schema(description = "Brand.", example = "Toyota") String brand,
-        @Schema(description = "Cost Price.", example = "45.00") BigDecimal costPrice,
-        @Schema(description = "Sale Price.", example = "89.90") BigDecimal salePrice,
-        @Schema(description = "Active.", example = "true") boolean active,
-        @Schema(description = "Fractional Allowed.", example = "true") boolean fractionalAllowed,
-        @Schema(description = "Package Size.", example = "1.0") BigDecimal packageSize,
-        @Schema(description = "Created At.", example = "2026-05-03T10:00:00") LocalDateTime createdAt,
-        @Schema(description = "Updated At.", example = "2026-05-03T10:00:00") LocalDateTime updatedAt
+        Long id,
+        String name,
+        String sku,
+        UnitOfMeasure unit,
+        String category,
+        String brand,
+        BigDecimal costPrice,
+        BigDecimal salePrice,
+        boolean active,
+        boolean fractionalAllowed,
+        BigDecimal packageSize,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
     public static FindSupplyBySkuResponse from(Supply supply) {
         return new FindSupplyBySkuResponse(

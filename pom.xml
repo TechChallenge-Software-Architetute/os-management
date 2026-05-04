@@ -62,10 +62,6 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>3.0.2</version>
 		</dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-hateoas</artifactId>
-        </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -179,6 +175,9 @@
 									<artifactId>lombok</artifactId>
 								</path>
 								<path>
+									<groupId>org.mapstruct</groupId>
+									<artifactId>mapstruct-processor</artifactId>
+									<version>1.5.5.Final</version>
 									<groupId>org.projectlombok</groupId>
 									<artifactId>lombok-mapstruct-binding</artifactId>
 									<version>0.2.0</version>

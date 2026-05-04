@@ -1,17 +1,5 @@
 package com.os.workshop.features.client;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import io.swagger.v3.oas.annotations.media.Content;
-
-import io.swagger.v3.oas.annotations.Operation;
-
 import com.os.workshop.features.client.approveOrder.ApproveMyOrderHandler;
 import com.os.workshop.features.client.approveOrder.ApproveMyOrderResponse;
 import com.os.workshop.features.client.create.CreateClientHandler;
@@ -58,7 +46,6 @@ import java.util.UUID;
  *   <li>{@code PATCH  /api/clients/my-orders/{orderId}/approve} — aprova uma ordem do cliente logado</li>
  * </ul>
  */
-@Tag(name = "Clients", description = "Manage clients and client portal order operations.")
 @RestController
 @RequestMapping("/api/clients")
 @RequiredArgsConstructor
@@ -74,29 +61,12 @@ public class ClientController {
     private final FindMyOrderDetailHandler findMyOrderDetailHandler;
     private final ApproveMyOrderHandler approveMyOrderHandler;
 
-    @Operation(summary = "Create resource", description = "Create resource endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @PostMapping
-    public ResponseEntity<CreateClientResponse> create(@io.swagger.v3.oas.annotations.parameters.RequestBody(
-        description = "Request payload for this operation",
-        required = true,
-        content = @Content(schema = @Schema(implementation = CreateClientRequest.class))
-)
-@Valid @RequestBody CreateClientRequest request) {
+    public ResponseEntity<CreateClientResponse> create(@Valid @RequestBody CreateClientRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CreateClientResponse.from(createClientHandler.handle(request)));
     }
 
-    @Operation(summary = "List resources", description = "List resources endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @GetMapping
     public ResponseEntity<List<ListClientsResponse>> findAll() {
         List<ListClientsResponse> response = listClientsHandler.handle().stream()
@@ -105,56 +75,22 @@ public class ClientController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Find resource by id", description = "Find resource by id endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @GetMapping("/{id}")
     public ResponseEntity<FindClientByIdResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(FindClientByIdResponse.from(findClientByIdHandler.handle(id)));
     }
 
-    @Operation(summary = "Find client by CPF", description = "Find client by CPF endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @GetMapping("/cpf/{cpf}")
     public ResponseEntity<FindClientByCpfResponse> findByCpf(@PathVariable String cpf) {
         return ResponseEntity.ok(FindClientByCpfResponse.from(findClientByCpfHandler.handle(cpf)));
     }
 
-    @Operation(summary = "Update resource", description = "Update resource endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @PutMapping("/{id}")
     public ResponseEntity<UpdateClientResponse> update(@PathVariable Long id,
-                                                        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-
-                                                                description = "Request payload for this operation",
-
-                                                                required = true,
-
-                                                                content = @Content(schema = @Schema(implementation = UpdateClientRequest.class))
-
-                                                        )
-
                                                         @Valid @RequestBody UpdateClientRequest request) {
         return ResponseEntity.ok(UpdateClientResponse.from(updateClientHandler.handle(id, request)));
     }
 
-    @Operation(summary = "Deactivate resource", description = "Deactivate resource endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         deactivateClientHandler.handle(id);
@@ -163,12 +99,6 @@ public class ClientController {
 
     // ==================== Client Portal Endpoints ====================
 
-    @Operation(summary = "List authenticated client orders", description = "List authenticated client orders endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @GetMapping("/my-orders")
     public ResponseEntity<List<FindMyOrdersResponse>> findMyOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -178,12 +108,6 @@ public class ClientController {
         return ResponseEntity.ok(orders);
     }
 
-    @Operation(summary = "Get authenticated client order detail", description = "Get authenticated client order detail endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @GetMapping("/my-orders/{orderId}")
     public ResponseEntity<FindMyOrderDetailResponse> findMyOrderDetail(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -192,12 +116,6 @@ public class ClientController {
         return ResponseEntity.ok(FindMyOrderDetailResponse.from(result.order(), result.budget()));
     }
 
-    @Operation(summary = "Approve authenticated client order", description = "Approve authenticated client order endpoint.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Request completed successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
     @PatchMapping("/my-orders/{orderId}/approve")
     public ResponseEntity<ApproveMyOrderResponse> approveMyOrder(
             @AuthenticationPrincipal UserDetails userDetails,
