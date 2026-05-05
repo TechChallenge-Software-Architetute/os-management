@@ -1,0 +1,17 @@
+﻿meta {
+  name: Deactivate Supply
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/supplies/{{supplyId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

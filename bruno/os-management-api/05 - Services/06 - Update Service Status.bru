@@ -1,0 +1,24 @@
+﻿meta {
+  name: Update Service Status
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/services/update-status
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "id": "{{serviceId}}",
+    "status": "DOING"
+  }
+}
+

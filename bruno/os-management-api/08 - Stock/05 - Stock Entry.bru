@@ -1,0 +1,24 @@
+﻿meta {
+  name: Stock Entry
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/stocks/product/{{productId}}/entry
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "quantity": 50.00,
+    "reason": "Entrega do fornecedor - NF 12345"
+  }
+}
+

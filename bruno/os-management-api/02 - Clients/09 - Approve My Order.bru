@@ -1,0 +1,17 @@
+﻿meta {
+  name: Approve My Order
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/api/clients/my-orders/{{serviceOrderId}}/approve
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

@@ -1,0 +1,25 @@
+﻿meta {
+  name: Sign Up User
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/signup
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "email": "mechanic@example.com",
+    "password": "password123",
+    "roles": ["ROLE_USER"]
+  }
+}
+

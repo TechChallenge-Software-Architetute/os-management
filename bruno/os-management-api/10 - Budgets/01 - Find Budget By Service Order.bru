@@ -1,0 +1,17 @@
+﻿meta {
+  name: Find Budget By Service Order
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/budgets/service-order/{{serviceOrderId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

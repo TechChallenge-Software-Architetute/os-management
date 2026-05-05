@@ -1,0 +1,17 @@
+﻿meta {
+  name: Find Vehicle By Plate
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/vehicles/plate/{{vehiclePlate}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

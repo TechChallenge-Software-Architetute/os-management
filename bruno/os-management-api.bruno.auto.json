@@ -1,0 +1,2171 @@
+{
+  "info": {
+    "name": "os-management-api-bruno-auto",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Bruno-compatible collection with automatic token and id variables using bru.* scripts. Import into Bruno and run."
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"superadmin@system.com\",\n    \"password\": \"coxinha123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              }
+            ]
+          },
+          "name": "Login",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "test(\"Token retornado no login\", function () {",
+                  "  expect(json.token).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "",
+                  "if (json.token) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"token\", json.token, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"token\", json.token);",
+                  "}",
+                  "console.log(\"token salvo\", json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"email\":  \"mechanic@example.com\",\r\n    \"password\":  \"password123\",\r\n    \"roles\":  [\r\n                  \"ROLE_USER\"\r\n              ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/signup",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Sign Up User",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"name\":  \"Joao Silva\",\r\n    \"cpf\":  \"52998224725\",\r\n    \"email\":  \"joao@email.com\",\r\n    \"phone\":  \"11999998888\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/clients",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Client",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "if (json && json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"clientId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"clientId\", json.id);",
+                  "}",
+                  "console.log(\"clientId salvo\", json && json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Clients",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/{{clientId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Client By Id",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/cpf/{{clientCpf}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Client By CPF",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"name\":  \"Maria Souza\",\r\n    \"cpf\":  \"52998224725\",\r\n    \"email\":  \"maria@email.com\",\r\n    \"phone\":  \"11888887777\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/clients/{{clientId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Client",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/clients/{{clientId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Deactivate Client",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/my-orders",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "My Orders",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/clients/my-orders/{{serviceOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "My Order Detail",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/clients/my-orders/{{serviceOrderId}}/approve",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Approve My Order",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"clientId\":  1,\r\n    \"plate\":  \"ABC-1234\",\r\n    \"brand\":  \"Toyota\",\r\n    \"model\":  \"Corolla\",\r\n    \"year\":  2020,\r\n    \"color\":  \"Prata\",\r\n    \"type\":  \"CAR\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/vehicles",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Vehicle",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "if (json && json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"vehicleId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"vehicleId\", json.id);",
+                  "}",
+                  "console.log(\"vehicleId salvo\", json && json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Vehicle By Id",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/vehicles/plate/{{vehiclePlate}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Vehicle By Plate",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/vehicles/client/{{clientId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Vehicles By Client",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"clientId\":  1,\r\n    \"plate\":  \"ABC-1234\",\r\n    \"brand\":  \"Toyota\",\r\n    \"model\":  \"Corolla XEI\",\r\n    \"year\":  2021,\r\n    \"color\":  \"Preto\",\r\n    \"type\":  \"CAR\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Vehicle",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/vehicles/{{vehicleId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Deactivate Vehicle",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Service Orders",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"cpfCnpj\":  \"529.982.247-25\",\r\n    \"placaVeiculo\":  \"ABC-1234\",\r\n    \"serviceTypes\":  [\r\n                         \"TROCA_OLEO\",\r\n                         \"ALINHAMENTO\"\r\n                     ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/order",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Order",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "test(\"Service order id retornado\", function () {",
+                  "  expect(json.id).to.exist;",
+                  "});",
+                  "",
+                  "if (json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"serviceOrderId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"serviceOrderId\", json.id);",
+                  "}",
+                  "console.log(\"serviceOrderId salvo\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/order",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Orders",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Order By Id",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"EM_DIAGNOSTICO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "method": "PATCH",
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Order Status",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"serviceType\":  \"REVISAO\",\r\n    \"idOS\":  \"{{serviceOrderId}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/services",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Service",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "if (json && json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"serviceId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"serviceId\", json.id);",
+                  "}",
+                  "console.log(\"serviceId salvo\", json && json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/services",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Services",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/services/{{serviceId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Service By Id",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/services/os/{{serviceOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Services By Order",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "test(\"Servicos retornados\", function () {",
+                  "  expect(json).to.be.an(\"array\");",
+                  "  expect(json.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "if (Array.isArray(json) && json.length > 0) {",
+                  "  if (json[0] && json[0].id) {",
+                  "    if (typeof bru.setEnvVar === \"function\") {",
+                  "      bru.setEnvVar(\"service1\", json[0].id, { persist: true });",
+                  "      bru.setEnvVar(\"serviceId\", json[0].id, { persist: true });",
+                  "    }",
+                  "    if (typeof bru.setVar === \"function\") {",
+                  "      bru.setVar(\"service1\", json[0].id);",
+                  "      bru.setVar(\"serviceId\", json[0].id);",
+                  "    }",
+                  "  }",
+                  "  if (json[1] && json[1].id) {",
+                  "    if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"service2\", json[1].id, { persist: true });",
+                  "    if (typeof bru.setVar === \"function\") bru.setVar(\"service2\", json[1].id);",
+                  "  }",
+                  "}",
+                  "console.log(\"service1\", json[0] && json[0].id);",
+                  "console.log(\"service2\", json[1] && json[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"serviceType\":  \"TROCA_OLEO\",\r\n    \"idOS\":  \"{{serviceOrderId}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PUT",
+            "url": "{{baseUrl}}/services/{{serviceId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Service",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"DOING\",\r\n    \"id\":  \"{{serviceId}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "method": "PATCH",
+            "url": "{{baseUrl}}/services/update-status",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Service Status",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/service-types",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Service Types",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Parts",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"name\":  \"Pastilha de Freio Dianteira\",\r\n    \"sku\":  \"BRK-PAD-001\",\r\n    \"unit\":  \"UNIT\",\r\n    \"category\":  \"Freios\",\r\n    \"brand\":  \"Bosch\",\r\n    \"costPrice\":  45,\r\n    \"salePrice\":  89.9,\r\n    \"manufacturerCode\":  \"BOH-BP-2025\",\r\n    \"warrantyMonths\":  12\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/parts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Part",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "if (json && json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"partId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"partId\", json.id);",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"productId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"productId\", json.id);",
+                  "}",
+                  "console.log(\"partId/productId salvo\", json && json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/parts",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Parts",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/parts/{{partId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Part By Id",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/parts/sku/{{partSku}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Part By SKU",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"name\":  \"Pastilha de Freio Dianteira Ceramica\",\r\n    \"sku\":  \"BRK-PAD-001\",\r\n    \"unit\":  \"UNIT\",\r\n    \"category\":  \"Freios\",\r\n    \"brand\":  \"Bosch\",\r\n    \"costPrice\":  55,\r\n    \"salePrice\":  109.9,\r\n    \"manufacturerCode\":  \"BOH-BP-2025-CER\",\r\n    \"warrantyMonths\":  24\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/parts/{{partId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Part",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/parts/{{partId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Deactivate Part",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Supplies",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"name\":  \"Oleo Motor 5W30 Sintetico\",\r\n    \"sku\":  \"OIL-5W30-SINT\",\r\n    \"unit\":  \"LITER\",\r\n    \"category\":  \"Lubrificantes\",\r\n    \"brand\":  \"Mobil\",\r\n    \"costPrice\":  28.5,\r\n    \"salePrice\":  54.9,\r\n    \"fractionalAllowed\":  true,\r\n    \"packageSize\":  1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/supplies",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Supply",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "if (json && json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"supplyId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"supplyId\", json.id);",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"productId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"productId\", json.id);",
+                  "}",
+                  "console.log(\"supplyId/productId salvo\", json && json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/supplies",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Supplies",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/supplies/{{supplyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Supply By Id",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/supplies/sku/{{supplySku}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Supply By SKU",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"name\":  \"Oleo Motor 5W30 Sintetico Premium\",\r\n    \"sku\":  \"OIL-5W30-SINT\",\r\n    \"unit\":  \"LITER\",\r\n    \"category\":  \"Lubrificantes\",\r\n    \"brand\":  \"Mobil 1\",\r\n    \"costPrice\":  32,\r\n    \"salePrice\":  62.9,\r\n    \"fractionalAllowed\":  true,\r\n    \"packageSize\":  1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/supplies/{{supplyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Supply",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/supplies/{{supplyId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Deactivate Supply",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"productId\":  1,\r\n    \"quantity\":  100,\r\n    \"minimumQuantity\":  10\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stocks",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Create Stock",
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "if (json && json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"productId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"productId\", json.id);",
+                  "}",
+                  "console.log(\"productId salvo\", json && json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stocks",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Stocks",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stocks/product/{{productId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Stock By Product",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stocks/low",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Low Stock",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"quantity\":  50,\r\n    \"reason\":  \"Entrega do fornecedor - NF 12345\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/stocks/product/{{productId}}/entry",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Stock Entry",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"quantity\":  5,\r\n    \"reason\":  \"Perda por validade\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/stocks/product/{{productId}}/exit",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Stock Exit",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/stocks/product/{{productId}}/minimum?minimumQuantity={{minimumQuantity}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Update Minimum Quantity",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stocks/product/{{productId}}/movements",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Stock Movements",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stock Reservations",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"serviceOrderId\":  \"{{serviceOrderId}}\",\r\n    \"items\":  [\r\n                  {\r\n                      \"productId\":  1,\r\n                      \"quantity\":  3.5\r\n                  }\r\n              ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stocks/reservations",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Reserve Stock",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/stocks/reservations/service-order/{{serviceOrderId}}/confirm",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Confirm Reservations",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/stocks/reservations/service-order/{{serviceOrderId}}/release",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Release Reservations",
+          "response": []
+        },
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/stocks/reservations/service-order/{{serviceOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "List Reservations By Order",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Budgets",
+      "item": [
+        {
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/budgets/service-order/{{serviceOrderId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Find Budget By Service Order",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Monitoring",
+      "item": [
+        {
+          "request": {
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"timeUnit\":  \"SECONDS\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/monitoring/all",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Average Execution Time All",
+          "response": []
+        },
+        {
+          "request": {
+            "body": {
+              "raw": "{\r\n    \"id\":  \"{{serviceId}}\",\r\n    \"timeUnit\":  \"MINUTES\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "mode": "raw"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/monitoring/by-id",
+            "header": [
+              {
+                "key": "Content-Type",
+                "type": "text",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          },
+          "name": "Average Execution Time By Id",
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Validation Flow",
+      "item": [
+        {
+          "name": "01 - Login superadmin",
+          "request": {
+            "method": "POST",
+            "header": {
+              "key": "Content-Type",
+              "value": "application/json",
+              "type": "text"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\":  \"superadmin@system.com\",\r\n    \"password\":  \"coxinha123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "test(\"Token retornado no login\", function () {",
+                  "  expect(json.token).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "",
+                  "if (json.token) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"token\", json.token, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"token\", json.token);",
+                  "}",
+                  "console.log(\"token salvo\", json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - Create Service Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "correlationid",
+                "value": "d29797dd-0eca-4ee0-918d-466ed0c8886e",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"cpfCnpj\":  \"529.982.247-25\",\r\n    \"placaVeiculo\":  \"ABC-1234\",\r\n    \"serviceTypes\":  [\r\n                         \"TROCA_OLEO\",\r\n                         \"ALINHAMENTO\"\r\n                     ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "test(\"Service order id retornado\", function () {",
+                  "  expect(json.id).to.exist;",
+                  "});",
+                  "",
+                  "if (json.id) {",
+                  "  if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"serviceOrderId\", json.id, { persist: true });",
+                  "  if (typeof bru.setVar === \"function\") bru.setVar(\"serviceOrderId\", json.id);",
+                  "}",
+                  "console.log(\"serviceOrderId salvo\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 - Update Order To EM_DIAGNOSTICO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"EM_DIAGNOSTICO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Get Service Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "05 - List Parts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/parts"
+          },
+          "response": []
+        },
+        {
+          "name": "06 - List Stocks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/stocks"
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Reserve Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/stocks/reservations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"serviceOrderId\":  \"{{serviceOrderId}}\",\r\n    \"items\":  [\r\n                  {\r\n                      \"productId\":  1,\r\n                      \"quantity\":  3.5\r\n                  }\r\n              ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Update Order To AGUARDANDO_APROVACAO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"AGUARDANDO_APROVACAO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Get Budget By Service Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/api/budgets/service-order/{{serviceOrderId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "10 - Update Order To APROVADO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"APROVADO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 - Find Services By Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/services/os/{{serviceOrderId}}"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = res.getBody();",
+                  "",
+                  "test(\"Servicos retornados\", function () {",
+                  "  expect(json).to.be.an(\"array\");",
+                  "  expect(json.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "if (Array.isArray(json) && json.length > 0) {",
+                  "  if (json[0] && json[0].id) {",
+                  "    if (typeof bru.setEnvVar === \"function\") {",
+                  "      bru.setEnvVar(\"service1\", json[0].id, { persist: true });",
+                  "      bru.setEnvVar(\"serviceId\", json[0].id, { persist: true });",
+                  "    }",
+                  "    if (typeof bru.setVar === \"function\") {",
+                  "      bru.setVar(\"service1\", json[0].id);",
+                  "      bru.setVar(\"serviceId\", json[0].id);",
+                  "    }",
+                  "  }",
+                  "  if (json[1] && json[1].id) {",
+                  "    if (typeof bru.setEnvVar === \"function\") bru.setEnvVar(\"service2\", json[1].id, { persist: true });",
+                  "    if (typeof bru.setVar === \"function\") bru.setVar(\"service2\", json[1].id);",
+                  "  }",
+                  "}",
+                  "console.log(\"service1\", json[0] && json[0].id);",
+                  "console.log(\"service2\", json[1] && json[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 - Start First Service DOING",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/services/update-status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"DOING\",\r\n    \"id\":  \"{{service1}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13 - Finish First Service DONE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/services/update-status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"DONE\",\r\n    \"id\":  \"{{service1}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14 - Start Second Service DOING",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/services/update-status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"DOING\",\r\n    \"id\":  \"{{service2}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15 - Finish Second Service DONE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/services/update-status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"DONE\",\r\n    \"id\":  \"{{service2}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "16 - Update Order To FINALIZADA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"FINALIZADA\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "17 - Update Order To ENTREGUE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/order/{{serviceOrderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"status\":  \"ENTREGUE\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18 - Monitoring Average Execution Time",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{baseUrl}}/monitoring/all",
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"timeUnit\":  \"SECONDS\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "type": "string",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "type": "string",
+      "value": "",
+      "description": "Preenchido automaticamente pelo script da request Auth / Login."
+    },
+    {
+      "key": "clientId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "clientCpf",
+      "type": "string",
+      "value": "52998224725"
+    },
+    {
+      "key": "vehicleId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "vehiclePlate",
+      "type": "string",
+      "value": "ABC1234"
+    },
+    {
+      "key": "serviceOrderId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "serviceId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "partId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "partSku",
+      "type": "string",
+      "value": "BRK-PAD-001"
+    },
+    {
+      "key": "supplyId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "supplySku",
+      "type": "string",
+      "value": "OIL-5W30-SINT"
+    },
+    {
+      "key": "productId",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "key": "minimumQuantity",
+      "type": "string",
+      "value": "15"
+    },
+    {
+      "key": "service1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "service2",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

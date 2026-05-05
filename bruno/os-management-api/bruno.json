@@ -1,0 +1,9 @@
+﻿{
+  "version": "1",
+  "name": "os-management-api",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

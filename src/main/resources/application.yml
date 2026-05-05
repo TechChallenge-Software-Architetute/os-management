@@ -1,23 +1,23 @@
 spring:
   application:
     name: workshop
-
   # PostgreSQL connection — defaults match docker-compose setup.
   # Override via environment variables (DB_USERNAME, DB_PASSWORD) for other environments.
   datasource:
-    url: jdbc:postgresql://localhost:5432/workshop
-    username: ${DB_USERNAME:workshop}
-    password: ${DB_PASSWORD:workshop}
+    url: ${DB_USERNAME:jdbc:postgresql://localhost:5432/workshop}
+    username: ${DB_USERNAME:user}
+    password: ${DB_PASSWORD:password}
 
   jpa:
     hibernate:
       # Auto-creates/updates tables from JPA entities. Use 'validate' or a migration tool (Flyway/Liquibase) in production.
       ddl-auto: update
+      #ddl-auto: validate
     # Logs SQL queries to console — useful for development debugging.
-    show-sql: true
+    show-sql: false
     # Required because the main app class is in com.os.workshop but entities live in com.os.features.
     # Spring Boot 4 removed @EntityScan, so this property tells Hibernate where to find @Entity classes.
-    packages-to-scan: com.os.features
+    packages-to-scan: com.os
     properties:
       hibernate:
         format_sql: true
@@ -26,3 +26,10 @@ spring:
 
 server:
   port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+springdoc:
+  enable-data-rest: false

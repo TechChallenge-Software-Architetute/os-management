@@ -1,0 +1,31 @@
+﻿meta {
+  name: Create Part
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/parts
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Pastilha de Freio Dianteira",
+    "sku": "BRK-PAD-001",
+    "unit": "UNIT",
+    "category": "Freios",
+    "brand": "Bosch",
+    "costPrice": 45.00,
+    "salePrice": 89.90,
+    "manufacturerCode": "BOH-BP-2025",
+    "warrantyMonths": 12
+  }
+}
+
