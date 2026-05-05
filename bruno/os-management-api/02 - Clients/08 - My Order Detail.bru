@@ -1,0 +1,17 @@
+﻿meta {
+  name: My Order Detail
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/clients/my-orders/{{serviceOrderId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

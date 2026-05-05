@@ -1,0 +1,17 @@
+﻿meta {
+  name: Find Services By Order
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/services/os/{{serviceOrderId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

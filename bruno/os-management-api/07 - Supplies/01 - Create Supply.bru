@@ -1,0 +1,31 @@
+﻿meta {
+  name: Create Supply
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/supplies
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Oleo Motor 5W30 Sintetico",
+    "sku": "OIL-5W30-SINT",
+    "unit": "LITER",
+    "category": "Lubrificantes",
+    "brand": "Mobil",
+    "costPrice": 28.50,
+    "salePrice": 54.90,
+    "fractionalAllowed": true,
+    "packageSize": 1.0
+  }
+}
+

@@ -1,0 +1,17 @@
+﻿meta {
+  name: Update Minimum Quantity
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/api/stocks/product/{{productId}}/minimum?minimumQuantity={{minimumQuantity}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
