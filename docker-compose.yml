@@ -41,37 +41,6 @@ services:
       retries: 12
       start_period: 30s
 
-  validation:
-    image: curlimages/curl:latest
-    container_name: validation
-    depends_on:
-      app:
-        condition: service_healthy
-    environment:
-      APP_URL: http://app:8080
-    volumes:
-      - ./validation.sh:/validation.sh:ro
-    entrypoint: ["sh", "-c", "sh /validation.sh"]
-
-  zap:
-    image: ghcr.io/zaproxy/zaproxy:stable
-    container_name: zap_security_scan
-    profiles:
-      - security
-    user: root
-    depends_on:
-      validation:
-        condition: service_completed_successfully
-    environment:
-      APP_URL: http://app:8080
-      ZAP_AUTH_EMAIL: superadmin@system.com
-      ZAP_AUTH_PASSWORD: coxinha123
-      REPORT_DIR: /zap/reports
-    volumes:
-      - ./zap:/zap/wrk:ro
-      - ./zap-reports:/zap/reports:rw
-    command: ["sh", "-c", "sh /zap/wrk/zap-scan.sh"]
-
   sonarqube_db:
     image: postgres:16-alpine
     restart: unless-stopped
