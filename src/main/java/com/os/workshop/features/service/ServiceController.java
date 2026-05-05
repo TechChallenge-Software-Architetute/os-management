@@ -14,10 +14,12 @@ import com.os.workshop.features.service.updateStatus.UpdateServiceStatusHandler;
 import com.os.workshop.features.service.updateStatus.UpdateServiceStatusRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,15 +56,14 @@ public class ServiceController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Service data.",
                     required = true,
-                    content = @Content(schema = @Schema(implementation = CreateServiceRequest.class))
+                    content = @Content(
+                            schema = @Schema(implementation = CreateServiceRequest.class),
+                            examples = @ExampleObject(value = "{\"ServiceType\":\"TROCA_OLEO\",\"idOS\":\"b46ac51b-5ca6-439b-ba52-a36bd52e8648\"}")
+                    )
             )
-            @RequestBody CreateServiceRequest request) {
-        try {
-            var createdService = createServiceHandler.handle(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+            @Valid @RequestBody CreateServiceRequest request) {
+        var createdService = createServiceHandler.handle(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
     }
 
     @Operation(summary = "Find service by ID", description = "Returns a service by its identifier.")
@@ -154,7 +155,10 @@ public class ServiceController {
                                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                                         description = "Updated service data.",
                                                         required = true,
-                                                        content = @Content(schema = @Schema(implementation = UpdateServiceRequest.class))
+                                                        content = @Content(
+                                                                schema = @Schema(implementation = UpdateServiceRequest.class),
+                                                                examples = @ExampleObject(value = "{\"serviceType\":\"ALINHAMENTO\",\"idOS\":\"b46ac51b-5ca6-439b-ba52-a36bd52e8648\"}")
+                                                        )
                                                 )
                                                 @RequestBody UpdateServiceRequest request) {
         logger.info("Recebida requisicao para atualizar servico. ID: {}", id);

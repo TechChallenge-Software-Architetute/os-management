@@ -187,6 +187,25 @@ Para garantir que a API rode com o codigo mais recente antes do `validation.sh`,
 docker compose up -d --build app
 ```
 
+
+OBS: Antes de executar algum dos profiles, é recomendado limpar os containers e volumes antigos para evitar conflitos:
+
+```bash
+docker system prune -a --volumes -f
+```
+
+#### Profile Security Scan (OWASP ZAP)
+
+```bash
+docker compose --profile security up
+```
+
+#### Profile Quality (Sonar)
+
+```bash
+docker compose --profile quality up
+```
+
 Isso irá iniciar:
 - **PostgreSQL 16** na porta `5432` (usuário: `user`, senha: `password`, banco: `workshop`)
 - **API OS Management** na porta `8080`

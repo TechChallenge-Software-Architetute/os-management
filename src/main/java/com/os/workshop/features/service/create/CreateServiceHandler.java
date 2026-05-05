@@ -5,6 +5,8 @@ import com.os.workshop.features.service.shared.domain.Status;
 import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.service.shared.repository.ServiceRepository;
 import com.os.workshop.features.service.shared.repository.ServiceTypeRepository;
+import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,7 @@ public class CreateServiceHandler {
 
     private final ServiceRepository serviceRepository;
     private final ServiceTypeRepository serviceTypeRepository;
+    private final ServiceOrderJpaRepository serviceOrderJpaRepository;
 
     public ServiceEntity handle(CreateServiceRequest request) {
         logger.info("Iniciando criação de serviço. Tipo: {}", request.getServiceType());
@@ -31,9 +34,15 @@ public class CreateServiceHandler {
                     return new RuntimeException("Tipo de serviço não encontrado na base de Serviços.");
                 });
 
+        var idOs = serviceOrderJpaRepository.findById(request.getIdOS())
+                .orElseThrow(() -> {
+                    logger.error("Ordem de serviço não encontrada: {}", request.getIdOS());
+                    return new RuntimeException("Ordem de serviço não encontrada na base de Serviços.");
+                }).getId();
+
         ServiceEntity newService = new ServiceEntity();
         newService.setServiceTypeName(serviceType.getName());
-        newService.setIdOS(request.getIdOS());
+        newService.setIdOS(idOs);
         newService.setServiceStatus(List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now())));
 
         ServiceEntity createdService = serviceRepository.save(newService);

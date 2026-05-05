@@ -46,15 +46,6 @@ public class CreateOrderHandler {
 
         findVehicleByPlateHandler.handle(request.getPlacaVeiculo());
 
-        request.getServiceTypes().forEach(
-                service -> {
-                    var serviceRequest = new CreateServiceRequest();
-                    serviceRequest.setIdOS(idOrdemServico);
-                    serviceRequest.setServiceType(service);
-                    createServiceHandler.handle(serviceRequest);
-                }
-        );
-
         ServiceOrderEntity order = new ServiceOrderEntity();
         order.setId(idOrdemServico);
         order.setServiceTypeName(request.getServiceTypes().toString());
@@ -64,6 +55,15 @@ public class CreateOrderHandler {
         order.setPlacaVeiculo(request.getPlacaVeiculo());
 
         serviceOrderJpaRepository.save(order);
+
+        request.getServiceTypes().forEach(
+                service -> {
+                    var serviceRequest = new CreateServiceRequest();
+                    serviceRequest.setIdOS(idOrdemServico);
+                    serviceRequest.setServiceType(service);
+                    createServiceHandler.handle(serviceRequest);
+                }
+        );
 
         logger.info("Ordem de serviço Criado.");
 

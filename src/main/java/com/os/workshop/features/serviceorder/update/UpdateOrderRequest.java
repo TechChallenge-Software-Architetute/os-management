@@ -9,6 +9,6 @@ import lombok.Data;
 @Schema(description = "Update Order request payload.")
 public class UpdateOrderRequest {
 
-    @Schema(description = "Status.", example = "DOING")
+    @Schema(description = "Service order status.", example = "EM_DIAGNOSTICO")
     private OrderServiceStatusEnum status;
 }

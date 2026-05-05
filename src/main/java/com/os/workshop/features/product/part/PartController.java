@@ -26,9 +26,11 @@ import com.os.workshop.features.product.part.update.UpdatePartHandler;
 import com.os.workshop.features.product.part.update.UpdatePartRequest;
 import com.os.workshop.features.product.part.update.UpdatePartResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,6 +40,7 @@ import java.util.List;
  * Provides CRUD operations for parts used in mechanic service orders.
  */
 @Tag(name = "Parts", description = "Manage automotive parts.")
+@Validated
 @RestController
 @RequestMapping("/api/parts")
 @RequiredArgsConstructor
@@ -85,7 +88,9 @@ public class PartController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<FindPartBySkuResponse> findBySku(@PathVariable String sku) {
+    public ResponseEntity<FindPartBySkuResponse> findBySku(
+            @Pattern(regexp = "^[A-Za-z0-9]+[\\-_][A-Za-z0-9\\-_]+$", message = "SKU deve seguir o formato prefixo-sufixo (ex: BRK-PAD-001)")
+            @PathVariable String sku) {
         return ResponseEntity.ok(FindPartBySkuResponse.from(findPartBySkuHandler.handle(sku)));
     }
 

@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import io.swagger.v3.oas.annotations.media.Content;
@@ -62,7 +64,10 @@ public class ServiceOrderController {
     public ResponseEntity<CreateOrderResponse> createOrder(@io.swagger.v3.oas.annotations.parameters.RequestBody(
         description = "Request payload for this operation",
         required = true,
-        content = @Content(schema = @Schema(implementation = CreateOrderRequest.class))
+        content = @Content(
+                schema = @Schema(implementation = CreateOrderRequest.class),
+                examples = @ExampleObject(value = "{\"cpfCnpj\":\"52998224725\",\"placaVeiculo\":\"ABC-1234\",\"serviceTypes\":[\"TROCA_OLEO\",\"ALINHAMENTO\"]}")
+        )
 )
 @RequestBody CreateOrderRequest request) {
         try {
@@ -133,7 +138,10 @@ public class ServiceOrderController {
 
                     required = true,
 
-                    content = @Content(schema = @Schema(implementation = UpdateOrderRequest.class))
+                    content = @Content(
+                            schema = @Schema(implementation = UpdateOrderRequest.class),
+                            examples = @ExampleObject(value = "{\"status\":\"EM_DIAGNOSTICO\"}")
+                    )
 
             )
 
