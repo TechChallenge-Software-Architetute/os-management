@@ -11,9 +11,9 @@ import java.util.UUID;
 @Schema(description = "Update Service request payload.")
 public class UpdateServiceRequest {
     @UpperCase
-    @Schema(description = "Service Type.", example = "example")
+    @Schema(description = "Service type registered in the system.", example = "ALINHAMENTO")
     private String serviceType;
 
-    @Schema(description = "Identifier OS.", example = "example")
+    @Schema(description = "Service order identifier.", example = "b46ac51b-5ca6-439b-ba52-a36bd52e8648")
     private UUID idOS;
 }

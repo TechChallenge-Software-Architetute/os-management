@@ -16,10 +16,10 @@ public class CreateServiceRequest {
     @UpperCase
     @NotBlank
     @Pattern(regexp = "^[A-Za-z0-9_\\- ]+$", message = "serviceType deve conter apenas letras, números, hífens, underscores e espaços")
-    @Schema(description = "Service Type.", example = "BRAKE_SERVICE")
+    @Schema(description = "Service type registered in the system.", example = "TROCA_OLEO")
     private String ServiceType;
 
     @NotNull
-    @Schema(description = "Identifier OS.", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+    @Schema(description = "Service order identifier.", example = "b46ac51b-5ca6-439b-ba52-a36bd52e8648")
     private UUID idOS;
 }

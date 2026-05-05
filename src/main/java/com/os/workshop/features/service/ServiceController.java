@@ -14,6 +14,7 @@ import com.os.workshop.features.service.updateStatus.UpdateServiceStatusHandler;
 import com.os.workshop.features.service.updateStatus.UpdateServiceStatusRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -55,7 +56,10 @@ public class ServiceController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Service data.",
                     required = true,
-                    content = @Content(schema = @Schema(implementation = CreateServiceRequest.class))
+                    content = @Content(
+                            schema = @Schema(implementation = CreateServiceRequest.class),
+                            examples = @ExampleObject(value = "{\"ServiceType\":\"TROCA_OLEO\",\"idOS\":\"b46ac51b-5ca6-439b-ba52-a36bd52e8648\"}")
+                    )
             )
             @Valid @RequestBody CreateServiceRequest request) {
         var createdService = createServiceHandler.handle(request);
@@ -151,7 +155,10 @@ public class ServiceController {
                                                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
                                                         description = "Updated service data.",
                                                         required = true,
-                                                        content = @Content(schema = @Schema(implementation = UpdateServiceRequest.class))
+                                                        content = @Content(
+                                                                schema = @Schema(implementation = UpdateServiceRequest.class),
+                                                                examples = @ExampleObject(value = "{\"serviceType\":\"ALINHAMENTO\",\"idOS\":\"b46ac51b-5ca6-439b-ba52-a36bd52e8648\"}")
+                                                        )
                                                 )
                                                 @RequestBody UpdateServiceRequest request) {
         logger.info("Recebida requisicao para atualizar servico. ID: {}", id);
