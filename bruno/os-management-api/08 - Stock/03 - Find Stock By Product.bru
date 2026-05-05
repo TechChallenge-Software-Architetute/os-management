@@ -1,0 +1,17 @@
+﻿meta {
+  name: Find Stock By Product
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/stocks/product/{{productId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

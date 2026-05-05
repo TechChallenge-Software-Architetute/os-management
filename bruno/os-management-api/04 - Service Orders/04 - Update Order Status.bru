@@ -1,0 +1,23 @@
+﻿meta {
+  name: Update Order Status
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/order/{{serviceOrderId}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "status": "EM_DIAGNOSTICO"
+  }
+}
+

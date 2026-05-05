@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Stock Movements
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/api/stocks/product/{{productId}}/movements
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

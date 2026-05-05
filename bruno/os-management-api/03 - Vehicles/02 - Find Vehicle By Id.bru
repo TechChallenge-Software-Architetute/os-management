@@ -1,0 +1,17 @@
+﻿meta {
+  name: Find Vehicle By Id
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/vehicles/{{vehicleId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

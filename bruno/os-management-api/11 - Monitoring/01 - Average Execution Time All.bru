@@ -1,0 +1,23 @@
+﻿meta {
+  name: Average Execution Time All
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/monitoring/all
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "timeUnit": "MINUTES"
+  }
+}
+

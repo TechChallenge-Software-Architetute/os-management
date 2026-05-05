@@ -1,0 +1,24 @@
+﻿meta {
+  name: Stock Exit
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/api/stocks/product/{{productId}}/exit
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "quantity": 5.00,
+    "reason": "Perda por validade"
+  }
+}
+

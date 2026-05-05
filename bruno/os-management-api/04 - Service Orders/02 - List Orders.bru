@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Orders
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/order
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

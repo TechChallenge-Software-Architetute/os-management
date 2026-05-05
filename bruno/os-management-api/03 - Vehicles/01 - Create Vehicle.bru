@@ -1,0 +1,29 @@
+﻿meta {
+  name: Create Vehicle
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/vehicles
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "clientId": 1,
+    "plate": "ABC-1234",
+    "brand": "Toyota",
+    "model": "Corolla",
+    "year": 2020,
+    "color": "Prata",
+    "type": "CAR"
+  }
+}
+

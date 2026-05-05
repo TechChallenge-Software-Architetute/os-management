@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Clients
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/clients
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
