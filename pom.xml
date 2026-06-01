@@ -33,7 +33,7 @@
 		<sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
 		<sonar.projectKey>os-management</sonar.projectKey>
 		<sonar.projectName>os-management</sonar.projectName>
-		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
