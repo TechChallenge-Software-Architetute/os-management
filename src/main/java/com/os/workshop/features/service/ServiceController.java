@@ -62,8 +62,18 @@ public class ServiceController {
                     )
             )
             @Valid @RequestBody CreateServiceRequest request) {
-        var createdService = createServiceHandler.handle(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
+        logger.info("Recebida requisição para criar serviço. Tipo: {}", request.getServiceType());
+        try {
+            var createdService = createServiceHandler.handle(request);
+            logger.info("Serviço criado com sucesso. ID: {}, Tipo: {}", createdService.getId(), createdService.getServiceTypeName());
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdService);
+        } catch (RuntimeException e) {
+            logger.error("Erro ao criar serviço. Tipo: {}. Erro: {}", request.getServiceType(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            logger.error("Erro inesperado ao criar serviço. Tipo: {}. Erro: {}", request.getServiceType(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @Operation(summary = "Find service by ID", description = "Returns a service by its identifier.")

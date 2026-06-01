@@ -5,6 +5,8 @@ import com.os.workshop.features.service.shared.repository.ServiceEntity;
 import com.os.workshop.features.service.shared.repository.ServiceRepository;
 import com.os.workshop.features.service.shared.repository.ServiceTypeEntity;
 import com.os.workshop.features.service.shared.repository.ServiceTypeRepository;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
+import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,6 +29,9 @@ class CreateServiceHandlerTest {
     @Mock
     private ServiceTypeRepository serviceTypeRepository;
 
+    @Mock
+    private ServiceOrderJpaRepository serviceOrderJpaRepository;
+
     @InjectMocks
     private CreateServiceHandler createServiceHandler;
 
@@ -45,6 +50,14 @@ class CreateServiceHandlerTest {
         return type;
     }
 
+    private ServiceOrderEntity createServiceOrder(UUID id) {
+        return ServiceOrderEntity.builder()
+                .id(id)
+                .serviceTypeName("TEST")
+                .serviceStatus("RECEBIDA")
+                .build();
+    }
+
     @Test
     void whenCreatingServiceWithValidType_thenServiceIsSaved() {
         UUID idOS = UUID.randomUUID();
@@ -53,6 +66,7 @@ class CreateServiceHandlerTest {
         ServiceTypeEntity serviceType = createServiceType(typeName);
 
         when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(serviceType));
+        when(serviceOrderJpaRepository.findById(idOS)).thenReturn(Optional.of(createServiceOrder(idOS)));
         when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> {
             ServiceEntity entity = i.getArgument(0);
             entity.setId(UUID.randomUUID());
@@ -94,6 +108,7 @@ class CreateServiceHandlerTest {
         ServiceTypeEntity serviceType = createServiceType(typeName);
 
         when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(serviceType));
+        when(serviceOrderJpaRepository.findById(idOS)).thenReturn(Optional.of(createServiceOrder(idOS)));
         when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         ServiceEntity result = createServiceHandler.handle(request);
@@ -110,6 +125,7 @@ class CreateServiceHandlerTest {
         ServiceTypeEntity serviceType = createServiceType(typeName);
 
         when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(serviceType));
+        when(serviceOrderJpaRepository.findById(idOS)).thenReturn(Optional.of(createServiceOrder(idOS)));
         when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         ServiceEntity result = createServiceHandler.handle(request);
