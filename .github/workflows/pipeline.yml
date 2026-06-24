@@ -20,11 +20,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Run unit tests
-        run: mvn test
+        run: cd app && mvn test
 
       - name: Generate JaCoCo Badge
         id: jacoco
         uses: cicirello/jacoco-badge-generator@v2.0.1
+        with:
+          jacoco-csv-file: app/target/site/jacoco/jacoco.csv
 
       - name: Log coverage percentage
         run: |
@@ -52,7 +54,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Package
-        run: mvn package -DskipTests
+        run: cd app && mvn package -DskipTests
 
   docker-build:
     runs-on: ubuntu-latest
@@ -76,7 +78,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: app
+          file: app/Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository }}:latest
@@ -98,7 +101,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Publish Package
-        run: mvn --batch-mode deploy --settings settings.xml
+        run: cd app && mvn --batch-mode deploy --settings ../settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -115,7 +118,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Run database migrations
-        run: mvn flyway:migrate
+        run: cd app && mvn flyway:migrate
         env:
           FLYWAY_URL: ${{ secrets.DB_URL }}
           FLYWAY_USER: ${{ secrets.DB_USER }}
