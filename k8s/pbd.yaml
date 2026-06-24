@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: os-management-pdb
+  namespace: os-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: os-management
