@@ -1,7 +1,10 @@
 package com.os.workshop.features.client.shared.repository;
 
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.mapper.ClientMapper;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.adapter.out.persistence.client.ClientMapper;
+import com.os.workshop.adapter.out.persistence.client.ClientPersistenceAdapter;
+import com.os.workshop.infrastructure.persistence.client.ClientEntity;
+import com.os.workshop.infrastructure.persistence.client.ClientJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

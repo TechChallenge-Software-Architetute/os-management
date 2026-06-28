@@ -1,8 +1,9 @@
 package com.os.workshop.features.client.findByCpf;
 
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.exception.ClientNotFoundException;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.client.FindClientByCpfUseCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,13 +17,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FindClientByCpfHandlerTest {
+class FindClientByCpfUseCaseTest {
 
     @Mock
     private ClientRepository clientRepository;
 
     @InjectMocks
-    private FindClientByCpfHandler handler;
+    private FindClientByCpfUseCase handler;
 
     private static final String VALID_CPF = "12345678909";
 
@@ -31,7 +32,7 @@ class FindClientByCpfHandlerTest {
         Client client = Client.create("JOHN DOE", VALID_CPF, "john@email.com", null);
         when(clientRepository.findByCpf(VALID_CPF)).thenReturn(Optional.of(client));
 
-        Client result = handler.handle(VALID_CPF);
+        Client result = handler.execute(VALID_CPF);
 
         assertNotNull(result);
         assertEquals("JOHN DOE", result.getName());
@@ -42,7 +43,7 @@ class FindClientByCpfHandlerTest {
         when(clientRepository.findByCpf(VALID_CPF)).thenReturn(Optional.empty());
 
         ClientNotFoundException ex = assertThrows(ClientNotFoundException.class,
-                () -> handler.handle(VALID_CPF));
+                () -> handler.execute(VALID_CPF));
 
         assertTrue(ex.getMessage().contains(VALID_CPF));
     }
@@ -52,7 +53,7 @@ class FindClientByCpfHandlerTest {
         Client client = Client.create("JOHN DOE", VALID_CPF, null, null);
         when(clientRepository.findByCpf(VALID_CPF)).thenReturn(Optional.of(client));
 
-        handler.handle("123.456.789-09");
+        handler.execute("123.456.789-09");
 
         verify(clientRepository).findByCpf(VALID_CPF);
     }

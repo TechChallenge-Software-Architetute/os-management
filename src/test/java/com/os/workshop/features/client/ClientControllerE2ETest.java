@@ -2,20 +2,21 @@ package com.os.workshop.features.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.os.workshop.adapter.in.web.client.ClientController;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
-import com.os.workshop.features.client.approveOrder.ApproveMyOrderHandler;
-import com.os.workshop.features.client.create.CreateClientHandler;
-import com.os.workshop.features.client.create.CreateClientRequest;
-import com.os.workshop.features.client.deactivate.DeactivateClientHandler;
-import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
-import com.os.workshop.features.client.findById.FindClientByIdHandler;
-import com.os.workshop.features.client.list.ListClientsHandler;
-import com.os.workshop.features.client.myOrderDetail.FindMyOrderDetailHandler;
-import com.os.workshop.features.client.myOrders.FindMyOrdersHandler;
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
-import com.os.workshop.features.client.update.UpdateClientHandler;
-import com.os.workshop.features.client.update.UpdateClientRequest;
+import com.os.workshop.application.client.ApproveMyOrderUseCase;
+import com.os.workshop.application.client.CreateClientUseCase;
+import com.os.workshop.adapter.in.web.client.CreateClientRequest;
+import com.os.workshop.application.client.DeactivateClientUseCase;
+import com.os.workshop.application.client.FindClientByCpfUseCase;
+import com.os.workshop.application.client.FindClientByIdUseCase;
+import com.os.workshop.application.client.ListClientsUseCase;
+import com.os.workshop.application.client.FindMyOrderDetailUseCase;
+import com.os.workshop.application.client.FindMyOrdersUseCase;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.client.UpdateClientUseCase;
+import com.os.workshop.adapter.in.web.client.UpdateClientRequest;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,20 +57,20 @@ class ClientControllerE2ETest {
 
     @BeforeEach
     void setUp() {
-        CreateClientHandler createClientHandler = new CreateClientHandler(clientRepository);
-        ListClientsHandler listClientsHandler = new ListClientsHandler(clientRepository);
-        FindClientByIdHandler findClientByIdHandler = new FindClientByIdHandler(clientRepository);
-        FindClientByCpfHandler findClientByCpfHandler = new FindClientByCpfHandler(clientRepository);
-        UpdateClientHandler updateClientHandler = new UpdateClientHandler(clientRepository);
-        DeactivateClientHandler deactivateClientHandler = new DeactivateClientHandler(clientRepository);
-        FindMyOrdersHandler findMyOrdersHandler = new FindMyOrdersHandler(clientRepository, serviceOrderJpaRepository);
-        FindMyOrderDetailHandler findMyOrderDetailHandler = new FindMyOrderDetailHandler(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
-        ApproveMyOrderHandler approveMyOrderHandler = new ApproveMyOrderHandler(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
+        CreateClientUseCase createClientUseCase = new CreateClientUseCase(clientRepository);
+        ListClientsUseCase listClientsUseCase = new ListClientsUseCase(clientRepository);
+        FindClientByIdUseCase findClientByIdUseCase = new FindClientByIdUseCase(clientRepository);
+        FindClientByCpfUseCase findClientByCpfUseCase = new FindClientByCpfUseCase(clientRepository);
+        UpdateClientUseCase updateClientUseCase = new UpdateClientUseCase(clientRepository);
+        DeactivateClientUseCase deactivateClientUseCase = new DeactivateClientUseCase(clientRepository);
+        FindMyOrdersUseCase findMyOrdersUseCase = new FindMyOrdersUseCase(clientRepository, serviceOrderJpaRepository);
+        FindMyOrderDetailUseCase findMyOrderDetailUseCase = new FindMyOrderDetailUseCase(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
+        ApproveMyOrderUseCase approveMyOrderUseCase = new ApproveMyOrderUseCase(clientRepository, serviceOrderJpaRepository, findBudgetByServiceOrderHandler);
 
         ClientController clientController = new ClientController(
-                createClientHandler, listClientsHandler, findClientByIdHandler,
-                findClientByCpfHandler, updateClientHandler, deactivateClientHandler,
-                findMyOrdersHandler, findMyOrderDetailHandler, approveMyOrderHandler);
+                createClientUseCase, listClientsUseCase, findClientByIdUseCase,
+                findClientByCpfUseCase, updateClientUseCase, deactivateClientUseCase,
+                findMyOrdersUseCase, findMyOrderDetailUseCase, approveMyOrderUseCase);
         mockMvc = MockMvcBuilders.standaloneSetup(clientController)
                 .setCustomArgumentResolvers(new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
                     @Override

@@ -2,9 +2,10 @@ package com.os.workshop.features.client.myOrderDetail;
 
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.budget.shared.domain.Budget;
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.exception.ClientNotFoundException;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.client.FindMyOrderDetailUseCase;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FindMyOrderDetailHandlerTest {
+class FindMyOrderDetailUseCaseTest {
 
     @Mock
     private ClientRepository clientRepository;
@@ -34,7 +35,7 @@ class FindMyOrderDetailHandlerTest {
     private FindBudgetByServiceOrderHandler findBudgetByServiceOrderHandler;
 
     @InjectMocks
-    private FindMyOrderDetailHandler handler;
+    private FindMyOrderDetailUseCase handler;
 
     private static final String VALID_CPF = "12345678909";
     private static final String EMAIL = "john@email.com";
@@ -67,7 +68,7 @@ class FindMyOrderDetailHandlerTest {
         budget.setTotalPrice(BigDecimal.valueOf(100));
         when(findBudgetByServiceOrderHandler.handle(orderId)).thenReturn(Optional.of(budget));
 
-        FindMyOrderDetailHandler.FindMyOrderDetailResult result = handler.handle(EMAIL, orderId);
+        FindMyOrderDetailUseCase.FindMyOrderDetailResult result = handler.execute(EMAIL, orderId);
 
         assertNotNull(result);
         assertEquals(orderId, result.order().getId());
@@ -84,7 +85,7 @@ class FindMyOrderDetailHandlerTest {
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(findBudgetByServiceOrderHandler.handle(orderId)).thenReturn(Optional.empty());
 
-        FindMyOrderDetailHandler.FindMyOrderDetailResult result = handler.handle(EMAIL, orderId);
+        FindMyOrderDetailUseCase.FindMyOrderDetailResult result = handler.execute(EMAIL, orderId);
 
         assertNotNull(result.order());
         assertNull(result.budget());
@@ -95,7 +96,7 @@ class FindMyOrderDetailHandlerTest {
         when(clientRepository.findByEmail("unknown@email.com")).thenReturn(Optional.empty());
 
         assertThrows(ClientNotFoundException.class,
-                () -> handler.handle("unknown@email.com", UUID.randomUUID()));
+                () -> handler.execute("unknown@email.com", UUID.randomUUID()));
     }
 
     @Test
@@ -106,7 +107,7 @@ class FindMyOrderDetailHandlerTest {
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> handler.handle(EMAIL, orderId));
+                () -> handler.execute(EMAIL, orderId));
 
         assertTrue(ex.getMessage().contains(orderId.toString()));
     }
@@ -121,7 +122,7 @@ class FindMyOrderDetailHandlerTest {
         when(serviceOrderJpaRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> handler.handle(EMAIL, orderId));
+                () -> handler.execute(EMAIL, orderId));
 
         assertTrue(ex.getMessage().contains("does not belong"));
     }

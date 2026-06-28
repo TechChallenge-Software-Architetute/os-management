@@ -1,7 +1,7 @@
 package com.os.workshop.features.vehicle.shared.repository;
 
-import com.os.workshop.features.client.shared.repository.ClientEntity;
-import com.os.workshop.features.client.shared.repository.ClientJpaRepository;
+import com.os.workshop.infrastructure.persistence.client.ClientEntity;
+import com.os.workshop.infrastructure.persistence.client.ClientJpaRepository;
 import com.os.workshop.features.vehicle.shared.domain.Vehicle;
 import com.os.workshop.features.vehicle.shared.domain.VehicleType;
 import com.os.workshop.features.vehicle.shared.mapper.VehicleMapper;

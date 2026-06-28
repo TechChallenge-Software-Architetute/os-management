@@ -1,8 +1,9 @@
 package com.os.workshop.features.client.update;
 
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.exception.ClientNotFoundException;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.client.UpdateClientUseCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,13 +18,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class UpdateClientHandlerTest {
+class UpdateClientUseCaseTest {
 
     @Mock
     private ClientRepository clientRepository;
 
     @InjectMocks
-    private UpdateClientHandler handler;
+    private UpdateClientUseCase handler;
 
     private static final String VALID_CPF = "12345678909";
 
@@ -33,8 +34,7 @@ class UpdateClientHandlerTest {
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(clientRepository.save(any(Client.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        var request = new UpdateClientRequest("NEW NAME", VALID_CPF, "new@email.com", "11999999999");
-        Client result = handler.handle(1L, request);
+        Client result = handler.execute(1L, "NEW NAME", "new@email.com", "11999999999");
 
         assertEquals("NEW NAME", result.getName());
         assertEquals("new@email.com", result.getEmail());
@@ -46,8 +46,7 @@ class UpdateClientHandlerTest {
     void handle_whenClientNotFound_thenThrowsClientNotFoundException() {
         when(clientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        var request = new UpdateClientRequest("NAME", VALID_CPF, null, null);
-        assertThrows(ClientNotFoundException.class, () -> handler.handle(99L, request));
+        assertThrows(ClientNotFoundException.class, () -> handler.execute(99L, "NAME", null, null));
 
         verify(clientRepository, never()).save(any());
     }

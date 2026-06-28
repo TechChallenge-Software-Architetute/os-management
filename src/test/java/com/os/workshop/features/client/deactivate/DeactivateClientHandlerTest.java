@@ -1,8 +1,9 @@
 package com.os.workshop.features.client.deactivate;
 
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.exception.ClientNotFoundException;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.client.DeactivateClientUseCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,13 +17,13 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class DeactivateClientHandlerTest {
+class DeactivateClientUseCaseTest {
 
     @Mock
     private ClientRepository clientRepository;
 
     @InjectMocks
-    private DeactivateClientHandler handler;
+    private DeactivateClientUseCase handler;
 
     @Test
     void handle_whenClientExists_thenDeactivatesAndSaves() {
@@ -31,7 +32,7 @@ class DeactivateClientHandlerTest {
         when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
         when(clientRepository.save(any(Client.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        handler.handle(1L);
+        handler.execute(1L);
 
         assertFalse(client.isActive());
         verify(clientRepository).save(argThat(c -> !c.isActive()));
@@ -41,7 +42,7 @@ class DeactivateClientHandlerTest {
     void handle_whenClientNotFound_thenThrowsClientNotFoundException() {
         when(clientRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ClientNotFoundException.class, () -> handler.handle(99L));
+        assertThrows(ClientNotFoundException.class, () -> handler.execute(99L));
 
         verify(clientRepository, never()).save(any());
     }

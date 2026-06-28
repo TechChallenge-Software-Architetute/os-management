@@ -1,7 +1,8 @@
 package com.os.workshop.features.client.list;
 
-import com.os.workshop.features.client.shared.domain.Client;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.domain.client.Client;
+import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.client.ListClientsUseCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,13 +16,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ListClientsHandlerTest {
+class ListClientsUseCaseTest {
 
     @Mock
     private ClientRepository clientRepository;
 
     @InjectMocks
-    private ListClientsHandler handler;
+    private ListClientsUseCase handler;
 
     @Test
     void handle_whenClientsExist_thenReturnsList() {
@@ -29,7 +30,7 @@ class ListClientsHandlerTest {
         Client c2 = Client.create("BOB", "98765432100", null, null);
         when(clientRepository.findAllActive()).thenReturn(List.of(c1, c2));
 
-        List<Client> result = handler.handle();
+        List<Client> result = handler.execute();
 
         assertEquals(2, result.size());
     }
@@ -38,7 +39,7 @@ class ListClientsHandlerTest {
     void handle_whenNoClients_thenReturnsEmptyList() {
         when(clientRepository.findAllActive()).thenReturn(List.of());
 
-        List<Client> result = handler.handle();
+        List<Client> result = handler.execute();
 
         assertTrue(result.isEmpty());
     }

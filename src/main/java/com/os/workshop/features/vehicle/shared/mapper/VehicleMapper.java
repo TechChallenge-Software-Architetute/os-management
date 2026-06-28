@@ -1,6 +1,6 @@
 package com.os.workshop.features.vehicle.shared.mapper;
 
-import com.os.workshop.features.client.shared.repository.ClientEntity;
+import com.os.workshop.infrastructure.persistence.client.ClientEntity;
 import com.os.workshop.features.vehicle.shared.domain.Vehicle;
 import com.os.workshop.features.vehicle.shared.repository.VehicleEntity;
 import org.mapstruct.Mapper;

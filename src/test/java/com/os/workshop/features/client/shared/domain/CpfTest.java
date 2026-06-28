@@ -1,6 +1,6 @@
 package com.os.workshop.features.client.shared.domain;
 
-import com.os.workshop.features.client.shared.domain.valueobject.Cpf;
+import com.os.workshop.domain.client.Cpf;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

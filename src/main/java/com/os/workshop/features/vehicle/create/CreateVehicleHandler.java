@@ -1,7 +1,7 @@
 package com.os.workshop.features.vehicle.create;
 
-import com.os.workshop.features.client.shared.exception.ClientNotFoundException;
-import com.os.workshop.features.client.shared.repository.ClientRepository;
+import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.application.client.port.out.ClientRepository;
 import com.os.workshop.features.vehicle.shared.domain.Vehicle;
 import com.os.workshop.features.vehicle.shared.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;

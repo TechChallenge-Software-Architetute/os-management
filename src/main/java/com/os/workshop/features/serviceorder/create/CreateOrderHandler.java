@@ -2,7 +2,7 @@ package com.os.workshop.features.serviceorder.create;
 
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderHandler;
 import com.os.workshop.features.budget.findByServiceOrder.FindBudgetByServiceOrderResponse;
-import com.os.workshop.features.client.findByCpf.FindClientByCpfHandler;
+import com.os.workshop.application.client.FindClientByCpfUseCase;
 import com.os.workshop.features.service.create.CreateServiceHandler;
 import com.os.workshop.features.service.create.CreateServiceRequest;
 import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
@@ -27,7 +27,7 @@ public class CreateOrderHandler {
     private CreateServiceHandler createServiceHandler;
 
     @Autowired
-    private FindClientByCpfHandler findClientByCpfHandler;
+    private FindClientByCpfUseCase findClientByCpfUseCase;
 
     @Autowired
     private FindVehicleByPlateHandler findVehicleByPlateHandler;
@@ -42,7 +42,7 @@ public class CreateOrderHandler {
 
         var idOrdemServico = UUID.randomUUID();
 
-        findClientByCpfHandler.handle(request.getCpfCnpj());
+        findClientByCpfUseCase.execute(request.getCpfCnpj());
 
         findVehicleByPlateHandler.handle(request.getPlacaVeiculo());
 

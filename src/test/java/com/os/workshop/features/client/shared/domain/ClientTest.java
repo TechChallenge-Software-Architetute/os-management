@@ -1,5 +1,6 @@
 package com.os.workshop.features.client.shared.domain;
 
+import com.os.workshop.domain.client.Client;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
