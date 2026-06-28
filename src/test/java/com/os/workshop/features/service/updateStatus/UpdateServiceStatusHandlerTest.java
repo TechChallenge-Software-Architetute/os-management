@@ -1,9 +1,10 @@
 package com.os.workshop.features.service.updateStatus;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.application.service.UpdateServiceStatusUseCase;
+import com.os.workshop.application.service.port.out.ServiceRepository;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,36 +27,23 @@ class UpdateServiceStatusHandlerTest {
     private ServiceRepository serviceRepository;
 
     @InjectMocks
-    private UpdateServiceStatusHandler handler;
+    private UpdateServiceStatusUseCase useCase;
 
-    private ServiceEntity createServiceEntity(UUID id) {
-        ServiceEntity entity = new ServiceEntity();
-        entity.setId(id);
-        entity.setServiceTypeName("TROCA_OLEO");
-        entity.setIdOS(UUID.randomUUID());
+    private WorkshopService createService(UUID id) {
         ArrayList<Status> statusList = new ArrayList<>();
         statusList.add(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now()));
-        entity.setServiceStatus(statusList);
-        return entity;
-    }
-
-    private UpdateServiceStatusRequest createUpdateRequest(UUID id, ServiceStatusEnum status) {
-        UpdateServiceStatusRequest request = new UpdateServiceStatusRequest();
-        request.setId(id);
-        request.setStatus(status);
-        return request;
+        return new WorkshopService(id, "TROCA_OLEO", UUID.randomUUID(), statusList);
     }
 
     @Test
     void whenUpdatingStatusOfExistingService_thenNewStatusIsAdded() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity service = createServiceEntity(serviceId);
-        UpdateServiceStatusRequest request = createUpdateRequest(serviceId, ServiceStatusEnum.DOING);
+        WorkshopService service = createService(serviceId);
 
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(service));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> i.getArgument(0));
 
-        ServiceEntity result = handler.handle(request);
+        WorkshopService result = useCase.execute(serviceId, ServiceStatusEnum.DOING);
 
         assertNotNull(result);
         assertEquals(2, result.getServiceStatus().size());
@@ -67,29 +55,25 @@ class UpdateServiceStatusHandlerTest {
     @Test
     void whenUpdatingStatusOfNonExistingService_thenThrowsRuntimeException() {
         UUID serviceId = UUID.randomUUID();
-        UpdateServiceStatusRequest request = createUpdateRequest(serviceId, ServiceStatusEnum.DOING);
-
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> handler.handle(request));
+                () -> useCase.execute(serviceId, ServiceStatusEnum.DOING));
 
         assertEquals("Serviço não encontrado. ID: " + serviceId, exception.getMessage());
-        verify(serviceRepository, never()).save(any(ServiceEntity.class));
+        verify(serviceRepository, never()).save(any(WorkshopService.class));
     }
 
     @Test
     void whenUpdatingStatusToDone_thenStatusListContainsAllTransitions() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity service = createServiceEntity(serviceId);
+        WorkshopService service = createService(serviceId);
         service.getServiceStatus().add(new Status(ServiceStatusEnum.DOING, LocalDateTime.now()));
 
-        UpdateServiceStatusRequest request = createUpdateRequest(serviceId, ServiceStatusEnum.DONE);
-
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(service));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> i.getArgument(0));
 
-        ServiceEntity result = handler.handle(request);
+        WorkshopService result = useCase.execute(serviceId, ServiceStatusEnum.DONE);
 
         assertEquals(3, result.getServiceStatus().size());
         assertEquals(ServiceStatusEnum.TO_DO, result.getServiceStatus().get(0).getStatus());
@@ -100,13 +84,12 @@ class UpdateServiceStatusHandlerTest {
     @Test
     void whenUpdatingStatus_thenNewStatusHasTimestamp() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity service = createServiceEntity(serviceId);
-        UpdateServiceStatusRequest request = createUpdateRequest(serviceId, ServiceStatusEnum.DOING);
+        WorkshopService service = createService(serviceId);
 
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(service));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> i.getArgument(0));
 
-        ServiceEntity result = handler.handle(request);
+        WorkshopService result = useCase.execute(serviceId, ServiceStatusEnum.DOING);
 
         Status newStatus = result.getServiceStatus().get(1);
         assertNotNull(newStatus.getChangedAt());
@@ -116,13 +99,12 @@ class UpdateServiceStatusHandlerTest {
     @Test
     void whenUpdatingStatus_thenServiceIsSavedToRepository() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity service = createServiceEntity(serviceId);
-        UpdateServiceStatusRequest request = createUpdateRequest(serviceId, ServiceStatusEnum.DONE);
+        WorkshopService service = createService(serviceId);
 
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(service));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> i.getArgument(0));
 
-        handler.handle(request);
+        useCase.execute(serviceId, ServiceStatusEnum.DONE);
 
         verify(serviceRepository).findById(serviceId);
         verify(serviceRepository).save(service);

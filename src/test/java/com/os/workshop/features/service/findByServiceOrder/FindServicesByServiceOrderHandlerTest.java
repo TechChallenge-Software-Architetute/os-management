@@ -1,7 +1,8 @@
 package com.os.workshop.features.service.findByServiceOrder;
 
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.application.service.FindServicesByServiceOrderUseCase;
+import com.os.workshop.application.service.port.out.ServiceRepository;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,14 +22,13 @@ class FindServicesByServiceOrderHandlerTest {
     private ServiceRepository serviceRepository;
 
     @InjectMocks
-    private FindServicesByServiceOrderHandler handler;
+    private FindServicesByServiceOrderUseCase useCase;
 
     @Test
     void returnsServicesForOrderId() {
         UUID orderId = UUID.randomUUID();
-        ServiceEntity service = new ServiceEntity();
-        when(serviceRepository.findByIdOS(orderId)).thenReturn(List.of(service));
+        when(serviceRepository.findByIdOS(orderId)).thenReturn(List.of(new WorkshopService()));
 
-        assertEquals(1, handler.handle(orderId).size());
+        assertEquals(1, useCase.execute(orderId).size());
     }
 }

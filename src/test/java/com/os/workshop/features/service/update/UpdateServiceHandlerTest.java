@@ -1,9 +1,10 @@
 package com.os.workshop.features.service.update;
 
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
-import com.os.workshop.features.service.shared.repository.ServiceTypeEntity;
-import com.os.workshop.features.service.shared.repository.ServiceTypeRepository;
+import com.os.workshop.application.service.UpdateServiceUseCase;
+import com.os.workshop.application.service.port.out.ServiceRepository;
+import com.os.workshop.application.service.port.out.ServiceTypeRepository;
+import com.os.workshop.domain.service.ServiceType;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,23 +28,20 @@ class UpdateServiceHandlerTest {
     private ServiceTypeRepository serviceTypeRepository;
 
     @InjectMocks
-    private UpdateServiceHandler handler;
+    private UpdateServiceUseCase useCase;
 
     @Test
     void updatesServiceTypeAndOrderId() {
         UUID id = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
-        ServiceEntity service = new ServiceEntity();
-        UpdateServiceRequest request = new UpdateServiceRequest();
-        request.setServiceType("TROCA");
-        request.setIdOS(orderId);
+        WorkshopService service = new WorkshopService();
 
         when(serviceRepository.findById(id)).thenReturn(Optional.of(service));
         when(serviceTypeRepository.findByName("TROCA"))
-                .thenReturn(Optional.of(new ServiceTypeEntity(UUID.randomUUID(), "TROCA", "Troca")));
+                .thenReturn(Optional.of(new ServiceType(UUID.randomUUID(), "TROCA", "Troca")));
         when(serviceRepository.save(service)).thenReturn(service);
 
-        ServiceEntity result = handler.handle(id, request);
+        WorkshopService result = useCase.execute(id, "TROCA", orderId);
 
         assertEquals("TROCA", result.getServiceTypeName());
         assertEquals(orderId, result.getIdOS());
@@ -52,18 +50,15 @@ class UpdateServiceHandlerTest {
     @Test
     void throwsWhenServiceDoesNotExist() {
         UUID id = UUID.randomUUID();
-        UpdateServiceRequest request = new UpdateServiceRequest();
         when(serviceRepository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> handler.handle(id, request));
+        assertThrows(RuntimeException.class, () -> useCase.execute(id, "TROCA", UUID.randomUUID()));
     }
 
     @Test
     void throwsWhenServiceTypeDoesNotExist() {
         UUID id = UUID.randomUUID();
-        UpdateServiceRequest request = new UpdateServiceRequest();
-        request.setServiceType("TROCA");
-        when(serviceRepository.findById(id)).thenReturn(Optional.of(new ServiceEntity()));
+        when(serviceRepository.findById(id)).thenReturn(Optional.of(new WorkshopService()));
         when(serviceTypeRepository.findByName("TROCA")).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> handler.handle(id, request));
+        assertThrows(RuntimeException.class, () -> useCase.execute(id, "TROCA", UUID.randomUUID()));
     }
 }

@@ -2,10 +2,10 @@ package com.os.workshop.features.monitoring.averageExecutionTimeById;
 
 import com.os.workshop.features.monitoring.shared.domain.AverageTimeEnum;
 import com.os.workshop.features.monitoring.shared.domain.ServiceAverageTime;
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.infrastructure.persistence.service.ServiceEntity;
+import com.os.workshop.infrastructure.persistence.service.ServiceJpaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class GetAverageExecutionTimeByIdHandlerTest {
 
     @Mock
-    private ServiceRepository serviceRepository;
+    private ServiceJpaRepository serviceRepository;
 
     @InjectMocks
     private GetAverageExecutionTimeByIdHandler getAverageExecutionTimeByIdHandler;

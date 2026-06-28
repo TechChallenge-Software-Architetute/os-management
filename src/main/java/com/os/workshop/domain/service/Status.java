@@ -1,4 +1,4 @@
-package com.os.workshop.features.service.shared.domain;
+package com.os.workshop.domain.service;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +12,5 @@ import java.time.LocalDateTime;
 public class Status {
 
     private ServiceStatusEnum status = ServiceStatusEnum.TO_DO;
-
     private LocalDateTime changedAt;
 }

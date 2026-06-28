@@ -1,5 +1,6 @@
 package com.os.workshop.features.service.shared.domain;
 
+import com.os.workshop.domain.service.ServiceStatusEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

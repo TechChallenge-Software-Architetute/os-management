@@ -1,7 +1,7 @@
-package com.os.workshop.features.service.shared.repository;
+package com.os.workshop.infrastructure.persistence.service;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

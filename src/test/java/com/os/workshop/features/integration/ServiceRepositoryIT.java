@@ -1,11 +1,11 @@
 package com.os.workshop.features.integration;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
-import com.os.workshop.features.service.shared.repository.ServiceTypeEntity;
-import com.os.workshop.features.service.shared.repository.ServiceTypeRepository;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.infrastructure.persistence.service.ServiceEntity;
+import com.os.workshop.infrastructure.persistence.service.ServiceJpaRepository;
+import com.os.workshop.infrastructure.persistence.service.ServiceTypeEntity;
+import com.os.workshop.infrastructure.persistence.service.ServiceTypeJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -22,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class ServiceRepositoryIT extends BaseIntegrationTest {
 
     @Autowired
-    private ServiceRepository serviceRepository;
+    private ServiceJpaRepository serviceRepository;
 
     @Autowired
-    private ServiceTypeRepository serviceTypeRepository;
+    private ServiceTypeJpaRepository serviceTypeRepository;
 
     @Test
     void savesServiceWithJsonStatusConverter() {

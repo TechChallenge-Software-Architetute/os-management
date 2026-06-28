@@ -1,4 +1,4 @@
-package com.os.workshop.features.service.shared.repository;
+package com.os.workshop.infrastructure.persistence.service;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

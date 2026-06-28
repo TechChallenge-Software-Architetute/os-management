@@ -2,16 +2,11 @@ package com.os.workshop.features.service.findById;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.os.workshop.features.service.ServiceController;
-import com.os.workshop.features.service.create.CreateServiceHandler;
-import com.os.workshop.features.service.findByServiceOrder.FindServicesByServiceOrderHandler;
-import com.os.workshop.features.service.list.ListServicesHandler;
-import com.os.workshop.features.service.listTypes.ListServiceTypesHandler;
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.update.UpdateServiceHandler;
-import com.os.workshop.features.service.updateStatus.UpdateServiceStatusHandler;
+import com.os.workshop.adapter.in.web.service.ServiceController;
+import com.os.workshop.application.service.*;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,13 +30,13 @@ class FindServiceByIdControllerE2ETest {
 
     private MockMvc mockMvc;
 
-    @Mock private CreateServiceHandler createServiceHandler;
-    @Mock private FindServiceByIdHandler findServiceByIdHandler;
-    @Mock private FindServicesByServiceOrderHandler findServicesByServiceOrderHandler;
-    @Mock private ListServicesHandler listServicesHandler;
-    @Mock private ListServiceTypesHandler listServiceTypesHandler;
-    @Mock private UpdateServiceHandler updateServiceHandler;
-    @Mock private UpdateServiceStatusHandler updateServiceStatusHandler;
+    @Mock private CreateServiceUseCase createServiceUseCase;
+    @Mock private FindServiceByIdUseCase findServiceByIdUseCase;
+    @Mock private FindServicesByServiceOrderUseCase findServicesByServiceOrderUseCase;
+    @Mock private ListServicesUseCase listServicesUseCase;
+    @Mock private ListServiceTypesUseCase listServiceTypesUseCase;
+    @Mock private UpdateServiceUseCase updateServiceUseCase;
+    @Mock private UpdateServiceStatusUseCase updateServiceStatusUseCase;
 
     @BeforeEach
     void setUp() {
@@ -50,28 +45,25 @@ class FindServiceByIdControllerE2ETest {
         converter.setObjectMapper(objectMapper);
 
         ServiceController controller = new ServiceController(
-                createServiceHandler, findServiceByIdHandler, findServicesByServiceOrderHandler,
-                listServicesHandler, listServiceTypesHandler, updateServiceHandler, updateServiceStatusHandler);
+                createServiceUseCase, findServiceByIdUseCase, findServicesByServiceOrderUseCase,
+                listServicesUseCase, listServiceTypesUseCase, updateServiceUseCase, updateServiceStatusUseCase);
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setMessageConverters(converter)
                 .build();
     }
 
-    private ServiceEntity createServiceEntity() {
+    private WorkshopService createWorkshopService() {
         UUID serviceId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         UUID osId = UUID.fromString("33333333-3333-3333-3333-333333333333");
-        return new ServiceEntity(
-                serviceId, "TROCA_OLEO", osId,
-                List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now()))
-        );
+        return new WorkshopService(serviceId, "TROCA_OLEO", osId,
+                List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now())));
     }
 
     @Test
     void whenFindingServiceByExistingId_thenReturns200() throws Exception {
         UUID serviceId = UUID.fromString("22222222-2222-2222-2222-222222222222");
-        ServiceEntity entity = createServiceEntity();
-        when(findServiceByIdHandler.handle(serviceId)).thenReturn(entity);
+        when(findServiceByIdUseCase.execute(serviceId)).thenReturn(createWorkshopService());
 
         mockMvc.perform(get("/services/{id}", serviceId))
                 .andExpect(status().isOk())
@@ -82,7 +74,7 @@ class FindServiceByIdControllerE2ETest {
     @Test
     void whenFindingServiceByNonExistingId_thenReturns404() throws Exception {
         UUID serviceId = UUID.randomUUID();
-        when(findServiceByIdHandler.handle(serviceId))
+        when(findServiceByIdUseCase.execute(serviceId))
                 .thenThrow(new RuntimeException("Servico nao encontrado"));
 
         mockMvc.perform(get("/services/{id}", serviceId))

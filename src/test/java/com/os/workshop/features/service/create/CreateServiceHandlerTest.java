@@ -1,10 +1,11 @@
 package com.os.workshop.features.service.create;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
-import com.os.workshop.features.service.shared.repository.ServiceTypeEntity;
-import com.os.workshop.features.service.shared.repository.ServiceTypeRepository;
+import com.os.workshop.application.service.CreateServiceUseCase;
+import com.os.workshop.application.service.port.out.ServiceRepository;
+import com.os.workshop.application.service.port.out.ServiceTypeRepository;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.ServiceType;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,75 +29,52 @@ class CreateServiceHandlerTest {
     private ServiceTypeRepository serviceTypeRepository;
 
     @InjectMocks
-    private CreateServiceHandler createServiceHandler;
-
-    private CreateServiceRequest createRequest(String serviceType, UUID idOS) {
-        CreateServiceRequest request = new CreateServiceRequest();
-        request.setServiceType(serviceType);
-        request.setIdOS(idOS);
-        return request;
-    }
-
-    private ServiceTypeEntity createServiceType(String name) {
-        ServiceTypeEntity type = new ServiceTypeEntity();
-        type.setId(UUID.randomUUID());
-        type.setName(name);
-        type.setDescription("Descrição de " + name);
-        return type;
-    }
+    private CreateServiceUseCase createServiceUseCase;
 
     @Test
     void whenCreatingServiceWithValidType_thenServiceIsSaved() {
         UUID idOS = UUID.randomUUID();
         String typeName = "TROCA_OLEO";
-        CreateServiceRequest request = createRequest(typeName, idOS);
-        ServiceTypeEntity serviceType = createServiceType(typeName);
 
-        when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(serviceType));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> {
-            ServiceEntity entity = i.getArgument(0);
-            entity.setId(UUID.randomUUID());
-            return entity;
+        when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(new ServiceType(UUID.randomUUID(), typeName, "desc")));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> {
+            WorkshopService s = i.getArgument(0);
+            s.setId(UUID.randomUUID());
+            return s;
         });
 
-        ServiceEntity result = createServiceHandler.handle(request);
+        WorkshopService result = createServiceUseCase.execute(typeName, idOS);
 
         assertNotNull(result);
         assertNotNull(result.getId());
         assertEquals(typeName, result.getServiceTypeName());
         assertEquals(idOS, result.getIdOS());
-        assertNotNull(result.getServiceStatus());
         assertEquals(1, result.getServiceStatus().size());
         assertEquals(ServiceStatusEnum.TO_DO, result.getServiceStatus().get(0).getStatus());
-        verify(serviceRepository).save(any(ServiceEntity.class));
+        verify(serviceRepository).save(any(WorkshopService.class));
     }
 
     @Test
     void whenCreatingServiceWithInvalidType_thenThrowsRuntimeException() {
-        UUID idOS = UUID.randomUUID();
         String typeName = "TIPO_INEXISTENTE";
-        CreateServiceRequest request = createRequest(typeName, idOS);
-
         when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> createServiceHandler.handle(request));
+                () -> createServiceUseCase.execute(typeName, UUID.randomUUID()));
 
         assertEquals("Tipo de serviço não encontrado na base de Serviços.", exception.getMessage());
-        verify(serviceRepository, never()).save(any(ServiceEntity.class));
+        verify(serviceRepository, never()).save(any(WorkshopService.class));
     }
 
     @Test
     void whenCreatingService_thenInitialStatusIsToDo() {
         UUID idOS = UUID.randomUUID();
         String typeName = "ALINHAMENTO";
-        CreateServiceRequest request = createRequest(typeName, idOS);
-        ServiceTypeEntity serviceType = createServiceType(typeName);
 
-        when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(serviceType));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(new ServiceType(UUID.randomUUID(), typeName, "desc")));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> i.getArgument(0));
 
-        ServiceEntity result = createServiceHandler.handle(request);
+        WorkshopService result = createServiceUseCase.execute(typeName, idOS);
 
         assertEquals(ServiceStatusEnum.TO_DO, result.getServiceStatus().get(0).getStatus());
         assertNotNull(result.getServiceStatus().get(0).getChangedAt());
@@ -106,14 +84,12 @@ class CreateServiceHandlerTest {
     void whenCreatingService_thenServiceTypeNameMatchesFoundType() {
         UUID idOS = UUID.randomUUID();
         String typeName = "BALANCEAMENTO";
-        CreateServiceRequest request = createRequest(typeName, idOS);
-        ServiceTypeEntity serviceType = createServiceType(typeName);
 
-        when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(serviceType));
-        when(serviceRepository.save(any(ServiceEntity.class))).thenAnswer(i -> i.getArgument(0));
+        when(serviceTypeRepository.findByName(typeName)).thenReturn(Optional.of(new ServiceType(UUID.randomUUID(), typeName, "desc")));
+        when(serviceRepository.save(any(WorkshopService.class))).thenAnswer(i -> i.getArgument(0));
 
-        ServiceEntity result = createServiceHandler.handle(request);
+        WorkshopService result = createServiceUseCase.execute(typeName, idOS);
 
-        assertEquals(serviceType.getName(), result.getServiceTypeName());
+        assertEquals(typeName, result.getServiceTypeName());
     }
 }

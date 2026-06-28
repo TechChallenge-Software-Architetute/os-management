@@ -1,6 +1,6 @@
-package com.os.workshop.features.service.updateStatus;
+package com.os.workshop.adapter.in.web.service;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
+import com.os.workshop.domain.service.ServiceStatusEnum;
 import lombok.Data;
 
 import java.util.UUID;

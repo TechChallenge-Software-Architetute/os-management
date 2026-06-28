@@ -1,4 +1,4 @@
-package com.os.workshop.features.service.update;
+package com.os.workshop.adapter.in.web.service;
 
 import com.os.workshop.features.utils.annotations.UpperCase;
 import lombok.Data;
@@ -6,9 +6,9 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
-public class UpdateServiceRequest {
+public class CreateServiceRequest {
     @UpperCase
-    private String serviceType;
+    private String ServiceType;
 
     private UUID idOS;
 }

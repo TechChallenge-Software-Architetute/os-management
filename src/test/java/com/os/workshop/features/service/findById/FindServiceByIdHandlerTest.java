@@ -1,9 +1,10 @@
 package com.os.workshop.features.service.findById;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.application.service.FindServiceByIdUseCase;
+import com.os.workshop.application.service.port.out.ServiceRepository;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,24 +27,20 @@ class FindServiceByIdHandlerTest {
     private ServiceRepository serviceRepository;
 
     @InjectMocks
-    private FindServiceByIdHandler findServiceByIdHandler;
+    private FindServiceByIdUseCase findServiceByIdUseCase;
 
-    private ServiceEntity createServiceEntity(UUID id) {
-        ServiceEntity entity = new ServiceEntity();
-        entity.setId(id);
-        entity.setServiceTypeName("TROCA_OLEO");
-        entity.setIdOS(UUID.randomUUID());
-        entity.setServiceStatus(List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now())));
-        return entity;
+    private WorkshopService createService(UUID id) {
+        return new WorkshopService(id, "TROCA_OLEO", UUID.randomUUID(),
+                List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now())));
     }
 
     @Test
     void whenFindingServiceByExistingId_thenReturnsService() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity expected = createServiceEntity(serviceId);
+        WorkshopService expected = createService(serviceId);
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(expected));
 
-        ServiceEntity result = findServiceByIdHandler.handle(serviceId);
+        WorkshopService result = findServiceByIdUseCase.execute(serviceId);
 
         assertNotNull(result);
         assertEquals(serviceId, result.getId());
@@ -57,7 +54,7 @@ class FindServiceByIdHandlerTest {
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> findServiceByIdHandler.handle(serviceId));
+                () -> findServiceByIdUseCase.execute(serviceId));
 
         assertEquals("Servico nao encontrado. ID: " + serviceId, exception.getMessage());
         verify(serviceRepository).findById(serviceId);
@@ -66,10 +63,10 @@ class FindServiceByIdHandlerTest {
     @Test
     void whenFindingServiceByExistingId_thenReturnsCorrectServiceStatus() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity expected = createServiceEntity(serviceId);
+        WorkshopService expected = createService(serviceId);
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(expected));
 
-        ServiceEntity result = findServiceByIdHandler.handle(serviceId);
+        WorkshopService result = findServiceByIdUseCase.execute(serviceId);
 
         assertNotNull(result.getServiceStatus());
         assertEquals(1, result.getServiceStatus().size());
@@ -79,10 +76,10 @@ class FindServiceByIdHandlerTest {
     @Test
     void whenFindingServiceByExistingId_thenReturnsCorrectIdOS() {
         UUID serviceId = UUID.randomUUID();
-        ServiceEntity expected = createServiceEntity(serviceId);
+        WorkshopService expected = createService(serviceId);
         when(serviceRepository.findById(serviceId)).thenReturn(Optional.of(expected));
 
-        ServiceEntity result = findServiceByIdHandler.handle(serviceId);
+        WorkshopService result = findServiceByIdUseCase.execute(serviceId);
 
         assertEquals(expected.getIdOS(), result.getIdOS());
     }

@@ -2,10 +2,10 @@ package com.os.workshop.features.monitoring.averageExecutionTime;
 
 import com.os.workshop.features.monitoring.shared.domain.AverageTimeEnum;
 import com.os.workshop.features.monitoring.shared.domain.ServiceAverageTime;
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.shared.repository.ServiceRepository;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.infrastructure.persistence.service.ServiceEntity;
+import com.os.workshop.infrastructure.persistence.service.ServiceJpaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ public class GetAverageExecutionTimeHandler {
     private static final Logger logger = LoggerFactory.getLogger(GetAverageExecutionTimeHandler.class);
 
     @Autowired
-    private ServiceRepository serviceRepository;
+    private ServiceJpaRepository serviceRepository;
 
     public List<ServiceAverageTime> handle(GetAverageExecutionTimeRequest request) {
         logger.info("Calculando tempo médio de execução dos serviços...");

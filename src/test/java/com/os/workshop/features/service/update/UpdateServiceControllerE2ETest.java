@@ -2,16 +2,12 @@ package com.os.workshop.features.service.update;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.os.workshop.features.service.ServiceController;
-import com.os.workshop.features.service.create.CreateServiceHandler;
-import com.os.workshop.features.service.findById.FindServiceByIdHandler;
-import com.os.workshop.features.service.findByServiceOrder.FindServicesByServiceOrderHandler;
-import com.os.workshop.features.service.list.ListServicesHandler;
-import com.os.workshop.features.service.listTypes.ListServiceTypesHandler;
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
-import com.os.workshop.features.service.shared.domain.Status;
-import com.os.workshop.features.service.shared.repository.ServiceEntity;
-import com.os.workshop.features.service.updateStatus.UpdateServiceStatusHandler;
+import com.os.workshop.adapter.in.web.service.ServiceController;
+import com.os.workshop.adapter.in.web.service.UpdateServiceRequest;
+import com.os.workshop.application.service.*;
+import com.os.workshop.domain.service.ServiceStatusEnum;
+import com.os.workshop.domain.service.Status;
+import com.os.workshop.domain.service.WorkshopService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,13 +35,13 @@ class UpdateServiceControllerE2ETest {
     private MockMvc mockMvc;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @Mock private CreateServiceHandler createServiceHandler;
-    @Mock private FindServiceByIdHandler findServiceByIdHandler;
-    @Mock private FindServicesByServiceOrderHandler findServicesByServiceOrderHandler;
-    @Mock private ListServicesHandler listServicesHandler;
-    @Mock private ListServiceTypesHandler listServiceTypesHandler;
-    @Mock private UpdateServiceHandler updateServiceHandler;
-    @Mock private UpdateServiceStatusHandler updateServiceStatusHandler;
+    @Mock private CreateServiceUseCase createServiceUseCase;
+    @Mock private FindServiceByIdUseCase findServiceByIdUseCase;
+    @Mock private FindServicesByServiceOrderUseCase findServicesByServiceOrderUseCase;
+    @Mock private ListServicesUseCase listServicesUseCase;
+    @Mock private ListServiceTypesUseCase listServiceTypesUseCase;
+    @Mock private UpdateServiceUseCase updateServiceUseCase;
+    @Mock private UpdateServiceStatusUseCase updateServiceStatusUseCase;
 
     @BeforeEach
     void setUp() {
@@ -53,21 +49,12 @@ class UpdateServiceControllerE2ETest {
         converter.setObjectMapper(objectMapper);
 
         ServiceController controller = new ServiceController(
-                createServiceHandler, findServiceByIdHandler, findServicesByServiceOrderHandler,
-                listServicesHandler, listServiceTypesHandler, updateServiceHandler, updateServiceStatusHandler);
+                createServiceUseCase, findServiceByIdUseCase, findServicesByServiceOrderUseCase,
+                listServicesUseCase, listServiceTypesUseCase, updateServiceUseCase, updateServiceStatusUseCase);
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setMessageConverters(converter)
                 .build();
-    }
-
-    private ServiceEntity createServiceEntity() {
-        UUID serviceId = UUID.fromString("22222222-2222-2222-2222-222222222222");
-        UUID osId = UUID.fromString("33333333-3333-3333-3333-333333333333");
-        return new ServiceEntity(
-                serviceId, "TROCA_OLEO", osId,
-                List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now()))
-        );
     }
 
     private UpdateServiceRequest createUpdateRequest() {
@@ -80,11 +67,12 @@ class UpdateServiceControllerE2ETest {
     @Test
     void whenUpdatingServiceWithValidData_thenReturns200() throws Exception {
         UUID serviceId = UUID.fromString("22222222-2222-2222-2222-222222222222");
-        ServiceEntity updatedEntity = createServiceEntity();
-        updatedEntity.setServiceTypeName("ALINHAMENTO");
+        UUID osId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+        WorkshopService updatedService = new WorkshopService(serviceId, "ALINHAMENTO", osId,
+                List.of(new Status(ServiceStatusEnum.TO_DO, LocalDateTime.now())));
 
-        when(updateServiceHandler.handle(eq(serviceId), any(UpdateServiceRequest.class)))
-                .thenReturn(updatedEntity);
+        when(updateServiceUseCase.execute(eq(serviceId), eq("ALINHAMENTO"), eq(osId)))
+                .thenReturn(updatedService);
 
         mockMvc.perform(put("/services/{id}", serviceId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +85,7 @@ class UpdateServiceControllerE2ETest {
     @Test
     void whenUpdatingServiceAndNotFound_thenReturns404() throws Exception {
         UUID serviceId = UUID.randomUUID();
-        when(updateServiceHandler.handle(eq(serviceId), any(UpdateServiceRequest.class)))
+        when(updateServiceUseCase.execute(eq(serviceId), any(), any()))
                 .thenThrow(new RuntimeException("Servico nao encontrado"));
 
         mockMvc.perform(put("/services/{id}", serviceId)

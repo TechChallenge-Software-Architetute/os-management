@@ -1,6 +1,7 @@
 package com.os.workshop.features.service.updateStatus;
 
-import com.os.workshop.features.service.shared.domain.ServiceStatusEnum;
+import com.os.workshop.adapter.in.web.service.UpdateServiceStatusRequest;
+import com.os.workshop.domain.service.ServiceStatusEnum;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;

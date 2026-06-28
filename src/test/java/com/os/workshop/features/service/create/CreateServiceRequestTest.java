@@ -1,5 +1,6 @@
 package com.os.workshop.features.service.create;
 
+import com.os.workshop.adapter.in.web.service.CreateServiceRequest;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
