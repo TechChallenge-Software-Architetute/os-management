@@ -1,11 +1,11 @@
 package com.os.workshop.features.integration;
 
-import com.os.workshop.features.product.shared.domain.ProductType;
-import com.os.workshop.features.product.shared.domain.UnitOfMeasure;
-import com.os.workshop.features.product.shared.repository.PartEntity;
-import com.os.workshop.features.product.shared.repository.PartJpaRepository;
-import com.os.workshop.features.product.shared.repository.SupplyEntity;
-import com.os.workshop.features.product.shared.repository.SupplyJpaRepository;
+import com.os.workshop.domain.product.ProductType;
+import com.os.workshop.domain.product.UnitOfMeasure;
+import com.os.workshop.infrastructure.persistence.product.PartEntity;
+import com.os.workshop.infrastructure.persistence.product.PartJpaRepository;
+import com.os.workshop.infrastructure.persistence.product.SupplyEntity;
+import com.os.workshop.infrastructure.persistence.product.SupplyJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -2,7 +2,7 @@ package com.os.workshop.features.budget.shared.repository;
 
 import com.os.workshop.features.budget.shared.domain.Budget;
 import com.os.workshop.features.budget.shared.domain.BudgetItem;
-import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.domain.product.ProductType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

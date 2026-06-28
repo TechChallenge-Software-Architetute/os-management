@@ -4,7 +4,7 @@ import com.os.workshop.features.budget.shared.domain.Budget;
 import com.os.workshop.features.budget.shared.domain.BudgetItem;
 import com.os.workshop.features.budget.shared.repository.BudgetEntity;
 import com.os.workshop.features.budget.shared.repository.BudgetItemEntity;
-import com.os.workshop.features.product.shared.domain.ProductType;
+import com.os.workshop.domain.product.ProductType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
