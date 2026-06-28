@@ -1,6 +1,6 @@
 package com.os.workshop.adapter.in.web.service;
 
-import com.os.workshop.features.utils.annotations.UpperCase;
+import com.os.workshop.infrastructure.config.UpperCase;
 import lombok.Data;
 
 import java.util.UUID;

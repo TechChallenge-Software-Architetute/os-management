@@ -1,10 +1,10 @@
 package com.os.workshop.application.client;
 
 import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
-import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
-import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
+import com.os.workshop.domain.serviceorder.ServiceOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +16,12 @@ import java.util.List;
 public class FindMyOrdersUseCase {
 
     private final ClientRepository clientRepository;
-    private final ServiceOrderJpaRepository serviceOrderJpaRepository;
+    private final ServiceOrderRepository serviceOrderRepository;
 
     @Transactional(readOnly = true)
-    public List<ServiceOrderEntity> execute(String email) {
+    public List<ServiceOrder> execute(String email) {
         Client client = clientRepository.findByEmail(email)
                 .orElseThrow(() -> new ClientNotFoundException("email: " + email));
-        return serviceOrderJpaRepository.findByCpfCnpj(client.getCpf().getValue());
+        return serviceOrderRepository.findByCpfCnpj(client.getCpf().getValue());
     }
 }

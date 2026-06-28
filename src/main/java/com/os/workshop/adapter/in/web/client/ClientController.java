@@ -35,9 +35,7 @@ public class ClientController {
 
     @GetMapping
     public ResponseEntity<List<ClientResponse>> findAll() {
-        var response = listClientsUseCase.execute().stream()
-                .map(ClientResponse::from)
-                .toList();
+        var response = listClientsUseCase.execute().stream().map(ClientResponse::from).toList();
         return ResponseEntity.ok(response);
     }
 
@@ -68,23 +66,20 @@ public class ClientController {
     public ResponseEntity<List<FindMyOrdersResponse>> findMyOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
         var orders = findMyOrdersUseCase.execute(userDetails.getUsername()).stream()
-                .map(FindMyOrdersResponse::from)
-                .toList();
+                .map(FindMyOrdersResponse::from).toList();
         return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/my-orders/{orderId}")
     public ResponseEntity<FindMyOrderDetailResponse> findMyOrderDetail(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable UUID orderId) {
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID orderId) {
         var result = findMyOrderDetailUseCase.execute(userDetails.getUsername(), orderId);
         return ResponseEntity.ok(FindMyOrderDetailResponse.from(result.order(), result.budget()));
     }
 
     @PatchMapping("/my-orders/{orderId}/approve")
     public ResponseEntity<ApproveMyOrderResponse> approveMyOrder(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable UUID orderId) {
+            @AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID orderId) {
         var result = approveMyOrderUseCase.execute(userDetails.getUsername(), orderId);
         return ResponseEntity.ok(ApproveMyOrderResponse.from(result.order(), result.budget()));
     }
