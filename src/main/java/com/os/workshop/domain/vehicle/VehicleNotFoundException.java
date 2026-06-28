@@ -1,4 +1,4 @@
-package com.os.workshop.features.vehicle.shared.exception;
+package com.os.workshop.domain.vehicle;
 
 public class VehicleNotFoundException extends RuntimeException {
     public VehicleNotFoundException(String identifier) {

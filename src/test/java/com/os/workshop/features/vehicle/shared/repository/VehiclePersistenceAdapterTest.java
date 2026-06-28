@@ -2,9 +2,12 @@ package com.os.workshop.features.vehicle.shared.repository;
 
 import com.os.workshop.infrastructure.persistence.client.ClientEntity;
 import com.os.workshop.infrastructure.persistence.client.ClientJpaRepository;
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
-import com.os.workshop.features.vehicle.shared.domain.VehicleType;
-import com.os.workshop.features.vehicle.shared.mapper.VehicleMapper;
+import com.os.workshop.domain.vehicle.Vehicle;
+import com.os.workshop.domain.vehicle.VehicleType;
+import com.os.workshop.adapter.out.persistence.vehicle.VehicleMapper;
+import com.os.workshop.adapter.out.persistence.vehicle.VehiclePersistenceAdapter;
+import com.os.workshop.infrastructure.persistence.vehicle.VehicleJpaRepository;
+import com.os.workshop.infrastructure.persistence.vehicle.VehicleEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

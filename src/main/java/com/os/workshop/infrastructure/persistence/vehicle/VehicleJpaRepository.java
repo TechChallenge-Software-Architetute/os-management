@@ -1,4 +1,4 @@
-package com.os.workshop.features.vehicle.shared.repository;
+package com.os.workshop.infrastructure.persistence.vehicle;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

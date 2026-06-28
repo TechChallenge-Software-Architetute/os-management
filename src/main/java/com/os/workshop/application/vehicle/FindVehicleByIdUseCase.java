@@ -1,20 +1,20 @@
-package com.os.workshop.features.vehicle.findById;
+package com.os.workshop.application.vehicle;
 
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
-import com.os.workshop.features.vehicle.shared.exception.VehicleNotFoundException;
-import com.os.workshop.features.vehicle.shared.repository.VehicleRepository;
+import com.os.workshop.application.vehicle.port.out.VehicleRepository;
+import com.os.workshop.domain.vehicle.Vehicle;
+import com.os.workshop.domain.vehicle.VehicleNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class FindVehicleByIdHandler {
+public class FindVehicleByIdUseCase {
 
     private final VehicleRepository vehicleRepository;
 
     @Transactional(readOnly = true)
-    public Vehicle handle(Long id) {
+    public Vehicle execute(Long id) {
         return vehicleRepository.findById(id)
                 .orElseThrow(() -> new VehicleNotFoundException("id: " + id));
     }

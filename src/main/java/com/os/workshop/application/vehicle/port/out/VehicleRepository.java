@@ -1,6 +1,6 @@
-package com.os.workshop.features.vehicle.shared.repository;
+package com.os.workshop.application.vehicle.port.out;
 
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
+import com.os.workshop.domain.vehicle.Vehicle;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,5 +1,7 @@
 package com.os.workshop.features.vehicle.shared.domain.valueobject;
 
+import com.os.workshop.domain.vehicle.LicensePlate;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

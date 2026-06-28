@@ -1,6 +1,6 @@
-package com.os.workshop.features.vehicle.create;
+package com.os.workshop.adapter.in.web.vehicle;
 
-import com.os.workshop.features.vehicle.shared.domain.VehicleType;
+import com.os.workshop.domain.vehicle.VehicleType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

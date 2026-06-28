@@ -5,7 +5,7 @@ import com.os.workshop.infrastructure.persistence.client.ClientEntity;
 import com.os.workshop.features.stock.shared.repository.StockEntity;
 import com.os.workshop.features.stock.shared.repository.StockMovementEntity;
 import com.os.workshop.features.stock.shared.repository.StockReservationEntity;
-import com.os.workshop.features.vehicle.shared.repository.VehicleEntity;
+import com.os.workshop.infrastructure.persistence.vehicle.VehicleEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 

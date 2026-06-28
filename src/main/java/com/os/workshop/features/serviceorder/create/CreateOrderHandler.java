@@ -10,7 +10,7 @@ import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceSta
 import com.os.workshop.features.serviceorder.shared.mapper.ServiceOrderMapper;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
-import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateHandler;
+import com.os.workshop.application.vehicle.FindVehicleByPlateUseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,7 @@ public class CreateOrderHandler {
     private FindClientByCpfUseCase findClientByCpfUseCase;
 
     @Autowired
-    private FindVehicleByPlateHandler findVehicleByPlateHandler;
+    private FindVehicleByPlateUseCase findVehicleByPlateUseCase;
 
     @Autowired
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
@@ -44,7 +44,7 @@ public class CreateOrderHandler {
 
         findClientByCpfUseCase.execute(request.getCpfCnpj());
 
-        findVehicleByPlateHandler.handle(request.getPlacaVeiculo());
+        findVehicleByPlateUseCase.execute(request.getPlacaVeiculo());
 
         request.getServiceTypes().forEach(
                 service -> {

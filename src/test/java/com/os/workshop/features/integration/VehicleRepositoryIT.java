@@ -2,9 +2,9 @@ package com.os.workshop.features.integration;
 
 import com.os.workshop.infrastructure.persistence.client.ClientEntity;
 import com.os.workshop.infrastructure.persistence.client.ClientJpaRepository;
-import com.os.workshop.features.vehicle.shared.domain.VehicleType;
-import com.os.workshop.features.vehicle.shared.repository.VehicleEntity;
-import com.os.workshop.features.vehicle.shared.repository.VehicleJpaRepository;
+import com.os.workshop.domain.vehicle.VehicleType;
+import com.os.workshop.infrastructure.persistence.vehicle.VehicleEntity;
+import com.os.workshop.infrastructure.persistence.vehicle.VehicleJpaRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -3,15 +3,14 @@ package com.os.workshop.features.vehicle;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
 import com.os.workshop.application.client.port.out.ClientRepository;
-import com.os.workshop.features.vehicle.create.CreateVehicleHandler;
-import com.os.workshop.features.vehicle.create.CreateVehicleRequest;
-import com.os.workshop.features.vehicle.deactivate.DeactivateVehicleHandler;
-import com.os.workshop.features.vehicle.findById.FindVehicleByIdHandler;
-import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateHandler;
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
-import com.os.workshop.features.vehicle.shared.domain.VehicleType;
-import com.os.workshop.features.vehicle.shared.exception.VehicleNotFoundException;
-import com.os.workshop.features.vehicle.shared.repository.VehicleRepository;
+import com.os.workshop.application.vehicle.CreateVehicleUseCase;
+import com.os.workshop.application.vehicle.DeactivateVehicleUseCase;
+import com.os.workshop.application.vehicle.FindVehicleByIdUseCase;
+import com.os.workshop.application.vehicle.FindVehicleByPlateUseCase;
+import com.os.workshop.domain.vehicle.Vehicle;
+import com.os.workshop.domain.vehicle.VehicleType;
+import com.os.workshop.domain.vehicle.VehicleNotFoundException;
+import com.os.workshop.application.vehicle.port.out.VehicleRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,15 +31,10 @@ class VehicleServiceTest {
     @Mock private VehicleRepository vehicleRepository;
     @Mock private ClientRepository clientRepository;
 
-    @InjectMocks private CreateVehicleHandler createVehicleHandler;
-    @InjectMocks private FindVehicleByIdHandler findVehicleByIdHandler;
-    @InjectMocks private FindVehicleByPlateHandler findVehicleByPlateHandler;
-    @InjectMocks private DeactivateVehicleHandler deactivateVehicleHandler;
-
-    private CreateVehicleRequest createRequest() {
-        return new CreateVehicleRequest(1L, "ABC1234", "Toyota", "Corolla",
-                2020, "White", VehicleType.CAR);
-    }
+    @InjectMocks private CreateVehicleUseCase createVehicleUseCase;
+    @InjectMocks private FindVehicleByIdUseCase findVehicleByIdUseCase;
+    @InjectMocks private FindVehicleByPlateUseCase findVehicleByPlateUseCase;
+    @InjectMocks private DeactivateVehicleUseCase deactivateVehicleUseCase;
 
     private Vehicle createVehicle() {
         return Vehicle.reconstitute(1L, 1L, "ABC1234", "TOYOTA", "COROLLA",
@@ -60,7 +54,7 @@ class VehicleServiceTest {
         when(vehicleRepository.existsByPlate("ABC1234")).thenReturn(false);
         when(vehicleRepository.save(any(Vehicle.class))).thenReturn(createVehicle());
 
-        Vehicle result = createVehicleHandler.handle(createRequest());
+        Vehicle result = createVehicleUseCase.execute(1L, "ABC1234", "Toyota", "Corolla", 2020, "White", VehicleType.CAR);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
@@ -70,34 +64,34 @@ class VehicleServiceTest {
     @Test
     void whenCreatingVehicleWithNonExistingClient_thenThrowsClientNotFound() {
         when(clientRepository.findById(1L)).thenReturn(Optional.empty());
-        var result = createRequest();
-        assertThrows(ClientNotFoundException.class, () -> createVehicleHandler.handle(result));
+        assertThrows(ClientNotFoundException.class,
+                () -> createVehicleUseCase.execute(1L, "ABC1234", "Toyota", "Corolla", 2020, "White", VehicleType.CAR));
     }
 
     @Test
     void whenCreatingVehicleWithDuplicatePlate_thenThrowsIllegalState() {
         when(clientRepository.findById(1L)).thenReturn(Optional.of(createClient()));
         when(vehicleRepository.existsByPlate("ABC1234")).thenReturn(true);
-        var result = createRequest();
-        assertThrows(IllegalStateException.class, () -> createVehicleHandler.handle(result));
+        assertThrows(IllegalStateException.class,
+                () -> createVehicleUseCase.execute(1L, "ABC1234", "Toyota", "Corolla", 2020, "White", VehicleType.CAR));
     }
 
     @Test
     void whenFindingVehicleByExistingId_thenReturnsVehicle() {
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(createVehicle()));
-        assertEquals(1L, findVehicleByIdHandler.handle(1L).getId());
+        assertEquals(1L, findVehicleByIdUseCase.execute(1L).getId());
     }
 
     @Test
     void whenFindingVehicleByNonExistingId_thenThrowsVehicleNotFound() {
         when(vehicleRepository.findById(999L)).thenReturn(Optional.empty());
-        assertThrows(VehicleNotFoundException.class, () -> findVehicleByIdHandler.handle(999L));
+        assertThrows(VehicleNotFoundException.class, () -> findVehicleByIdUseCase.execute(999L));
     }
 
     @Test
     void whenFindingVehicleByExistingPlate_thenReturnsVehicle() {
         when(vehicleRepository.findByPlate("ABC1234")).thenReturn(Optional.of(createVehicle()));
-        assertEquals("ABC1234", findVehicleByPlateHandler.handle("ABC1234").getPlate().getValue());
+        assertEquals("ABC1234", findVehicleByPlateUseCase.execute("ABC1234").getPlate().getValue());
     }
 
     @Test
@@ -105,7 +99,7 @@ class VehicleServiceTest {
         Vehicle vehicle = createVehicle();
         when(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle));
         when(vehicleRepository.save(any(Vehicle.class))).thenReturn(vehicle);
-        deactivateVehicleHandler.handle(1L);
+        deactivateVehicleUseCase.execute(1L);
         assertFalse(vehicle.isActive());
         verify(vehicleRepository).save(vehicle);
     }

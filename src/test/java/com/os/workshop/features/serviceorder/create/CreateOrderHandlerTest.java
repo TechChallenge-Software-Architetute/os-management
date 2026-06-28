@@ -10,8 +10,8 @@ import com.os.workshop.features.serviceorder.shared.domain.ServiceOrder;
 import com.os.workshop.features.serviceorder.shared.domain.enums.OrderServiceStatusEnum;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderEntity;
 import com.os.workshop.features.serviceorder.shared.repository.ServiceOrderJpaRepository;
-import com.os.workshop.features.vehicle.findByPlate.FindVehicleByPlateHandler;
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
+import com.os.workshop.application.vehicle.FindVehicleByPlateUseCase;
+import com.os.workshop.domain.vehicle.Vehicle;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,7 +35,7 @@ class CreateOrderHandlerTest {
     private FindClientByCpfUseCase findClientByCpfUseCase;
 
     @Mock
-    private FindVehicleByPlateHandler findVehicleByPlateHandler;
+    private FindVehicleByPlateUseCase findVehicleByPlateUseCase;
 
     @Mock
     private ServiceOrderJpaRepository serviceOrderJpaRepository;
@@ -59,7 +59,7 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", List.of("TROCA_OLEO", "ALINHAMENTO"));
 
         when(findClientByCpfUseCase.execute("12345678900")).thenReturn(mock(Client.class));
-        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(findVehicleByPlateUseCase.execute("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
@@ -81,7 +81,7 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", serviceTypes);
 
         when(findClientByCpfUseCase.execute("12345678900")).thenReturn(mock(Client.class));
-        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(findVehicleByPlateUseCase.execute("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
@@ -107,7 +107,7 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "INVALID", List.of("TROCA_OLEO"));
 
         when(findClientByCpfUseCase.execute("12345678900")).thenReturn(mock(Client.class));
-        when(findVehicleByPlateHandler.handle("INVALID")).thenThrow(new RuntimeException("Vehicle not found"));
+        when(findVehicleByPlateUseCase.execute("INVALID")).thenThrow(new RuntimeException("Vehicle not found"));
 
         assertThrows(RuntimeException.class, () -> createOrderHandler.handle(request));
 
@@ -119,7 +119,7 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", List.of("TROCA_OLEO"));
 
         when(findClientByCpfUseCase.execute("12345678900")).thenReturn(mock(Client.class));
-        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(findVehicleByPlateUseCase.execute("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
@@ -134,7 +134,7 @@ class CreateOrderHandlerTest {
         CreateOrderRequest request = createRequest("12345678900", "ABC1234", List.of("TROCA_OLEO"));
 
         when(findClientByCpfUseCase.execute("12345678900")).thenReturn(mock(Client.class));
-        when(findVehicleByPlateHandler.handle("ABC1234")).thenReturn(mock(Vehicle.class));
+        when(findVehicleByPlateUseCase.execute("ABC1234")).thenReturn(mock(Vehicle.class));
         when(createServiceHandler.handle(any(CreateServiceRequest.class))).thenReturn(new ServiceEntity());
         when(serviceOrderJpaRepository.save(any(ServiceOrderEntity.class))).thenAnswer(i -> i.getArgument(0));
         when(findBudgetByServiceOrderHandler.handle(any())).thenReturn(Optional.empty());
@@ -142,6 +142,6 @@ class CreateOrderHandlerTest {
         createOrderHandler.handle(request);
 
         verify(findClientByCpfUseCase).execute("12345678900");
-        verify(findVehicleByPlateHandler).handle("ABC1234");
+        verify(findVehicleByPlateUseCase).execute("ABC1234");
     }
 }

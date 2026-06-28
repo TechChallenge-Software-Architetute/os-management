@@ -1,11 +1,11 @@
-package com.os.workshop.features.vehicle.create;
+package com.os.workshop.adapter.in.web.vehicle;
 
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
-import com.os.workshop.features.vehicle.shared.domain.VehicleType;
+import com.os.workshop.domain.vehicle.Vehicle;
+import com.os.workshop.domain.vehicle.VehicleType;
 
 import java.time.LocalDateTime;
 
-public record CreateVehicleResponse(
+public record VehicleResponse(
         Long id,
         Long clientId,
         String plate,
@@ -18,8 +18,8 @@ public record CreateVehicleResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static CreateVehicleResponse from(Vehicle vehicle) {
-        return new CreateVehicleResponse(
+    public static VehicleResponse from(Vehicle vehicle) {
+        return new VehicleResponse(
                 vehicle.getId(),
                 vehicle.getClientId(),
                 vehicle.getPlate().formatted(),

@@ -1,4 +1,4 @@
-package com.os.workshop.features.vehicle.shared.domain;
+package com.os.workshop.domain.vehicle;
 
 public enum VehicleType {
     CAR,

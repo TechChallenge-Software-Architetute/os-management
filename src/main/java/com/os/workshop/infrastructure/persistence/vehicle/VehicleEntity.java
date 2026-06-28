@@ -1,7 +1,7 @@
-package com.os.workshop.features.vehicle.shared.repository;
+package com.os.workshop.infrastructure.persistence.vehicle;
 
+import com.os.workshop.domain.vehicle.VehicleType;
 import com.os.workshop.infrastructure.persistence.client.ClientEntity;
-import com.os.workshop.features.vehicle.shared.domain.VehicleType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,20 +1,20 @@
-package com.os.workshop.features.vehicle.deactivate;
+package com.os.workshop.application.vehicle;
 
-import com.os.workshop.features.vehicle.shared.domain.Vehicle;
-import com.os.workshop.features.vehicle.shared.exception.VehicleNotFoundException;
-import com.os.workshop.features.vehicle.shared.repository.VehicleRepository;
+import com.os.workshop.application.vehicle.port.out.VehicleRepository;
+import com.os.workshop.domain.vehicle.Vehicle;
+import com.os.workshop.domain.vehicle.VehicleNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class DeactivateVehicleHandler {
+public class DeactivateVehicleUseCase {
 
     private final VehicleRepository vehicleRepository;
 
     @Transactional
-    public void handle(Long id) {
+    public void execute(Long id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new VehicleNotFoundException("id: " + id));
         vehicle.deactivate();
