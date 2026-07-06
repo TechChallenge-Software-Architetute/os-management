@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Reservations By Order
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/stocks/reservations/service-order/{{serviceOrderId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

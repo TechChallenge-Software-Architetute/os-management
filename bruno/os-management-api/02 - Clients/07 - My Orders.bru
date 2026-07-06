@@ -1,0 +1,17 @@
+﻿meta {
+  name: My Orders
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/clients/my-orders
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

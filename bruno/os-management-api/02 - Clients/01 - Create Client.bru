@@ -1,0 +1,26 @@
+﻿meta {
+  name: Create Client
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/clients
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Joao Silva",
+    "cpf": "52998224725",
+    "email": "joao@email.com",
+    "phone": "11999998888"
+  }
+}
+

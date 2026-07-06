@@ -1,0 +1,17 @@
+﻿meta {
+  name: Deactivate Vehicle
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/vehicles/{{vehicleId}}
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+

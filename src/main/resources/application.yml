@@ -30,3 +30,6 @@ server:
 jwt:
   secret: ${JWT_SECRET:akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa}
   expiration: ${JWT_EXPIRATION:86400000}
+
+springdoc:
+  enable-data-rest: false

@@ -26,3 +26,8 @@ replay_pid*
 /target
 
 *.idea
+
+# ZAP security scan reports (gerados em tempo de execucao)
+zap-reports/*.html
+zap-reports/*.json
+zap-reports/*.log

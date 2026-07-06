@@ -1,0 +1,17 @@
+﻿meta {
+  name: List Service Types
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/service-types
+  body: none
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
