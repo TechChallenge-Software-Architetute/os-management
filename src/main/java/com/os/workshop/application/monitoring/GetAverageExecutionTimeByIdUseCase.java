@@ -1,11 +1,11 @@
 package com.os.workshop.application.monitoring;
 
+import com.os.workshop.application.service.port.out.ServiceRepository;
 import com.os.workshop.domain.monitoring.AverageTimeEnum;
 import com.os.workshop.domain.monitoring.ServiceAverageTime;
 import com.os.workshop.domain.service.ServiceStatusEnum;
 import com.os.workshop.domain.service.Status;
-import com.os.workshop.infrastructure.persistence.service.ServiceEntity;
-import com.os.workshop.infrastructure.persistence.service.ServiceJpaRepository;
+import com.os.workshop.domain.service.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +19,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class GetAverageExecutionTimeByIdUseCase {
 
-    private final ServiceJpaRepository serviceRepository;
+    private final ServiceRepository serviceRepository;
 
     public ServiceAverageTime execute(UUID id, AverageTimeEnum timeUnit) {
-        ServiceEntity service = serviceRepository.findById(id)
+        WorkshopService service = serviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Servico nao encontrado. ID: " + id));
 
         if (service.getServiceTypeName() == null) {
@@ -33,7 +33,7 @@ public class GetAverageExecutionTimeByIdUseCase {
         return new ServiceAverageTime(service.getServiceTypeName(), executionTime);
     }
 
-    private double calculateExecutionTime(ServiceEntity service, AverageTimeEnum timeUnit) {
+    private double calculateExecutionTime(WorkshopService service, AverageTimeEnum timeUnit) {
         List<Status> statuses = service.getServiceStatus();
         boolean hasCompleted = statuses.stream()
                 .anyMatch(status -> status.getStatus() == ServiceStatusEnum.DONE);
