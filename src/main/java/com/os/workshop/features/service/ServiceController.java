@@ -106,7 +106,7 @@ public class ServiceController {
     })
     @GetMapping("/service-types")
     public ResponseEntity<List<ServiceTypeEntity>> listServiceTypes() {
-        List<ServiceTypeEntity> serviceType = listServiceTypesHandler.handle();
+        List<ServiceTypeEntity> serviceType = listServicesHandler.handle();
         return ResponseEntity.ok(serviceType);
     }
 
