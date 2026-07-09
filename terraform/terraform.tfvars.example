@@ -1,0 +1,60 @@
+# =============================================================================
+# terraform.tfvars.example
+# Copie este arquivo para terraform.tfvars e preencha com seus valores reais.
+# NUNCA commite terraform.tfvars — ele está no .gitignore.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# GitHub (necessário para configurar os secrets do CI/CD)
+# ---------------------------------------------------------------------------
+github_token  = "ghp_XXXXXXXXXXXXXXXXXXXX"   # GitHub PAT com escopo repo/secrets
+github_owner  = "TechChallenge-Software-Architetute"
+repository_name = "os-management"
+
+# ---------------------------------------------------------------------------
+# Kubernetes — conexão com o cluster
+# Para Kind local:
+#   kubernetes_host           = $(kubectl config view --raw -o jsonpath='{.clusters[0].cluster.server}')
+#   kubernetes_token          = $(kubectl create token default -n os-management)
+#   kubernetes_ca_certificate = $(kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+#   kube_config               = $(cat ~/.kube/config | base64 -w0)
+# ---------------------------------------------------------------------------
+kubernetes_host           = "https://127.0.0.1:6443"
+kubernetes_token          = "eyJhbGc..."
+kubernetes_ca_certificate = "LS0tLS1CRUdJTi..."   # base64 do CA cert
+kube_config               = "YXBpVmVyc2lvbi..."   # base64 do kubeconfig completo
+
+kubernetes_namespace = "os-management"
+kubernetes_replicas  = 2
+
+# ---------------------------------------------------------------------------
+# Banco de dados PostgreSQL
+# ---------------------------------------------------------------------------
+db_name     = "workshop"
+db_user     = "workshop_user"
+db_password = "S3nh@Segura!2024"
+db_url      = "jdbc:postgresql://postgres.os-management.svc.cluster.local:5432/workshop"
+# db_host e db_port são derivados do módulo database automaticamente
+
+# ---------------------------------------------------------------------------
+# Aplicação
+# ---------------------------------------------------------------------------
+app_name         = "os-management"
+docker_image     = "ghcr.io/TechChallenge-Software-Architetute/os-management"
+docker_image_tag = "latest"
+container_port   = 8080
+service_type     = "LoadBalancer"   # Use "NodePort" para Kind sem MetalLB
+
+jwt_secret     = "minha-chave-jwt-super-secreta-com-mais-de-32-caracteres"
+jwt_expiration = 86400000   # 24 horas em ms
+
+# ---------------------------------------------------------------------------
+# Ambiente
+# ---------------------------------------------------------------------------
+environment = "dev"
+tags = {
+  Project     = "os-management"
+  ManagedBy   = "Terraform"
+  Environment = "dev"
+  Course      = "Pos-Graduacao"
+}

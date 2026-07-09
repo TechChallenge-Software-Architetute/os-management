@@ -42,7 +42,7 @@ spec:
         - configMapRef:
             name: os-management-config
         - secretRef:
-            name: os-management-db-secret
+            name: os-management-secret
         
         # Resources limits and requests
         resources:

@@ -2,8 +2,6 @@ resource "kubernetes_namespace" "app" {
   metadata {
     name = var.namespace
   }
-
-  depends_on = [kubernetes_namespace.app]
 }
 
 # ConfigMap for application configuration
@@ -14,26 +12,29 @@ resource "kubernetes_config_map" "app_config" {
   }
 
   data = {
-    DB_HOST = var.db_host
-    DB_PORT = var.db_port
-    DB_NAME = var.db_name
+    SPRING_DATASOURCE_URL = "jdbc:postgresql://${var.db_host}:${var.db_port}/${var.db_name}"
+    LOG_LEVEL             = "INFO"
+    JAVA_OPTS             = "-Xms256m -Xmx512m"
   }
 
   depends_on = [kubernetes_namespace.app]
 }
 
-# Secret for database credentials
-resource "kubernetes_secret" "db_credentials" {
+# Secret for database credentials and JWT
+resource "kubernetes_secret" "app_secrets" {
   metadata {
-    name      = "${var.app_name}-db-secret"
+    name      = "${var.app_name}-secret"
     namespace = var.namespace
   }
 
   type = "Opaque"
 
-  data = {
-    DB_USER     = base64encode(var.db_user)
-    DB_PASSWORD = base64encode(var.db_password)
+  # string_data accepts plaintext; the provider handles base64 encoding
+  string_data = {
+    SPRING_DATASOURCE_USERNAME = var.db_user
+    SPRING_DATASOURCE_PASSWORD = var.db_password
+    JWT_SECRET                 = var.jwt_secret
+    JWT_EXPIRATION             = tostring(var.jwt_expiration)
   }
 
   depends_on = [kubernetes_namespace.app]
@@ -79,23 +80,9 @@ resource "kubernetes_deployment" "app" {
             }
           }
 
-          env {
-            name = "DB_USER"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.db_credentials.metadata[0].name
-                key  = "DB_USER"
-              }
-            }
-          }
-
-          env {
-            name = "DB_PASSWORD"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.db_credentials.metadata[0].name
-                key  = "DB_PASSWORD"
-              }
+          env_from {
+            secret_ref {
+              name = kubernetes_secret.app_secrets.metadata[0].name
             }
           }
 
@@ -134,7 +121,7 @@ resource "kubernetes_deployment" "app" {
 
   depends_on = [
     kubernetes_config_map.app_config,
-    kubernetes_secret.db_credentials
+    kubernetes_secret.app_secrets
   ]
 }
 
@@ -160,6 +147,26 @@ resource "kubernetes_service" "app" {
     }
 
     type = var.service_type
+  }
+
+  depends_on = [kubernetes_deployment.app]
+}
+
+# Pod Disruption Budget — ensures at least 1 pod stays up during maintenance
+resource "kubernetes_pod_disruption_budget_v1" "app" {
+  metadata {
+    name      = "${var.app_name}-pdb"
+    namespace = var.namespace
+  }
+
+  spec {
+    min_available = 1
+
+    selector {
+      match_labels = {
+        app = var.app_name
+      }
+    }
   }
 
   depends_on = [kubernetes_deployment.app]

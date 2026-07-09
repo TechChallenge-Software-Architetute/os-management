@@ -34,20 +34,34 @@ module "github_secrets" {
   kube_config      = var.kube_config
 }
 
+# PostgreSQL Database (StatefulSet dentro do cluster)
+module "database" {
+  source = "./modules/database"
+
+  namespace   = var.kubernetes_namespace
+  db_name     = var.db_name
+  db_user     = var.db_user
+  db_password = var.db_password
+}
+
 # Kubernetes Resources
 module "kubernetes" {
   source = "./modules/kubernetes"
 
-  namespace             = var.kubernetes_namespace
-  app_name              = var.app_name
-  docker_image          = var.docker_image
-  docker_image_tag      = var.docker_image_tag
-  replicas              = var.kubernetes_replicas
-  container_port        = var.container_port
-  service_type          = var.service_type
-  db_host               = var.db_host
-  db_port               = var.db_port
-  db_name               = var.db_name
-  db_user               = var.db_user
-  db_password           = var.db_password
+  namespace        = var.kubernetes_namespace
+  app_name         = var.app_name
+  docker_image     = var.docker_image
+  docker_image_tag = var.docker_image_tag
+  replicas         = var.kubernetes_replicas
+  container_port   = var.container_port
+  service_type     = var.service_type
+  db_host          = module.database.db_service_host
+  db_port          = module.database.db_service_port
+  db_name          = var.db_name
+  db_user          = var.db_user
+  db_password      = var.db_password
+  jwt_secret       = var.jwt_secret
+  jwt_expiration   = var.jwt_expiration
+
+  depends_on = [module.database]
 }

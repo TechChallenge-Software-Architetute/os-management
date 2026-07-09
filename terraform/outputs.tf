@@ -3,6 +3,16 @@ output "github_secrets_created" {
   description = "List of GitHub secrets that were created"
 }
 
+output "database_host" {
+  value       = module.database.db_service_host
+  description = "Hostname interno do PostgreSQL no cluster"
+}
+
+output "database_pvc" {
+  value       = module.database.db_pvc_name
+  description = "PersistentVolumeClaim do PostgreSQL"
+}
+
 output "kubernetes_namespace" {
   value       = module.kubernetes.namespace
   description = "Kubernetes namespace"

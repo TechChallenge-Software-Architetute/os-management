@@ -43,13 +43,25 @@ variable "db_host" {
 variable "db_port" {
   type        = number
   description = "Database port"
-  default     = 3306
+  default     = 5432
 }
 
 variable "db_name" {
   type        = string
   description = "Database name"
-  default     = "os_management"
+  default     = "workshop"
+}
+
+variable "jwt_secret" {
+  type        = string
+  description = "JWT signing secret"
+  sensitive   = true
+}
+
+variable "jwt_expiration" {
+  type        = number
+  description = "JWT expiration in milliseconds"
+  default     = 86400000
 }
 
 # Kubernetes Variables

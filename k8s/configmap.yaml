@@ -4,8 +4,6 @@ metadata:
   name: os-management-config
   namespace: os-management
 data:
-  DB_HOST: "mysql.os-management.svc.cluster.local"
-  DB_PORT: "3306"
-  DB_NAME: "os_management"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres.os-management.svc.cluster.local:5432/workshop"
   JAVA_OPTS: "-Xms256m -Xmx512m"
   LOG_LEVEL: "INFO"

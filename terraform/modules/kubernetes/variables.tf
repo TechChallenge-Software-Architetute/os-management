@@ -50,7 +50,7 @@ variable "db_host" {
 variable "db_port" {
   type        = number
   description = "Database port"
-  default     = 3306
+  default     = 5432
 }
 
 variable "db_name" {
@@ -68,4 +68,16 @@ variable "db_password" {
   type        = string
   description = "Database password"
   sensitive   = true
+}
+
+variable "jwt_secret" {
+  type        = string
+  description = "JWT signing secret"
+  sensitive   = true
+}
+
+variable "jwt_expiration" {
+  type        = number
+  description = "JWT expiration in milliseconds"
+  default     = 86400000
 }
