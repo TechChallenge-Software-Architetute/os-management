@@ -245,6 +245,61 @@ Isso irá iniciar:
 # → Relatório em: target/site/jacoco/index.html
 ```
 
+### Testes de Integração (E2E)
+
+Os testes de integração validam o **fluxo completo da aplicação** — da chamada HTTP ao endpoint até a persistência no banco de dados. Utilizam:
+
+- **Testcontainers** — sobe um PostgreSQL 16 real em container Docker automaticamente
+- **TestRestTemplate** — faz chamadas HTTP reais contra a aplicação rodando em porta aleatória
+- **Profile `integration`** — banco criado do zero a cada execução (`ddl-auto: create-drop`)
+
+#### Pré-requisitos
+
+- **Docker Desktop** rodando (o daemon precisa estar ativo)
+- Java 21
+
+#### Como executar
+
+```bash
+# Rodar todos os testes (unitários + integração)
+./mvnw clean verify
+
+# Rodar SOMENTE os testes de integração (pula unitários)
+./mvnw verify -Dsurefire.skip=true
+```
+
+> ⚠️ `./mvnw test` executa **apenas testes unitários** — os testes de integração são gerenciados pelo `maven-failsafe-plugin` e rodam na fase `verify`.
+
+#### Estrutura
+
+```
+src/test/java/com/os/workshop/integration/
+├── config/
+│   ├── TestcontainersConfig.java       # Singleton PostgreSQL container
+│   └── IntegrationTestBase.java        # Classe base com auth e helpers
+├── AuthIntegrationTest.java            # Signup + Login + acesso protegido
+├── ClientIntegrationTest.java          # CRUD completo de cliente
+├── VehicleIntegrationTest.java         # Criar + buscar por placa + listar por client
+├── ServiceOrderIntegrationTest.java    # Fluxo completo: client → vehicle → OS → status
+└── StockIntegrationTest.java           # Part/Supply → estoque → entrada → saída → lowStock
+```
+
+#### Cenários cobertos
+
+| Teste | Fluxo validado |
+|---|---|
+| Auth | Signup → Login → Token válido → Acesso a endpoint protegido |
+| Client | Criar → Buscar por ID → Buscar por CPF → Listar |
+| Vehicle | Criar client → Criar veículo → Buscar por placa → Listar por client |
+| Service Order | Client → Vehicle → Criar OS → Listar → Atualizar status → Verificar serviços criados |
+| Stock | Criar peça → Criar estoque → Entrada → Saída → Verificar saldo e lowStock |
+
+#### Convenções
+
+- Apenas **cenário feliz** (happy path) — validações de erro ficam nos testes unitários
+- Cada teste é independente (usa CPFs/SKUs únicos para evitar conflito entre testes)
+- O container PostgreSQL é compartilhado entre todos os testes (singleton) para performance
+
 ### Análise com SonarQube
 
 ```bash
