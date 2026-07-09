@@ -87,6 +87,6 @@ jobs:
           distribution: 'temurin'
 
       - name: Publish Package
-        run: mvn --batch-mode deploy --settings settings.xml
+        run: mvn --batch-mode deploy -DskipTests --settings settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
