@@ -168,6 +168,13 @@ jobs:
             -var="kubernetes_ca_certificate=${KUBE_CA}" \
             -var="kube_config=${KUBE_CONFIG}"
 
+      - name: Update app image
+        run: |
+          kubectl set image deployment/os-management \
+            os-management=ghcr.io/${{ github.repository }}:${{ github.sha }} \
+            -n os-management
+          kubectl rollout status deployment/os-management -n os-management --timeout=120s
+
   # ---------------------------------------------------------------------------
   # Terraform AWS — EKS + RDS quando AWS_ACCESS_KEY_ID está configurada
   # ---------------------------------------------------------------------------
@@ -213,3 +220,10 @@ jobs:
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="kube_config=${KUBE_CONFIG}"
+
+      - name: Update app image
+        run: |
+          kubectl set image deployment/os-management \
+            os-management=ghcr.io/${{ github.repository }}:${{ github.sha }} \
+            -n os-management
+          kubectl rollout status deployment/os-management -n os-management --timeout=300s

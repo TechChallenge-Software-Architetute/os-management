@@ -38,7 +38,7 @@ output "eks_cluster_endpoint" {
 # =============================================================================
 output "rds_endpoint" {
   description = "Endpoint do RDS PostgreSQL"
-  value       = var.use_aws ? module.rds[0].endpoint : null
+  value       = var.use_aws ? module.rds[0].db_endpoint : null
   sensitive   = true
 }
 

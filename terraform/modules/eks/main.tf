@@ -53,7 +53,7 @@ module "eks" {
   cluster_version = var.cluster_version
 
   vpc_id                         = module.vpc.vpc_id
-  subnet_ids                     = module.vpc.private_subnet_ids
+  subnet_ids                     = module.vpc.private_subnets
   cluster_endpoint_public_access = true   # API Server acessível pela internet (necessário para CI/CD)
 
   # Add-ons gerenciados pela AWS
@@ -72,7 +72,7 @@ module "eks" {
       desired_size   = var.node_desired_size
 
       # Nodes nas subnets privadas — não expostos diretamente
-      subnet_ids = module.vpc.private_subnet_ids
+      subnet_ids = module.vpc.private_subnets
     }
   }
 

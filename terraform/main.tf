@@ -68,7 +68,7 @@ module "github_secrets" {
   source = "./modules/github"
 
   repository  = var.repository_name
-  db_url      = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://${var.db_host}:${var.db_port}/${var.db_name}"
+  db_url      = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://postgres:5432/${var.db_name}"
   db_user     = var.db_user
   db_password = var.db_password
   jwt_secret  = var.jwt_secret
@@ -120,77 +120,103 @@ module "rds" {
 }
 
 # =============================================================================
-# Manifests Kubernetes — padrão do professor (fileset + kubectl_manifest)
-# Nota: terraform/ está na raiz do projeto, portanto "../k8s/manifests" é correto.
+# Kubernetes Manifests
+# Estrutura plana em k8s/ — arquivos usados diretamente pelo Terraform.
+# Os arquivos .tpl injetam credenciais/URL dinâmicos sem hardcode.
+# Os arquivos .yaml estáticos são lidos via kubectl_path_documents (suporte multi-doc).
 # =============================================================================
 locals {
-  manifests_path = "${path.module}/../k8s/manifests"
-
-  namespace_files = fileset("${local.manifests_path}/00-namespaces", "*.yaml")
-  config_files    = fileset("${local.manifests_path}/01-config", "*.yaml")
-
-  # No modo AWS, exclui os manifests do postgres in-cluster (substituído pelo RDS)
-  app_files = var.use_aws ? {
-    for f in fileset("${local.manifests_path}/02-app", "*.yaml") :
-    f => f if !startswith(f, "postgres-")
-  } : { for f in fileset("${local.manifests_path}/02-app", "*.yaml") : f => f }
+  k8s_path = "${path.module}/../k8s"
 }
 
-# 00 — Namespaces (aplicados primeiro)
-resource "kubectl_manifest" "namespaces" {
-  for_each  = local.namespace_files
-  yaml_body = file("${local.manifests_path}/00-namespaces/${each.value}")
+# --- Namespace (deve ser o primeiro) ---
+resource "kubectl_manifest" "namespace" {
+  yaml_body = file("${local.k8s_path}/namespace.yaml")
 }
 
-# 01-config — Secrets dinâmicos via templatefile (credenciais não ficam hardcoded)
+# --- ConfigMap da aplicação (SPRING_DATASOURCE_URL dinâmica) ---
+# Local: postgres in-cluster | AWS: endpoint do RDS
+resource "kubectl_manifest" "app_configmap" {
+  yaml_body = templatefile("${local.k8s_path}/app-configmap.yaml.tpl", {
+    datasource_url = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://postgres:5432/${var.db_name}"
+  })
+  depends_on = [kubectl_manifest.namespace]
+}
+
+# --- ConfigMap do Postgres (apenas modo local, RDS não precisa) ---
+resource "kubectl_manifest" "postgres_configmap" {
+  count = var.use_aws ? 0 : 1
+  yaml_body = templatefile("${local.k8s_path}/postgres-configmap.yaml.tpl", {
+    db_name = var.db_name
+    db_user = var.db_user
+  })
+  depends_on = [kubectl_manifest.namespace]
+}
+
+# --- Secret da aplicação (credenciais nunca hardcoded) ---
 resource "kubectl_manifest" "app_secret" {
-  yaml_body = templatefile("${local.manifests_path}/01-config/app-secret.yaml.tpl", {
-    db_user_b64        = base64encode(var.db_user)
-    db_password_b64    = base64encode(var.db_password)
-    jwt_secret_b64     = base64encode(var.jwt_secret)
-    jwt_expiration_b64 = base64encode(tostring(var.jwt_expiration))
-    external_token_b64 = base64encode("change-me")
-  })
-  depends_on = [kubectl_manifest.namespaces]
-}
-
-resource "kubectl_manifest" "postgres_secret" {
-  yaml_body = templatefile("${local.manifests_path}/01-config/postgres-secret.yaml.tpl", {
-    db_name_b64     = base64encode(var.db_name)
-    db_user_b64     = base64encode(var.db_user)
-    db_password_b64 = base64encode(var.db_password)
-  })
-  depends_on = [kubectl_manifest.namespaces]
-}
-
-# ConfigMap — SPRING_DATASOURCE_URL dinâmica: local → postgres in-cluster, AWS → RDS endpoint
-resource "kubectl_manifest" "configmap" {
-  yaml_body = templatefile("${local.manifests_path}/01-config/configmap.yaml.tpl", {
-    datasource_url = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://${var.db_host}:${var.db_port}/${var.db_name}"
-    db_name        = var.db_name
+  yaml_body = templatefile("${local.k8s_path}/app-secret.yaml.tpl", {
     db_user        = var.db_user
+    db_password    = var.db_password
+    jwt_secret     = var.jwt_secret
+    external_token = "change-me"
   })
-  depends_on = [kubectl_manifest.namespaces]
+  depends_on = [kubectl_manifest.namespace]
 }
 
-# 01-config — Recursos estáticos (PVC, ServiceAccount)
-resource "kubectl_manifest" "config" {
-  for_each  = local.config_files
-  yaml_body = file("${local.manifests_path}/01-config/${each.value}")
-
-  depends_on = [kubectl_manifest.namespaces]
+# --- Secret do Postgres (apenas modo local) ---
+resource "kubectl_manifest" "postgres_secret" {
+  count = var.use_aws ? 0 : 1
+  yaml_body = templatefile("${local.k8s_path}/postgres-secret.yaml.tpl", {
+    db_password = var.db_password
+  })
+  depends_on = [kubectl_manifest.namespace]
 }
 
-# 02-app — Aplicação e postgres in-cluster (excluído no modo AWS)
-resource "kubectl_manifest" "app" {
-  for_each  = local.app_files
-  yaml_body = file("${local.manifests_path}/02-app/${each.value}")
+# --- Postgres in-cluster (apenas modo local) ---
+# postgres.yaml tem múltiplos documentos (PVC + Deployment + Service).
+# kubectl_path_documents divide o arquivo em manifests individuais.
+data "kubectl_path_documents" "postgres" {
+  pattern = "${local.k8s_path}/postgres.yaml"
+}
+
+resource "kubectl_manifest" "postgres" {
+  for_each  = var.use_aws ? {} : data.kubectl_path_documents.postgres.manifests
+  yaml_body = each.value
 
   depends_on = [
-    kubectl_manifest.config,
-    kubectl_manifest.configmap,
-    kubectl_manifest.app_secret,
+    kubectl_manifest.postgres_configmap,
     kubectl_manifest.postgres_secret,
+  ]
+}
+
+# --- Aplicação principal ---
+# app.yaml tem dois documentos (Deployment + Service).
+# A imagem do container é gerenciada pelo pipeline via kubectl set image após o apply.
+data "kubectl_path_documents" "app" {
+  pattern = "${local.k8s_path}/app.yaml"
+}
+
+resource "kubectl_manifest" "app" {
+  for_each  = data.kubectl_path_documents.app.manifests
+  yaml_body = each.value
+
+  depends_on = [
+    kubectl_manifest.app_configmap,
+    kubectl_manifest.app_secret,
+    kubectl_manifest.postgres,
     module.rds,
   ]
+}
+
+# --- HPA ---
+resource "kubectl_manifest" "hpa" {
+  yaml_body  = file("${local.k8s_path}/hpa.yaml")
+  depends_on = [kubectl_manifest.app]
+}
+
+# --- Ingress ---
+resource "kubectl_manifest" "ingress" {
+  yaml_body  = file("${local.k8s_path}/ingress.yaml")
+  depends_on = [kubectl_manifest.namespace]
 }
