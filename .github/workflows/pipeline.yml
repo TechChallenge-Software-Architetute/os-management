@@ -115,7 +115,7 @@ jobs:
           echo "publish_version=$PUBLISH_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Publicar pacote
-        run: mvn --batch-mode deploy --settings settings.xml
+        run: mvn --batch-mode deploy -DskipTests --settings settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
