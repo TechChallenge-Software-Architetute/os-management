@@ -12,3 +12,6 @@ spring:
 jwt:
   secret: test-secret-key-for-integration-tests-only-min-32-chars
   expiration: 86400000
+
+springdoc:
+  enable-data-rest: false
