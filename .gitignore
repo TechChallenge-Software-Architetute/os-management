@@ -1,16 +1,17 @@
 # Compiled class file
 *.class
 
-# Log file
-*.log
+# Log
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+*tfplan*
+e Files #
 *.jar
 *.war
 *.nar
