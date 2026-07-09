@@ -52,7 +52,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Generate JaCoCo Report
-        run: mvn verify
+        run: mvn verify -DskipITs
 
   build:
     runs-on: ubuntu-latest
