@@ -1,11 +1,11 @@
 package com.os.workshop.application.monitoring;
 
+import com.os.workshop.application.service.port.out.ServiceRepository;
 import com.os.workshop.domain.monitoring.AverageTimeEnum;
 import com.os.workshop.domain.monitoring.ServiceAverageTime;
 import com.os.workshop.domain.service.ServiceStatusEnum;
 import com.os.workshop.domain.service.Status;
-import com.os.workshop.infrastructure.persistence.service.ServiceEntity;
-import com.os.workshop.infrastructure.persistence.service.ServiceJpaRepository;
+import com.os.workshop.domain.service.WorkshopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GetAverageExecutionTimeUseCase {
 
-    private final ServiceJpaRepository serviceRepository;
+    private final ServiceRepository serviceRepository;
 
     public List<ServiceAverageTime> execute(AverageTimeEnum timeUnit) {
-        List<ServiceEntity> services = serviceRepository.findAll();
+        List<WorkshopService> services = serviceRepository.findAll();
 
-        Map<String, List<ServiceEntity>> groupedByType = services.stream()
+        Map<String, List<WorkshopService>> groupedByType = services.stream()
                 .collect(Collectors.groupingBy(service ->
                         service.getServiceTypeName() != null ? service.getServiceTypeName() : "Unknown"));
 
@@ -35,7 +35,7 @@ public class GetAverageExecutionTimeUseCase {
     }
 
     private ServiceAverageTime calculateAverageForType(
-            Map.Entry<String, List<ServiceEntity>> entry, AverageTimeEnum timeUnit) {
+            Map.Entry<String, List<WorkshopService>> entry, AverageTimeEnum timeUnit) {
         String type = entry.getKey();
         List<Double> times = entry.getValue().stream()
                 .filter(this::hasCompleted)
@@ -48,12 +48,12 @@ public class GetAverageExecutionTimeUseCase {
         return new ServiceAverageTime(type, average);
     }
 
-    private boolean hasCompleted(ServiceEntity service) {
+    private boolean hasCompleted(WorkshopService service) {
         return service.getServiceStatus().stream()
                 .anyMatch(status -> status.getStatus() == ServiceStatusEnum.DONE);
     }
 
-    private double calculateExecutionTime(ServiceEntity service, AverageTimeEnum timeUnit) {
+    private double calculateExecutionTime(WorkshopService service, AverageTimeEnum timeUnit) {
         List<Status> status = service.getServiceStatus();
         LocalDateTime doingTime = findEarliestStatusTime(status, ServiceStatusEnum.DOING);
         LocalDateTime doneTime = findEarliestStatusTime(status, ServiceStatusEnum.DONE);

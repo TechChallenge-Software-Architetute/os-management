@@ -1,4 +1,4 @@
-package com.os.workshop.features.config;
+package com.os.workshop.infrastructure.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.core.util.Json;
