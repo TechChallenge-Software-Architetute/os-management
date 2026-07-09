@@ -33,3 +33,8 @@ jwt:
 
 springdoc:
   enable-data-rest: false
+
+aws:
+  ses:
+    region: ${AWS_REGION:us-east-1}
+    sender-email: ${AWS_SES_SENDER_EMAIL:noreply@oficina.com}

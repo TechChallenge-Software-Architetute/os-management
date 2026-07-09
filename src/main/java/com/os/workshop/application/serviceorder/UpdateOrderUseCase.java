@@ -1,5 +1,6 @@
 package com.os.workshop.application.serviceorder;
 
+import com.os.workshop.application.notification.OrderStatusNotificationService;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
@@ -15,6 +16,7 @@ import java.util.UUID;
 public class UpdateOrderUseCase {
 
     private final ServiceOrderRepository serviceOrderRepository;
+    private final OrderStatusNotificationService notificationService;
 
     @Transactional
     public void execute(UUID id, OrderServiceStatusEnum status) {
@@ -26,6 +28,8 @@ public class UpdateOrderUseCase {
                 .orElseThrow(() -> new NoSuchElementException("Ordem de servico nao encontrada com id: " + id));
 
         order.advanceTo(status);
-        serviceOrderRepository.save(order);
+        ServiceOrder saved = serviceOrderRepository.save(order);
+
+        notificationService.notifyStatusChange(saved);
     }
 }

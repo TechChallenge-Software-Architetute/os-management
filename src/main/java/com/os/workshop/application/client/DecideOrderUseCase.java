@@ -1,6 +1,7 @@
 package com.os.workshop.application.client;
 
 import com.os.workshop.application.client.port.out.ClientRepository;
+import com.os.workshop.application.notification.OrderStatusNotificationService;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
@@ -23,6 +24,7 @@ public class DecideOrderUseCase {
     private final ClientRepository clientRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final OrderStatusNotificationService notificationService;
 
     @Transactional
     public void execute(String email, UUID orderId, Decision decision, String reason) {
@@ -41,10 +43,12 @@ public class DecideOrderUseCase {
             case REJECTED -> order.reject(reason);
         }
 
-        serviceOrderRepository.save(order);
+        ServiceOrder saved = serviceOrderRepository.save(order);
 
         if (decision == Decision.REJECTED) {
             eventPublisher.publishEvent(new OrderRejectedEvent(orderId));
         }
+
+        notificationService.notifyStatusChange(saved);
     }
 }

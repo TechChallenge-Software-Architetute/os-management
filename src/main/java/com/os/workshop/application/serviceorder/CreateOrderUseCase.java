@@ -1,6 +1,7 @@
 package com.os.workshop.application.serviceorder;
 
 import com.os.workshop.application.client.FindClientByCpfUseCase;
+import com.os.workshop.application.notification.OrderStatusNotificationService;
 import com.os.workshop.application.service.CreateServiceUseCase;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.application.vehicle.FindVehicleByPlateUseCase;
@@ -18,6 +19,7 @@ public class CreateOrderUseCase {
     private final FindClientByCpfUseCase findClientByCpfUseCase;
     private final FindVehicleByPlateUseCase findVehicleByPlateUseCase;
     private final ServiceOrderRepository serviceOrderRepository;
+    private final OrderStatusNotificationService notificationService;
 
     public ServiceOrder execute(String cpfCnpj, String placaVeiculo, List<String> serviceTypes) {
         findClientByCpfUseCase.execute(cpfCnpj);
@@ -27,6 +29,10 @@ public class CreateOrderUseCase {
 
         serviceTypes.forEach(service -> createServiceUseCase.execute(service, order.getId()));
 
-        return serviceOrderRepository.save(order);
+        ServiceOrder saved = serviceOrderRepository.save(order);
+
+        notificationService.notifyStatusChange(saved);
+
+        return saved;
     }
 }
