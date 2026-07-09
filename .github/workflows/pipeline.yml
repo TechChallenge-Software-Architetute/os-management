@@ -85,7 +85,7 @@ jobs:
     outputs:
       publish_version: ${{ steps.publish-version.outputs.publish_version }}
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
