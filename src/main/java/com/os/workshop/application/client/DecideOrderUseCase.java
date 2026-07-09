@@ -1,46 +1,50 @@
 package com.os.workshop.application.client;
 
-import com.os.workshop.application.budget.FindBudgetByServiceOrderUseCase;
 import com.os.workshop.application.client.port.out.ClientRepository;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
-import com.os.workshop.domain.budget.Budget;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.domain.serviceorder.Decision;
+import com.os.workshop.domain.serviceorder.OrderRejectedEvent;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Deprecated
-public class ApproveMyOrderUseCase {
+public class DecideOrderUseCase {
 
     private final ClientRepository clientRepository;
     private final ServiceOrderRepository serviceOrderRepository;
-    private final FindBudgetByServiceOrderUseCase findBudgetByServiceOrderUseCase;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public ApproveMyOrderResult execute(String email, UUID orderId) {
+    public void execute(String email, UUID orderId, Decision decision, String reason) {
         Client client = clientRepository.findByEmail(email)
                 .orElseThrow(() -> new ClientNotFoundException("email: " + email));
 
         ServiceOrder order = serviceOrderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
+                .orElseThrow(() -> new NoSuchElementException("Order not found with id: " + orderId));
 
         if (!order.getCpfCnpj().equals(client.getDocument().getValue())) {
-            throw new IllegalArgumentException("Order " + orderId + " does not belong to this client");
+            throw new SecurityException("Order " + orderId + " does not belong to this client");
         }
 
-        order.advanceTo(OrderServiceStatusEnum.APROVADO);
-        ServiceOrder savedOrder = serviceOrderRepository.save(order);
+        switch (decision) {
+            case APPROVED -> order.advanceTo(OrderServiceStatusEnum.APROVADO);
+            case REJECTED -> order.reject(reason);
+        }
 
-        Budget budget = findBudgetByServiceOrderUseCase.execute(orderId).orElse(null);
-        return new ApproveMyOrderResult(savedOrder, budget);
+        serviceOrderRepository.save(order);
+
+        if (decision == Decision.REJECTED) {
+            eventPublisher.publishEvent(new OrderRejectedEvent(orderId));
+        }
     }
-
-    public record ApproveMyOrderResult(ServiceOrder order, Budget budget) {}
 }

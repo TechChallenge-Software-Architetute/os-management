@@ -9,11 +9,11 @@ import java.util.Optional;
 @Repository
 public interface ClientJpaRepository extends JpaRepository<ClientEntity, Long> {
 
-    Optional<ClientEntity> findByCpf(String cpf);
+    Optional<ClientEntity> findByDocument(String document);
 
     List<ClientEntity> findByActiveTrue();
 
-    boolean existsByCpf(String cpf);
+    boolean existsByDocument(String document);
 
     Optional<ClientEntity> findByEmail(String email);
 }

@@ -17,15 +17,15 @@ public class UpdateOrderUseCase {
     private final ServiceOrderRepository serviceOrderRepository;
 
     @Transactional
-    public ServiceOrder execute(UUID id, OrderServiceStatusEnum status) {
+    public void execute(UUID id, OrderServiceStatusEnum status) {
         if (status == null) {
             throw new IllegalArgumentException("Status da ordem de servico e obrigatorio.");
         }
 
-        var order = serviceOrderRepository.findById(id)
+        ServiceOrder order = serviceOrderRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Ordem de servico nao encontrada com id: " + id));
 
-        order.setServiceStatus(status.getStatus());
-        return serviceOrderRepository.save(order);
+        order.advanceTo(status);
+        serviceOrderRepository.save(order);
     }
 }

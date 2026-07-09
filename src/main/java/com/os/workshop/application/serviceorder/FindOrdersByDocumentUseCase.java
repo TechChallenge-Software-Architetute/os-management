@@ -10,12 +10,13 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ListOrdersUseCase {
+public class FindOrdersByDocumentUseCase {
 
     private final ServiceOrderRepository serviceOrderRepository;
 
     @Transactional(readOnly = true)
-    public List<ServiceOrder> execute() {
-        return serviceOrderRepository.findActiveOrdersSorted();
+    public List<ServiceOrder> execute(String cpfCnpj) {
+        String normalized = cpfCnpj == null ? "" : cpfCnpj.replaceAll("[^0-9]", "");
+        return serviceOrderRepository.findByCpfCnpj(normalized);
     }
 }

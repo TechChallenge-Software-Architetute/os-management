@@ -3,6 +3,7 @@ package com.os.workshop.infrastructure.persistence.serviceorder;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,4 +35,24 @@ public class ServiceOrderEntity {
 
     @Column(name = "placa", nullable = false)
     private String placaVeiculo;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -18,7 +18,7 @@ class ClientIntegrationTest extends IntegrationTestBase {
         // Create client
         var createBody = Map.of(
                 "name", "Maria Silva",
-                "cpf", "52998224725",
+                "document", "52998224725",
                 "email", "maria@test.com",
                 "phone", "11988887777"
         );
@@ -33,7 +33,7 @@ class ClientIntegrationTest extends IntegrationTestBase {
                 new HttpEntity<>(authHeaders(token)), Map.class);
         assertThat(findResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(findResponse.getBody().get("name")).isEqualTo("MARIA SILVA");
-        assertThat(findResponse.getBody().get("cpf")).isEqualTo("529.982.247-25");
+        assertThat(findResponse.getBody().get("document")).isEqualTo("52998224725");
         assertThat(findResponse.getBody().get("email")).isEqualTo("maria@test.com");
         assertThat((Boolean) findResponse.getBody().get("active")).isTrue();
 

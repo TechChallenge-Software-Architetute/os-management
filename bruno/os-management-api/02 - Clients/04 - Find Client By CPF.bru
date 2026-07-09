@@ -1,11 +1,11 @@
 ﻿meta {
-  name: Find Client By CPF
+  name: Find Client By Document (CPF/CNPJ)
   type: http
   seq: 4
 }
 
 get {
-  url: {{baseUrl}}/api/clients/cpf/{{clientCpf}}
+  url: {{baseUrl}}/api/clients/cpf/{{document}}
   body: none
   auth: none
 }
@@ -14,4 +14,3 @@ headers {
   Content-Type: application/json
   Authorization: Bearer {{token}}
 }
-

@@ -1,6 +1,8 @@
 package com.os.workshop.adapter.in.web.client;
 
 import com.os.workshop.application.client.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/clients")
 @RequiredArgsConstructor
+@Tag(name = "Clients", description = "Gestao de Clientes e Decisao de Orcamento")
 public class ClientController {
 
     private final CreateClientUseCase createClientUseCase;
@@ -25,11 +28,11 @@ public class ClientController {
     private final DeactivateClientUseCase deactivateClientUseCase;
     private final FindMyOrdersUseCase findMyOrdersUseCase;
     private final FindMyOrderDetailUseCase findMyOrderDetailUseCase;
-    private final ApproveMyOrderUseCase approveMyOrderUseCase;
+    private final DecideOrderUseCase decideOrderUseCase;
 
     @PostMapping
     public ResponseEntity<ClientResponse> create(@Valid @RequestBody CreateClientRequest request) {
-        var client = createClientUseCase.execute(request.name(), request.cpf(), request.email(), request.phone());
+        var client = createClientUseCase.execute(request.name(), request.document(), request.email(), request.phone());
         return ResponseEntity.status(HttpStatus.CREATED).body(ClientResponse.from(client));
     }
 
@@ -77,10 +80,13 @@ public class ClientController {
         return ResponseEntity.ok(FindMyOrderDetailResponse.from(result.order(), result.budget()));
     }
 
-    @PatchMapping("/my-orders/{orderId}/approve")
-    public ResponseEntity<ApproveMyOrderResponse> approveMyOrder(
-            @AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID orderId) {
-        var result = approveMyOrderUseCase.execute(userDetails.getUsername(), orderId);
-        return ResponseEntity.ok(ApproveMyOrderResponse.from(result.order(), result.budget()));
+    @PostMapping("/my-orders/{orderId}/decision")
+    @Operation(summary = "Aprovar ou recusar orcamento", description = "O cliente autenticado decide aprovar ou recusar o orcamento da OS. Retorna 204 No Content.")
+    public ResponseEntity<Void> decideOrder(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID orderId,
+            @Valid @RequestBody DecisionRequest request) {
+        decideOrderUseCase.execute(userDetails.getUsername(), orderId, request.decision(), request.reason());
+        return ResponseEntity.noContent().build();
     }
 }

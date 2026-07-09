@@ -57,7 +57,7 @@ class ClientUseCaseTest {
 
     @Test
     void whenCreatingClientWithUniqueCpf_thenClientIsSaved() {
-        when(clientRepository.existsByCpf(VALID_CPF)).thenReturn(false);
+        when(clientRepository.existsByDocument(VALID_CPF)).thenReturn(false);
         when(clientRepository.save(any(Client.class))).thenAnswer(i -> i.getArgument(0));
 
         Client result = createClientUseCase.execute("John Doe", VALID_CPF_FORMATTED, "john@email.com", "11999999999");
@@ -69,7 +69,7 @@ class ClientUseCaseTest {
 
     @Test
     void whenCreatingClientWithDuplicateCpf_thenThrowsIllegalState() {
-        when(clientRepository.existsByCpf(VALID_CPF)).thenReturn(true);
+        when(clientRepository.existsByDocument(VALID_CPF)).thenReturn(true);
 
         assertThrows(IllegalStateException.class, () ->
                 createClientUseCase.execute("John Doe", VALID_CPF_FORMATTED, "john@email.com", "11999999999"));
@@ -100,16 +100,16 @@ class ClientUseCaseTest {
     @Test
     void whenFindingClientByExistingCpf_thenReturnsClient() {
         Client client = createClient();
-        when(clientRepository.findByCpf(VALID_CPF)).thenReturn(Optional.of(client));
+        when(clientRepository.findByDocument(VALID_CPF)).thenReturn(Optional.of(client));
 
         Client result = findClientByCpfUseCase.execute(VALID_CPF_FORMATTED);
 
-        assertEquals(VALID_CPF, result.getCpf().getValue());
+        assertEquals(VALID_CPF, result.getDocument().getValue());
     }
 
     @Test
     void whenFindingClientByNonExistingCpf_thenThrowsClientNotFound() {
-        when(clientRepository.findByCpf(ANOTHER_CPF)).thenReturn(Optional.empty());
+        when(clientRepository.findByDocument(ANOTHER_CPF)).thenReturn(Optional.empty());
 
         assertThrows(ClientNotFoundException.class, () -> findClientByCpfUseCase.execute(ANOTHER_CPF_FORMATTED));
     }

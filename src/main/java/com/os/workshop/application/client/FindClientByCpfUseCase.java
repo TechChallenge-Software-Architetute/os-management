@@ -14,9 +14,9 @@ public class FindClientByCpfUseCase {
     private final ClientRepository clientRepository;
 
     @Transactional(readOnly = true)
-    public Client execute(String cpf) {
-        String normalizedCpf = cpf == null ? "" : cpf.replaceAll("[^0-9]", "");
-        return clientRepository.findByCpf(normalizedCpf)
-                .orElseThrow(() -> new ClientNotFoundException("CPF: " + cpf));
+    public Client execute(String document) {
+        String normalized = document == null ? "" : document.replaceAll("[^0-9]", "");
+        return clientRepository.findByDocument(normalized)
+                .orElseThrow(() -> new ClientNotFoundException("Document: " + document));
     }
 }
