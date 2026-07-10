@@ -16,6 +16,6 @@ public class ListOrdersUseCase {
 
     @Transactional(readOnly = true)
     public List<ServiceOrder> execute() {
-        return serviceOrderRepository.findAll();
+        return serviceOrderRepository.findActiveOrdersSorted();
     }
 }

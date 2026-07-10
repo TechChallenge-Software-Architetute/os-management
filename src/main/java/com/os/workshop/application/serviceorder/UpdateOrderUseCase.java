@@ -1,5 +1,6 @@
 package com.os.workshop.application.serviceorder;
 
+import com.os.workshop.application.notification.OrderStatusNotificationService;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
@@ -15,17 +16,20 @@ import java.util.UUID;
 public class UpdateOrderUseCase {
 
     private final ServiceOrderRepository serviceOrderRepository;
+    private final OrderStatusNotificationService notificationService;
 
     @Transactional
-    public ServiceOrder execute(UUID id, OrderServiceStatusEnum status) {
+    public void execute(UUID id, OrderServiceStatusEnum status) {
         if (status == null) {
             throw new IllegalArgumentException("Status da ordem de servico e obrigatorio.");
         }
 
-        var order = serviceOrderRepository.findById(id)
+        ServiceOrder order = serviceOrderRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Ordem de servico nao encontrada com id: " + id));
 
-        order.setServiceStatus(status.getStatus());
-        return serviceOrderRepository.save(order);
+        order.advanceTo(status);
+        ServiceOrder saved = serviceOrderRepository.save(order);
+
+        notificationService.notifyStatusChange(saved);
     }
 }

@@ -13,12 +13,12 @@ public class CreateClientUseCase {
     private final ClientRepository clientRepository;
 
     @Transactional
-    public Client execute(String name, String cpf, String email, String phone) {
-        String normalizedCpf = cpf == null ? "" : cpf.replaceAll("[^0-9]", "");
-        if (clientRepository.existsByCpf(normalizedCpf)) {
-            throw new IllegalStateException("A client with CPF '" + cpf + "' already exists");
+    public Client execute(String name, String rawDocument, String email, String phone) {
+        String normalized = rawDocument == null ? "" : rawDocument.replaceAll("[^0-9]", "");
+        if (clientRepository.existsByDocument(normalized)) {
+            throw new IllegalStateException("A client with document '" + rawDocument + "' already exists");
         }
-        Client client = Client.create(name, cpf, email, phone);
+        Client client = Client.create(name, rawDocument, email, phone);
         return clientRepository.save(client);
     }
 }

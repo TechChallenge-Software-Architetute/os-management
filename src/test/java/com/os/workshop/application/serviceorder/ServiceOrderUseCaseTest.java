@@ -5,6 +5,7 @@ import com.os.workshop.application.service.CreateServiceUseCase;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.application.vehicle.FindVehicleByPlateUseCase;
 import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.domain.serviceorder.InvalidStatusTransitionException;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import com.os.workshop.domain.service.WorkshopService;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -28,7 +30,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ServiceOrderUseCaseTest {
 
-    // ========================= CreateOrderUseCase =========================
+    private static ServiceOrder createTestOrder(UUID id, String cpfCnpj, String placa, OrderServiceStatusEnum status) {
+        return ServiceOrder.reconstitute(
+                id, cpfCnpj, placa,
+                List.of("TROCA_OLEO"), "[TROCA_OLEO]",
+                status, null,
+                LocalDateTime.now(), LocalDateTime.now()
+        );
+    }
 
     @Nested
     @ExtendWith(MockitoExtension.class)
@@ -38,13 +47,14 @@ class ServiceOrderUseCaseTest {
         @Mock private FindClientByCpfUseCase findClientByCpfUseCase;
         @Mock private FindVehicleByPlateUseCase findVehicleByPlateUseCase;
         @Mock private ServiceOrderRepository serviceOrderRepository;
+        @Mock private com.os.workshop.application.notification.OrderStatusNotificationService notificationService;
         @InjectMocks private CreateOrderUseCase useCase;
 
         @Test
         void createsOrderSuccessfully() {
             String cpf = "12345678900";
             String placa = "ABC1234";
-            List<String> serviceTypes = List.of("Pintura", "Mecânica");
+            List<String> serviceTypes = List.of("Pintura", "Mecanica");
 
             when(findClientByCpfUseCase.execute(cpf)).thenReturn(null);
             when(findVehicleByPlateUseCase.execute(placa)).thenReturn(null);
@@ -56,7 +66,7 @@ class ServiceOrderUseCaseTest {
             assertNotNull(result);
             assertNotNull(result.getId());
             assertEquals(cpf, result.getCpfCnpj());
-            assertEquals(placa, result.getPlacaVeiculo());
+            assertEquals("ABC1234", result.getPlacaVeiculo());
             assertEquals(OrderServiceStatusEnum.RECEBIDA.getStatus(), result.getServiceStatus());
             assertEquals(serviceTypes, result.getListService());
             verify(createServiceUseCase, times(2)).execute(anyString(), any(UUID.class));
@@ -91,7 +101,7 @@ class ServiceOrderUseCaseTest {
         void createsServiceForEachType() {
             String cpf = "12345678900";
             String placa = "ABC1234";
-            List<String> serviceTypes = List.of("Pintura", "Mecânica", "Elétrica");
+            List<String> serviceTypes = List.of("Pintura", "Mecanica", "Eletrica");
 
             when(findClientByCpfUseCase.execute(cpf)).thenReturn(null);
             when(findVehicleByPlateUseCase.execute(placa)).thenReturn(null);
@@ -102,12 +112,22 @@ class ServiceOrderUseCaseTest {
 
             verify(createServiceUseCase, times(3)).execute(anyString(), any(UUID.class));
             verify(createServiceUseCase).execute(eq("Pintura"), any(UUID.class));
-            verify(createServiceUseCase).execute(eq("Mecânica"), any(UUID.class));
-            verify(createServiceUseCase).execute(eq("Elétrica"), any(UUID.class));
+            verify(createServiceUseCase).execute(eq("Mecanica"), any(UUID.class));
+            verify(createServiceUseCase).execute(eq("Eletrica"), any(UUID.class));
+        }
+
+        @Test
+        void throwsWhenServiceTypesEmpty() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> useCase.execute("12345678900", "ABC1234", List.of()));
+        }
+
+        @Test
+        void throwsWhenServiceTypesNull() {
+            assertThrows(IllegalArgumentException.class,
+                    () -> useCase.execute("12345678900", "ABC1234", null));
         }
     }
-
-    // ========================= FindOrderByIdUseCase =========================
 
     @Nested
     @ExtendWith(MockitoExtension.class)
@@ -119,12 +139,7 @@ class ServiceOrderUseCaseTest {
         @Test
         void returnsOrderWhenFound() {
             UUID id = UUID.randomUUID();
-            ServiceOrder order = ServiceOrder.builder()
-                    .id(id)
-                    .cpfCnpj("12345678900")
-                    .placaVeiculo("ABC1234")
-                    .serviceStatus(OrderServiceStatusEnum.RECEBIDA.getStatus())
-                    .build();
+            ServiceOrder order = createTestOrder(id, "12345678900", "ABC1234", OrderServiceStatusEnum.RECEBIDA);
             when(serviceOrderRepository.findById(id)).thenReturn(Optional.of(order));
 
             ServiceOrder result = useCase.execute(id);
@@ -144,8 +159,6 @@ class ServiceOrderUseCaseTest {
         }
     }
 
-    // ========================= ListOrdersUseCase =========================
-
     @Nested
     @ExtendWith(MockitoExtension.class)
     class ListOrdersUseCaseTests {
@@ -154,22 +167,22 @@ class ServiceOrderUseCaseTest {
         @InjectMocks private ListOrdersUseCase useCase;
 
         @Test
-        void returnsAllOrders() {
+        void returnsActiveOrdersSorted() {
             List<ServiceOrder> orders = List.of(
-                    ServiceOrder.builder().id(UUID.randomUUID()).cpfCnpj("111").build(),
-                    ServiceOrder.builder().id(UUID.randomUUID()).cpfCnpj("222").build()
+                    createTestOrder(UUID.randomUUID(), "111", "AAA1111", OrderServiceStatusEnum.RECEBIDA),
+                    createTestOrder(UUID.randomUUID(), "222", "BBB2222", OrderServiceStatusEnum.EM_DIAGNOSTICO)
             );
-            when(serviceOrderRepository.findAll()).thenReturn(orders);
+            when(serviceOrderRepository.findActiveOrdersSorted()).thenReturn(orders);
 
             List<ServiceOrder> result = useCase.execute();
 
             assertEquals(2, result.size());
-            verify(serviceOrderRepository).findAll();
+            verify(serviceOrderRepository).findActiveOrdersSorted();
         }
 
         @Test
-        void returnsEmptyListWhenNoOrders() {
-            when(serviceOrderRepository.findAll()).thenReturn(List.of());
+        void returnsEmptyListWhenNoActiveOrders() {
+            when(serviceOrderRepository.findActiveOrdersSorted()).thenReturn(List.of());
 
             List<ServiceOrder> result = useCase.execute();
 
@@ -177,31 +190,39 @@ class ServiceOrderUseCaseTest {
         }
     }
 
-    // ========================= UpdateOrderUseCase =========================
-
     @Nested
     @ExtendWith(MockitoExtension.class)
     class UpdateOrderUseCaseTests {
 
         @Mock private ServiceOrderRepository serviceOrderRepository;
+        @Mock private com.os.workshop.application.notification.OrderStatusNotificationService notificationService;
         @InjectMocks private UpdateOrderUseCase useCase;
 
         @Test
         void updatesOrderStatusSuccessfully() {
             UUID id = UUID.randomUUID();
-            ServiceOrder order = ServiceOrder.builder()
-                    .id(id)
-                    .serviceStatus(OrderServiceStatusEnum.RECEBIDA.getStatus())
-                    .cpfCnpj("12345678900")
-                    .build();
+            ServiceOrder order = createTestOrder(id, "12345678900", "ABC1234", OrderServiceStatusEnum.RECEBIDA);
 
             when(serviceOrderRepository.findById(id)).thenReturn(Optional.of(order));
             when(serviceOrderRepository.save(any(ServiceOrder.class))).thenAnswer(i -> i.getArgument(0));
 
-            ServiceOrder result = useCase.execute(id, OrderServiceStatusEnum.EM_EXECUCAO);
+            useCase.execute(id, OrderServiceStatusEnum.EM_DIAGNOSTICO);
 
-            assertEquals(OrderServiceStatusEnum.EM_EXECUCAO.getStatus(), result.getServiceStatus());
+            assertEquals(OrderServiceStatusEnum.EM_DIAGNOSTICO.getStatus(), order.getServiceStatus());
             verify(serviceOrderRepository).save(order);
+        }
+
+        @Test
+        void throwsWhenInvalidTransition() {
+            UUID id = UUID.randomUUID();
+            ServiceOrder order = createTestOrder(id, "12345678900", "ABC1234", OrderServiceStatusEnum.RECEBIDA);
+
+            when(serviceOrderRepository.findById(id)).thenReturn(Optional.of(order));
+
+            assertThrows(InvalidStatusTransitionException.class,
+                    () -> useCase.execute(id, OrderServiceStatusEnum.FINALIZADA));
+
+            verify(serviceOrderRepository, never()).save(any());
         }
 
         @Test

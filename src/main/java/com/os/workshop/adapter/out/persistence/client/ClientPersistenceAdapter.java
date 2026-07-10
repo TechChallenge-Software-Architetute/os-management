@@ -36,8 +36,8 @@ public class ClientPersistenceAdapter implements ClientRepository {
     }
 
     @Override
-    public Optional<Client> findByCpf(String normalizedCpf) {
-        return jpaRepository.findByCpf(normalizedCpf).map(mapper::toDomain);
+    public Optional<Client> findByDocument(String normalizedDocument) {
+        return jpaRepository.findByDocument(normalizedDocument).map(mapper::toDomain);
     }
 
     @Override
@@ -48,8 +48,8 @@ public class ClientPersistenceAdapter implements ClientRepository {
     }
 
     @Override
-    public boolean existsByCpf(String normalizedCpf) {
-        return jpaRepository.existsByCpf(normalizedCpf);
+    public boolean existsByDocument(String normalizedDocument) {
+        return jpaRepository.existsByDocument(normalizedDocument);
     }
 
     @Override

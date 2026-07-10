@@ -1,11 +1,11 @@
-﻿meta {
-  name: Approve My Order
+meta {
+  name: Find Orders By Document
   type: http
-  seq: 9
+  seq: 5
 }
 
-patch {
-  url: {{baseUrl}}/api/clients/my-orders/{{serviceOrderId}}/approve
+get {
+  url: {{baseUrl}}/order/document/{{document}}
   body: none
   auth: none
 }
@@ -14,4 +14,3 @@ headers {
   Content-Type: application/json
   Authorization: Bearer {{token}}
 }
-

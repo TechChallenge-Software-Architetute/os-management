@@ -16,6 +16,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Deprecated
 public class ApproveMyOrderUseCase {
 
     private final ClientRepository clientRepository;
@@ -30,17 +31,11 @@ public class ApproveMyOrderUseCase {
         ServiceOrder order = serviceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
 
-        if (!order.getCpfCnpj().equals(client.getCpf().getValue())) {
+        if (!order.getCpfCnpj().equals(client.getDocument().getValue())) {
             throw new IllegalArgumentException("Order " + orderId + " does not belong to this client");
         }
 
-        if (!OrderServiceStatusEnum.AGUARDANDO_APROVACAO.getStatus().equals(order.getServiceStatus())) {
-            throw new IllegalStateException(
-                    "Order " + orderId + " cannot be approved. Current status: " + order.getServiceStatus()
-                            + ". Expected: " + OrderServiceStatusEnum.AGUARDANDO_APROVACAO.getStatus());
-        }
-
-        order.setServiceStatus(OrderServiceStatusEnum.APROVADO.getStatus());
+        order.advanceTo(OrderServiceStatusEnum.APROVADO);
         ServiceOrder savedOrder = serviceOrderRepository.save(order);
 
         Budget budget = findBudgetByServiceOrderUseCase.execute(orderId).orElse(null);
