@@ -249,7 +249,21 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 15. Mecanico visualiza servicos a serem feitos."
+echo " - 15. Atualizando OS para em execucao [EM_EXECUCAO]."
+echo "------------------------------------------------------------------------------"
+run_curl --request PATCH \
+  --url "$APP_URL/order/$ORDER_ID" \
+  --header "Authorization: Bearer $TOKEN" \
+  --header 'content-type: application/json' \
+  --data '{
+  "status": "EM_EXECUCAO"
+}'
+
+sleep $TIMEOUT_CONST
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 16. Mecanico visualiza servicos a serem feitos."
 echo "------------------------------------------------------------------------------"
 SERVICES_RESPONSE="$(curl --silent --show-error --fail --request GET \
   --url "$APP_URL/services/os/$ORDER_ID" \
@@ -280,7 +294,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 16. Mecanico inicia execucao do primeiro servico [DOING]."
+echo " - 17. Mecanico inicia execucao do primeiro servico [DOING]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -295,7 +309,7 @@ sleep 5
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 17. Mecanico finaliza execucao do primeiro servico [DONE]."
+echo " - 18. Mecanico finaliza execucao do primeiro servico [DONE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -310,7 +324,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 18. Mecanico inicia execucao do segundo servico [DOING]."
+echo " - 19. Mecanico inicia execucao do segundo servico [DOING]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -325,7 +339,7 @@ sleep 7
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 19. Mecanico finaliza execucao do segundo servico [DONE]."
+echo " - 20. Mecanico finaliza execucao do segundo servico [DONE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -335,20 +349,6 @@ run_curl --request PATCH \
   \"status\": \"DONE\",
   \"id\": \"$service2\"
 }"
-
-sleep $TIMEOUT_CONST
-echo " "
-echo " "
-echo "------------------------------------------------------------------------------"
-echo " - 20. Atualizando OS para em execucao [EM_EXECUCAO]."
-echo "------------------------------------------------------------------------------"
-run_curl --request PATCH \
-  --url "$APP_URL/order/$ORDER_ID" \
-  --header "Authorization: Bearer $TOKEN" \
-  --header 'content-type: application/json' \
-  --data '{
-  "status": "EM_EXECUCAO"
-}'
 
 sleep $TIMEOUT_CONST
 echo " "

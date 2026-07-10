@@ -134,25 +134,23 @@ A validacao de transicoes e feita no dominio (ServiceOrder). Transicoes invalida
 
 ---
 
-## Notificacao por Email (AWS SES)
+## Notificacao por Email (AWS SNS)
 
-### Por que AWS SES?
+### Por que AWS SNS?
 
-Escolhemos o **Amazon Simple Email Service (SES)** como solucao de envio de emails pelos seguintes motivos:
+Escolhemos o **Amazon Simple Notification Service (SNS)** como solucao de notificacao pelos seguintes motivos:
 
-1. **Custo**: SES e um dos servicos de email mais economicos do mercado. O free tier oferece 62.000 emails/mes quando enviados de uma aplicacao hospedada no EC2/ECS.
+1. **Disponibilidade no AWS Academy**: O SES nao esta disponivel no Lab do Academy, mas o SNS sim. SNS suporta protocolo email como subscriber, permitindo enviar notificacoes para emails cadastrados.
 
-2. **Confiabilidade**: SES possui infraestrutura global da AWS com alta disponibilidade, gerenciamento automatico de bounces/complaints, e reputacao de IP gerenciada.
+2. **Simplicidade**: Um topico SNS com subscribers de email funciona sem infraestrutura adicional. A aplicacao publica a mensagem e o SNS entrega.
 
-3. **Simplicidade de integracao**: O AWS SDK v2 para Java oferece uma API fluente e type-safe que se integra naturalmente com Spring Boot. Nao requer servicos intermediarios (fila, broker) para o caso de uso atual.
+3. **Custo**: SNS oferece 1 milhao de publicacoes gratuitas/mes no free tier.
 
-4. **Escalabilidade**: SES suporta volumes massivos de envio sem necessidade de gerenciar infraestrutura de email (SMTP, SPF, DKIM, servidores).
+4. **Extensibilidade**: O mesmo topico pode ter subscribers de outros tipos no futuro (SMS, Lambda, SQS, HTTP) sem alterar o codigo da aplicacao.
 
-5. **Ecossistema AWS**: Como a aplicacao sera deployada em ambiente AWS (Academy), usar SES evita complexidade de integracao com provedores externos e aproveita as credenciais IAM ja disponiveis.
+5. **Desacoplamento**: A aplicacao nao precisa conhecer os destinatarios — apenas publica no topico. O SNS gerencia a entrega.
 
 ### Como funciona
-
-O fluxo de notificacao e acionado a cada mudanca de status da OS:
 
 ```
 Mudanca de Status
@@ -160,26 +158,26 @@ Mudanca de Status
        v
 OrderStatusNotificationService
        |
-       ├── Busca Client por documento → obtem nome e email
-       ├── Busca Vehicle por placa → obtem marca/modelo
+       +-- Busca Client por documento -> nome
+       +-- Busca Vehicle por placa -> marca/modelo
        |
        v
 EmailNotificationPort (interface)
        |
        v
-SesEmailService (@Async)
+SnsNotificationService (@Async)
        |
-       ├── Renderiza template HTML com dados personalizados
-       ├── Monta SendEmailRequest via AWS SDK v2
-       └── Envia via SesClient
+       +-- Monta mensagem em texto formatado
+       +-- Publica no topico SNS via AWS SDK v2
+       +-- SNS entrega para todos os subscribers (email)
 ```
 
 **Caracteristicas:**
 
 - **Assincrono**: O envio e feito com `@Async`, nao bloqueando a thread principal
-- **Best-effort**: Falha no envio e registrada em log mas nao reverte a operacao de negocio
-- **Template HTML**: Email responsivo com saudacao personalizada, badge de status, informacoes do veiculo e mensagem contextual por status
-- **Port & Adapter**: A interface `EmailNotificationPort` permite trocar o provider de email sem alterar logica de negocio
+- **Best-effort**: Falha na publicacao e registrada em log mas nao reverte a operacao de negocio
+- **Mensagem formatada**: Texto com saudacao personalizada, status, veiculo e mensagem contextual
+- **Port & Adapter**: A interface `EmailNotificationPort` permite trocar o provider sem alterar logica de negocio
 
 ### Configuracao
 
@@ -187,20 +185,56 @@ Variaveis de ambiente necessarias:
 
 | Variavel | Descricao | Default |
 |----------|-----------|---------|
-| `AWS_REGION` | Regiao AWS do SES | us-east-1 |
-| `AWS_SES_SENDER_EMAIL` | Email remetente (verificado no SES) | noreply@oficina.com |
+| `AWS_REGION` | Regiao AWS do SNS | us-east-1 |
+| `AWS_SNS_TOPIC_ARN` | ARN do topico SNS | — |
 | `AWS_ACCESS_KEY_ID` | Credencial AWS | — |
 | `AWS_SECRET_ACCESS_KEY` | Credencial AWS | — |
 | `AWS_SESSION_TOKEN` | Token de sessao (AWS Academy) | — |
 
-### Setup no AWS Academy (Sandbox)
+### Configuracao via arquivo `.env`
 
-No ambiente AWS Academy, o SES opera em modo sandbox:
+O projeto usa um arquivo `.env` na raiz para armazenar as credenciais AWS. Este arquivo esta no `.gitignore` e nunca deve ser commitado.
 
-1. Acesse o console AWS SES na regiao configurada
-2. Em "Verified Identities", adicione e verifique o email remetente
-3. Adicione e verifique os emails destinatarios (limitacao sandbox)
-4. Configure as variaveis de ambiente no `docker-compose.yml` ou no ambiente de deploy
+```env
+AWS_REGION=us-east-1
+AWS_SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789012:os-management-notifications
+AWS_ACCESS_KEY_ID=COLE_AQUI
+AWS_SECRET_ACCESS_KEY=COLE_AQUI
+AWS_SESSION_TOKEN=COLE_AQUI
+```
+
+O `docker-compose.yml` le automaticamente o `.env`. Basta atualizar as credenciais e subir os containers.
+
+**Como atualizar as credenciais (a cada sessao do Lab):**
+
+1. Acesse o AWS Academy e inicie o Lab
+2. Clique em **AWS Details** > **Show** (ao lado de AWS CLI)
+3. Copie `aws_access_key_id`, `aws_secret_access_key` e `aws_session_token`
+4. Cole no arquivo `.env` substituindo os valores anteriores
+5. Suba a aplicacao: `docker compose up --build`
+
+> As credenciais do AWS Academy expiram a cada sessao do Lab (~4h). Toda vez que reiniciar o Lab, atualize o `.env` com as novas credenciais.
+
+### Setup no AWS Academy — Criar Topico SNS
+
+1. Acesse o console AWS: **SNS > Topics**
+2. Clique em **Create topic**
+3. Tipo: **Standard**
+4. Nome: `os-management-notifications`
+5. Clique em **Create topic**
+6. Copie o **ARN** do topico (ex: `arn:aws:sns:us-east-1:837687730031:os-management-notifications`)
+7. Cole o ARN no `.env` em `AWS_SNS_TOPIC_ARN`
+
+### Setup no AWS Academy — Adicionar Subscriber de Email
+
+1. No topico criado, clique em **Create subscription**
+2. Protocolo: **Email**
+3. Endpoint: digite seu email (ex: `amanda.lcosta33@gmail.com`)
+4. Clique em **Create subscription**
+5. Acesse sua caixa de entrada e clique em **Confirm subscription** no email da AWS
+6. Status muda para **Confirmed**
+
+> Cada email que quiser receber notificacoes precisa ser adicionado como subscriber e confirmado. Para demonstracao, use seu proprio email.
 
 ---
 
@@ -215,7 +249,7 @@ No ambiente AWS Academy, o SES opera em modo sandbox:
 | PostgreSQL | 16 | Banco de dados relacional |
 | Docker / Docker Compose | — | Containerizacao e orquestracao |
 | Maven | — | Gerenciamento de dependencias e build |
-| AWS SES (SDK v2) | 2.29.1 | Envio de emails transacionais |
+| AWS SNS (SDK v2) | 2.29.1 | Notificacao por email via topico |
 | MapStruct | 1.6.3 | Mapeamento entre DTOs e entidades |
 | Lombok | — | Reducao de boilerplate |
 | JWT (jjwt) | 0.13.0 | Tokens de autenticacao |

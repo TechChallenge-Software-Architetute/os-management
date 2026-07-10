@@ -35,6 +35,6 @@ springdoc:
   enable-data-rest: false
 
 aws:
-  ses:
+  sns:
     region: ${AWS_REGION:us-east-1}
-    sender-email: ${AWS_SES_SENDER_EMAIL:noreply@oficina.com}
+    topic-arn: ${AWS_SNS_TOPIC_ARN:arn:aws:sns:us-east-1:000000000000:os-management-notifications}

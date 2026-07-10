@@ -16,13 +16,13 @@ C4Context
 
     System(osManagement, "OS Management", "Sistema de gestao de ordens de servico para oficina mecanica. Gerencia todo o ciclo de vida da OS.")
 
-    System_Ext(ses, "AWS SES", "Servico de envio de emails transacionais.")
+    System_Ext(sns, "AWS SNS", "Servico de notificacao por email via topico.")
     SystemDb_Ext(postgres, "PostgreSQL 16", "Banco de dados relacional para persistencia.")
 
     Rel(cliente, osManagement, "Aprova/recusa orcamento, consulta suas OS", "HTTPS/JSON")
     Rel(mecanico, osManagement, "Cria OS, reserva estoque, atualiza status", "HTTPS/JSON")
     Rel(admin, osManagement, "Gerencia usuarios, clientes, catalogos", "HTTPS/JSON")
-    Rel(osManagement, ses, "Envia notificacoes de status por email", "HTTPS/AWS SDK")
+    Rel(osManagement, sns, "Publica notificacoes de status", "HTTPS/AWS SDK")
     Rel(osManagement, postgres, "Persiste dados", "JDBC/TLS")
 ```
 
@@ -55,12 +55,12 @@ C4Container
         ContainerDb(db, "Database", "PostgreSQL 16", "Armazena todos os dados: clientes, veiculos, OS, servicos, estoque, orcamentos, usuarios.")
     }
 
-    System_Ext(ses, "AWS SES", "Envio de emails")
+    System_Ext(sns, "AWS SNS", "Notificacao por email")
 
     Rel(cliente, api, "POST /api/clients/my-orders/{id}/decision", "HTTPS/JSON + JWT")
     Rel(mecanico, api, "CRUD endpoints + PATCH /order/{id}", "HTTPS/JSON + JWT")
     Rel(api, db, "Leitura/Escrita", "JDBC PostgreSQL")
-    Rel(api, ses, "Envia emails de notificacao", "AWS SDK v2")
+    Rel(api, sns, "Publica notificacoes", "AWS SDK v2")
 ```
 
 #### Descricao dos Containers
@@ -69,7 +69,7 @@ C4Container
 |-----------|-----------|-----------------|
 | API Application | Java 21, Spring Boot 4.0.5, Docker (non-root) | Toda a logica de negocio. Autenticacao JWT. Validacao. Orquestracao de fluxos. |
 | Database | PostgreSQL 16, Docker | Persistencia relacional. Integridade referencial. Transacoes ACID. |
-| AWS SES | Servico gerenciado AWS | Envio de emails HTML transacionais com notificacoes de status. |
+| AWS SNS | Servico gerenciado AWS | Publicacao de notificacoes de status para subscribers (email). |
 
 ---
 

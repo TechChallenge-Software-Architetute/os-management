@@ -35,7 +35,7 @@ services:
       JWT_SECRET: akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa
       JWT_EXPIRATION: 86400000
       AWS_REGION: ${AWS_REGION:-us-east-1}
-      AWS_SES_SENDER_EMAIL: ${AWS_SES_SENDER_EMAIL:-noreply@oficina.com}
+      AWS_SNS_TOPIC_ARN: ${AWS_SNS_TOPIC_ARN:-}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
