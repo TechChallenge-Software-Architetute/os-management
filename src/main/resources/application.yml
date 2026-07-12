@@ -24,6 +24,12 @@ spring:
         # Explicitly sets PostgreSQL dialect for correct SQL generation.
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+logging:
+  file:
+    name: app.log
+  level:
+    root: INFO
+
 server:
   port: 8080
 
