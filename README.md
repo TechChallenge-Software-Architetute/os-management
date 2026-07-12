@@ -26,7 +26,7 @@ Para resolver esses problemas, desenvolvemos o **OS Management** — um sistema 
 - Status RECUSADA com possibilidade de reabertura da OS
 - Listagem de OS com ordenacao por prioridade de status e filtro de finalizadas/entregues
 - Busca de historico completo de OS por CPF/CNPJ do cliente
-- Notificacao por email (AWS SES) a cada mudanca de status da OS
+- Notificacao por email (AWS SNS) a cada mudanca de status da OS
 - Acompanhamento individual do status de cada servico dentro da OS (a fazer, em andamento, concluido)
 - Monitoramento de tempo de execucao dos servicos para analise de desempenho
 - Autenticacao via JWT e controle de acesso baseado em roles
@@ -39,15 +39,192 @@ Para resolver esses problemas, desenvolvemos o **OS Management** — um sistema 
 
 ## Sumario
 
+- [Arquitetura da Infraestrutura](#arquitetura-da-infraestrutura)
+- [Fluxo de Deploy (CI/CD)](#fluxo-de-deploy-cicd)
 - [Documentacao da API](#documentacao-da-api)
-- [Visao Geral da Arquitetura](#visao-geral-da-arquitetura)
-- [Notificacao por Email (AWS SES)](#notificacao-por-email-aws-ses)
+- [Video Demonstrativo](#video-demonstrativo)
+- [Visao Geral da Arquitetura da Aplicacao](#visao-geral-da-arquitetura-da-aplicacao)
+- [Notificacao por Email (AWS SNS)](#notificacao-por-email-aws-sns)
 - [Tecnologias](#tecnologias)
 - [Pre-requisitos e Como Executar](#pre-requisitos-e-como-executar)
+- [Deploy em Kubernetes](#deploy-em-kubernetes)
+- [Provisionamento com Terraform](#provisionamento-com-terraform)
 - [Referencia Rapida de Endpoints](#referencia-rapida-de-endpoints)
 - [Testando a API com Bruno](#testando-a-api-com-bruno)
 - [Scripts](#scripts)
 - [Testes](#testes)
+
+---
+
+### Objetivos
+
+| Objetivo | Ferramenta | Status |
+|----------|-----------|--------|
+| Provisionar cluster Kubernetes local para testes | Docker Desktop / Kind | Concluido |
+| Provisionar banco de dados PostgreSQL | Kubernetes (local) / AWS RDS (nuvem) | Concluido |
+| Gerenciar todos os recursos K8s via Terraform | Provider gavinbunney/kubectl | Concluido |
+| Pipeline CI/CD completo com versionamento automatico | GitHub Actions | Concluido |
+| Build e publicacao de imagem Docker multiplataforma | Docker Hub (linux/amd64) | Concluido |
+| Deploy em nuvem AWS (EC2 + RDS free tier) | Terraform AWS Provider | Concluido |
+| Escalabilidade automatica de pods | Kubernetes HPA (min 2, max 6 replicas) | Concluido |
+
+### Recursos provisionados pelo Terraform
+
+```
+terraform/
+  main.tf             ← Provider kubectl, AWS, GitHub; todos os recursos K8s
+  variables.tf        ← use_aws, db_*, jwt_*, kubernetes_*, github_token
+  outputs.tf          ← namespace_applied, rds_endpoint, github_secrets_created
+  modules/
+    eks/              ← VPC + EKS cluster + node group (deploy em nuvem)
+    rds/              ← RDS PostgreSQL db.t3.micro gerenciado
+    github/           ← GitHub Actions secrets (DB_URL, JWT_SECRET, KUBE_CONFIG)
+  ec2/                ← Alternativa free tier: EC2 t3.micro + RDS db.t3.micro
+    main.tf
+    user_data.sh.tpl  ← Bootstrap: instala Docker e sobe o container
+
+k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
+  namespace.yaml
+  app.yaml            ← Deployment (2 replicas) + Service
+  hpa.yaml            ← HPA: CPU 70%, Memoria 75%, min 2 / max 6 pods
+  ingress.yaml        ← Ingress nginx
+  configmap.yaml      ← ConfigMap estatico (kustomize do time)
+  secret.yaml         ← Secret estatico (kustomize do time)
+  app-configmap.yaml.tpl      ← Template: SPRING_DATASOURCE_URL dinamica
+  postgres-configmap.yaml.tpl ← Template: config postgres (local only)
+  app-secret.yaml.tpl         ← Template: credenciais da app
+  postgres-secret.yaml.tpl    ← Template: senha postgres (local only)
+  postgres.yaml       ← Deployment + PVC + Service postgres (local only)
+```
+
+---
+
+## Arquitetura da Infraestrutura
+
+### Modo Local (Docker Desktop / Kind)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  Kubernetes (Docker Desktop / Kind)              │
+│                   Namespace: os-management                       │
+│                                                                  │
+│  ┌──────────────────────┐      ┌──────────────────────────┐     │
+│  │  Deployment: app     │      │  Deployment: postgres     │     │
+│  │  replicas: 2 → 6     │─────▶│  PostgreSQL 16            │     │
+│  │  image: favilafrr/   │      │  PVC: 1Gi                 │     │
+│  │    os-management     │      └──────────────────────────┘     │
+│  │                      │                                        │
+│  │  HPA: cpu 70%        │      ┌──────────────────────────┐     │
+│  │       mem 75%        │      │  ConfigMap: app-config    │     │
+│  │  min 2 / max 6 pods  │      │  Secret: app-secret       │     │
+│  └──────────────────────┘      └──────────────────────────┘     │
+│           │                                                       │
+│  ┌────────▼───────────────────────────────────────────────┐     │
+│  │  Service: LoadBalancer :8080  │  Ingress: nginx         │     │
+│  └────────────────────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
+                    │
+         kubectl port-forward :8080
+                    │
+            http://localhost:8080
+```
+
+### Modo AWS (EC2 + RDS — Free Tier)
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        AWS us-east-1                              │
+│                                                                   │
+│  ┌──────────────────────────────────┐                            │
+│  │         Default VPC               │                            │
+│  │                                   │                            │
+│  │  ┌────────────────────────────┐  │  ┌─────────────────────┐  │
+│  │  │  EC2 t3.micro (Ubuntu 24)  │  │  │  RDS db.t3.micro    │  │
+│  │  │  Security Group: :8080 :22 │──┼─▶│  PostgreSQL 16      │  │
+│  │  │  user_data:                │  │  │  SG: porta 5432     │  │
+│  │  │    apt install docker      │  │  │  apenas da EC2      │  │
+│  │  │    docker run os-management│  │  └─────────────────────┘  │
+│  │  └───────────────┬────────────┘  │                            │
+│  └──────────────────│───────────────┘                            │
+└─────────────────────│──────────────────────────────────────────  ┘
+                      │  :8080
+              http://IP_PUBLICO:8080
+           /swagger-ui/index.html
+```
+
+### Recursos AWS criados pelo Terraform (terraform/ec2/)
+
+| Recurso | Tipo | Especificacao |
+|---------|------|--------------|
+| `aws_instance.app` | EC2 | t3.micro, Ubuntu 24.04 amd64 |
+| `aws_db_instance.postgres` | RDS | db.t3.micro, PostgreSQL 16, 20GB gp2 |
+| `aws_security_group.app` | SG | Ingress 8080 e 22, egress all |
+| `aws_security_group.rds` | SG | Ingress 5432 apenas do SG da EC2 |
+| `aws_db_subnet_group.default` | Subnet Group | Subnets da VPC default |
+
+---
+
+## Fluxo de Deploy (CI/CD)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         GitHub Actions Pipeline                      │
+│                                                                      │
+│  push para qualquer branch                                           │
+│          │                                                           │
+│          ▼                                                           │
+│  ┌──────────────┐                                                    │
+│  │  unit-test   │  mvn test + JaCoCo badge + upload relatório        │
+│  └──────┬───────┘                                                    │
+│         │                                                            │
+│         ▼                                                            │
+│  ┌──────────────┐                                                    │
+│  │ code-analysis│  mvn verify (JaCoCo report)                        │
+│  └──────┬───────┘                                                    │
+│         │                                                            │
+│         ▼                                                            │
+│  ┌──────────────┐                                                    │
+│  │    build     │  mvn package -DskipTests                           │
+│  └──────┬───────┘                                                    │
+│         │                                                            │
+│         ▼                                                            │
+│  ┌──────────────┐                                                    │
+│  │   publish    │  bump versao pom.xml → mvn deploy → GitHub Package │
+│  └──────┬───────┘   output: publish_version                         │
+│         │                                                            │
+│         ▼                                                            │
+│  ┌──────────────────┐                                                │
+│  │ docker-build-push│  buildx --platform linux/amd64                 │
+│  │                  │  push: Docker Hub latest + versao + hash       │
+│  └──────┬───────────┘                                                │
+│         │                                                            │
+│         ├─────────────────────────┐                                  │
+│         │ AWS_ACCESS_KEY_ID vazio │ AWS_ACCESS_KEY_ID preenchido     │
+│         ▼                         ▼                                  │
+│  ┌─────────────┐        ┌──────────────────┐                        │
+│  │terraform-   │        │  terraform-aws   │                        │
+│  │local (Kind) │        │  EKS + RDS       │                        │
+│  │             │        │                  │                        │
+│  │ terraform   │        │ terraform apply  │                        │
+│  │ apply       │        │ kubectl set image│                        │
+│  │ kubectl set │        │ rollout status   │                        │
+│  │ image       │        └──────────────────┘                        │
+│  └─────────────┘                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Secrets necessarios no GitHub
+
+| Secret | Descricao | Obrigatorio |
+|--------|-----------|-------------|
+| `DOCKER_USERNAME` | Usuario Docker Hub | Sempre |
+| `DOCKER_HUB_TOKEN` | Token Docker Hub | Sempre |
+| `DB_USER` | Usuario do banco | Sempre |
+| `DB_PASSWORD` | Senha do banco | Sempre |
+| `JWT_SECRET` | Chave JWT (min 32 chars) | Sempre |
+| `AWS_ACCESS_KEY_ID` | Credencial AWS | Apenas deploy AWS |
+| `AWS_SECRET_ACCESS_KEY` | Credencial AWS | Apenas deploy AWS |
+| `AWS_REGION` | Ex: `us-east-1` | Apenas deploy AWS |
 
 ---
 
@@ -57,12 +234,35 @@ A aplicacao expoe o **Swagger UI** com a especificacao OpenAPI gerada automatica
 
 | Recurso | URL |
 |---|---|
-| Swagger UI | http://localhost:8080/swagger-ui/index.html |
-| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| Swagger UI (local) | http://localhost:8080/swagger-ui/index.html |
+| OpenAPI JSON (local) | http://localhost:8080/v3/api-docs |
+
+### Collection Bruno
+
+A collection completa das APIs esta em `bruno/os-management-api/` e cobre todos os endpoints com exemplos de payload e sequencia de uso recomendada.
+
+**Como usar:**
+1. Instale o Bruno: https://www.usebruno.com/downloads
+2. Abra o Bruno → **Open Collection** → selecione a pasta `bruno/os-management-api/`
+3. Configure o ambiente: URL base `http://localhost:8080`
+4. Execute na sequencia descrita na secao [Testando a API com Bruno](#testando-a-api-com-bruno)
 
 ---
 
-## Visao Geral da Arquitetura
+## Video Demonstrativo
+
+> **Link do video:** *(sera publicado apos gravacao)*
+
+O video de ate 15 minutos demonstra:
+
+- Deploy da aplicacao via pipeline GitHub Actions
+- Execucao completa do CI/CD (unit-test → build → publish → docker push → terraform apply)
+- Consumo das APIs seguindo o fluxo completo de uma OS (login, OS, diagnostico, reserva, orcamento, aprovacao, execucao, entrega)
+- Escalabilidade automatica: simulacao de carga com HPA escalando de 2 para ate 6 replicas (CPU threshold 70%)
+
+---
+
+## Visao Geral da Arquitetura da Aplicacao
 
 O projeto adota a **Arquitetura Hexagonal (Ports & Adapters)**, onde cada modulo possui separacao clara entre dominio, aplicacao e infraestrutura. O dominio nao possui dependencias de frameworks externos.
 
@@ -103,9 +303,9 @@ src/main/java/com/os/workshop/
 │   ├── stock/
 │   ├── user/
 │   └── vehicle/
-├── infrastructure/                 # Configuracoes, JPA entities, Security, SES
+├── infrastructure/                 # Configuracoes, JPA entities, Security, SNS
 │   ├── config/
-│   ├── notification/               # SesEmailService, EmailTemplateRenderer, SesConfig
+│   ├── notification/               # SnsNotificationService, SnsConfig
 │   ├── persistence/
 │   └── security/
 └── WorkshopApplication.java
@@ -248,6 +448,11 @@ O `docker-compose.yml` le automaticamente o `.env`. Basta atualizar as credencia
 | Spring Data JPA | — | Persistencia de dados |
 | PostgreSQL | 16 | Banco de dados relacional |
 | Docker / Docker Compose | — | Containerizacao e orquestracao |
+| Kubernetes | — | Orquestracao de containers (local e AWS) |
+| Terraform | >= 1.0 | Provisionamento de infraestrutura (IaC) |
+| GitHub Actions | — | Pipeline CI/CD |
+| AWS EC2 | t3.micro | Hospedagem da aplicacao (free tier) |
+| AWS RDS | db.t3.micro | PostgreSQL gerenciado (free tier) |
 | Maven | — | Gerenciamento de dependencias e build |
 | AWS SNS (SDK v2) | 2.29.1 | Notificacao por email via topico |
 | MapStruct | 1.6.3 | Mapeamento entre DTOs e entidades |
@@ -303,6 +508,116 @@ docker compose up postgres -d
 docker compose --profile security up    # OWASP ZAP
 docker compose --profile quality up     # SonarQube
 ```
+
+---
+
+## Deploy em Kubernetes
+
+### Pre-requisitos
+
+- Docker Desktop com Kubernetes habilitado (ou Kind instalado)
+- `kubectl` instalado e apontando para o cluster
+- Terraform >= 1.0 instalado
+
+### Passo a passo — Docker Desktop
+
+**1. Verificar cluster ativo:**
+```bash
+kubectl cluster-info
+```
+
+**2. Exportar credenciais para o Terraform:**
+```powershell
+# PowerShell
+$KUBE_HOST = kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'
+$KUBE_CA   = kubectl config view --minify --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'
+$bytes     = [System.Text.Encoding]::UTF8.GetBytes((kubectl config view --minify --raw))
+$KUBE_CONFIG = [Convert]::ToBase64String($bytes)
+
+# Criar service account com permissao de cluster-admin
+kubectl create serviceaccount terraform-sa -n kube-system
+kubectl create clusterrolebinding terraform-sa-admin --clusterrole=cluster-admin --serviceaccount=kube-system:terraform-sa
+$KUBE_TOKEN = kubectl create token terraform-sa -n kube-system --duration=24h
+```
+
+**3. Preencher `terraform/terraform.tfvars`:**
+```hcl
+use_aws                   = false
+db_user                   = "user"
+db_password               = "password"
+jwt_secret                = "local-jwt-secret-para-dev"
+github_token              = ""
+kubernetes_host           = "https://kubernetes.docker.internal:6443"
+kubernetes_token          = "<TOKEN_OBTIDO_ACIMA>"
+kubernetes_ca_certificate = "<CA_BASE64>"
+kube_config               = "<KUBECONFIG_BASE64>"
+```
+
+**4. Aplicar o Terraform:**
+```bash
+cd terraform
+terraform init
+terraform apply
+```
+
+**5. Verificar e acessar:**
+```bash
+kubectl get all -n os-management
+kubectl port-forward svc/os-management 8080:8080 -n os-management
+# Acesse: http://localhost:8080/swagger-ui/index.html
+```
+
+**6. Destruir o ambiente:**
+```bash
+cd terraform && terraform destroy
+```
+
+Para o guia completo com Kind e troubleshooting, consulte [`INFRASTRUCTURE.md`](./INFRASTRUCTURE.md).
+
+---
+
+## Provisionamento com Terraform
+
+### Modo local (Kubernetes in-cluster)
+
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply    # cria namespace, postgres, app, HPA, ingress, secrets, configmaps
+```
+
+### Modo AWS — EC2 + RDS (free tier)
+
+```bash
+# 1. Configurar AWS CLI
+aws configure   # ou exportar AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+# 2. Preencher terraform/ec2/terraform.tfvars
+cd terraform/ec2
+terraform init
+terraform apply   # cria EC2 t3.micro + RDS db.t3.micro (~8 min)
+
+# 3. Aguardar ~3 min apos o apply (user_data instala Docker e sobe o container)
+# Output mostra: app_url = "http://IP:8080/swagger-ui/index.html"
+
+# 4. Destruir apos testes (evitar custos)
+terraform destroy
+```
+
+### Variaveis principais
+
+| Variavel | Descricao | Obrigatorio |
+|----------|-----------|-------------|
+| `use_aws` | `true` = EKS+RDS / `false` = local | Sempre |
+| `db_user` | Usuario do banco | Sempre |
+| `db_password` | Senha do banco | Sempre |
+| `jwt_secret` | Chave JWT | Sempre |
+| `kubernetes_host` | URL da API do cluster | Modo local |
+| `kubernetes_token` | Token de autenticacao | Modo local |
+| `kubernetes_ca_certificate` | CA do cluster em base64 | Modo local |
+| `kube_config` | kubeconfig completo em base64 | Modo local |
+| `github_token` | Token GitHub (opcional) | Opcional |
 
 ---
 
@@ -460,7 +775,7 @@ Dentro do mesmo status: mais antigas primeiro (createdAt ASC).
 
 ## Testando a API com Bruno
 
-O [Bruno](https://www.usebruno.com/) e um cliente HTTP open-source para testar APIs.
+O [Bruno](https://www.usebruno.com/) e um cliente HTTP open-source para testar APIs. A collection completa esta em `bruno/os-management-api/`.
 
 1. Instale o Bruno: https://www.usebruno.com/downloads
 2. Abra a collection em `bruno/os-management-api/`

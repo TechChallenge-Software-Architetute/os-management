@@ -12,8 +12,9 @@ variable "use_aws" {
 # =============================================================================
 variable "github_token" {
   type        = string
-  description = "GitHub PAT com escopos: repo + secrets"
+  description = "GitHub PAT com escopos: repo + secrets. Deixe vazio para pular criação de secrets no repositório."
   sensitive   = true
+  default     = ""
 }
 
 variable "github_owner" {

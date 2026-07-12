@@ -35,6 +35,15 @@ terraform {
 provider "aws" {
   region = var.aws_region
 
+  # Quando use_aws = false os módulos EKS/RDS têm count = 0 e o provider nunca
+  # é chamado de fato. Mesmo assim o Terraform valida credenciais na inicialização,
+  # então usamos credenciais dummy e desabilitamos as validações nesse modo.
+  access_key                  = var.use_aws ? null : "local-dummy"
+  secret_key                  = var.use_aws ? null : "local-dummy"
+  skip_credentials_validation = !var.use_aws
+  skip_requesting_account_id  = !var.use_aws
+  skip_metadata_api_check     = !var.use_aws
+
   default_tags {
     tags = {
       Project     = "os-management"
@@ -65,6 +74,7 @@ provider "kubectl" {
 # GitHub Secrets — credenciais injetadas no pipeline CI/CD
 # =============================================================================
 module "github_secrets" {
+  count  = var.github_token != "" ? 1 : 0
   source = "./modules/github"
 
   repository  = var.repository_name
@@ -198,8 +208,9 @@ data "kubectl_path_documents" "app" {
 }
 
 resource "kubectl_manifest" "app" {
-  for_each  = data.kubectl_path_documents.app.manifests
-  yaml_body = each.value
+  for_each         = data.kubectl_path_documents.app.manifests
+  yaml_body        = each.value
+  wait_for_rollout = false  # rollout verificado separadamente via kubectl rollout status
 
   depends_on = [
     kubectl_manifest.app_configmap,

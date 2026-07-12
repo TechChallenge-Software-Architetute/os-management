@@ -3,15 +3,16 @@
 # =============================================================================
 output "github_secrets_created" {
   description = "Secrets criados no repositório GitHub"
-  value       = module.github_secrets.secrets_created
+  value       = var.github_token != "" ? module.github_secrets[0].secrets_created : []
+  sensitive   = true
 }
 
 # =============================================================================
 # Kubernetes manifests aplicados
 # =============================================================================
-output "namespaces_applied" {
-  description = "Namespaces criados pelo Terraform"
-  value       = keys(kubectl_manifest.namespaces)
+output "namespace_applied" {
+  description = "Namespace criado pelo Terraform"
+  value       = kubectl_manifest.namespace.uid
 }
 
 output "app_resources_applied" {

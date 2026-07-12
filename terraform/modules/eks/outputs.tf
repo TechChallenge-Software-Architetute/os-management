@@ -15,7 +15,7 @@ output "cluster_ca_certificate" {
 }
 
 output "cluster_token" {
-  value       = module.eks.cluster_token
+  value       = data.aws_eks_cluster_auth.this.token
   description = "Token de autenticação no cluster"
   sensitive   = true
 }
