@@ -2,8 +2,6 @@ name: pipeline
 
 on:
   push:
-    branches:
-      - develop
 
 jobs:
 
@@ -183,7 +181,7 @@ jobs:
   terraform-local:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS != 'true'
+    if: vars.USE_AWS != 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do código
@@ -250,7 +248,7 @@ jobs:
   terraform-ec2:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS == 'true'
+    if: vars.USE_AWS == 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do codigo
