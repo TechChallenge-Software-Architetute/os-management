@@ -281,6 +281,7 @@ jobs:
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -var="sns_topic_arn=${{ secrets.AWS_SNS_TOPIC_ARN }}" \
             -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
 
       - name: Exibir URL da aplicacao
