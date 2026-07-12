@@ -24,6 +24,8 @@ docker run -d \
   -e SPRING_APPLICATION_NAME="workshop" \
   -e SPRING_JPA_HIBERNATE_DDL_AUTO="update" \
   -e SPRING_JPA_SHOW_SQL="false" \
+  -e AWS_REGION="${aws_region}" \
+  -e AWS_SNS_TOPIC_ARN="${sns_topic_arn}" \
   ${app_image}
 
 # Log para debug
