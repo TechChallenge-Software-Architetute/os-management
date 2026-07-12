@@ -191,8 +191,9 @@ data "kubectl_path_documents" "postgres" {
 }
 
 resource "kubectl_manifest" "postgres" {
-  for_each  = var.use_aws ? {} : data.kubectl_path_documents.postgres.manifests
-  yaml_body = each.value
+  for_each         = var.use_aws ? {} : data.kubectl_path_documents.postgres.manifests
+  yaml_body        = each.value
+  wait_for_rollout = false  # evita timeout no Kind — pod verificado via kubectl rollout
 
   depends_on = [
     kubectl_manifest.postgres_configmap,
