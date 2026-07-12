@@ -34,6 +34,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: password
       JWT_SECRET: akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa
       JWT_EXPIRATION: 86400000
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_SNS_TOPIC_ARN: ${AWS_SNS_TOPIC_ARN:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/v3/api-docs > /dev/null 2>&1 || exit 1"]
       interval: 10s

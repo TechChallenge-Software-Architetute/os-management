@@ -23,8 +23,8 @@ public class ClientEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 11)
-    private String cpf;
+    @Column(name = "document", nullable = false, unique = true, length = 14)
+    private String document;
 
     private String email;
 

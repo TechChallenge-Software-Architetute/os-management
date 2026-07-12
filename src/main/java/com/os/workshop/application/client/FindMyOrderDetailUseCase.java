@@ -29,7 +29,7 @@ public class FindMyOrderDetailUseCase {
         ServiceOrder order = serviceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
 
-        if (!order.getCpfCnpj().equals(client.getCpf().getValue())) {
+        if (!order.getCpfCnpj().equals(client.getDocument().getValue())) {
             throw new IllegalArgumentException("Order " + orderId + " does not belong to this client");
         }
 

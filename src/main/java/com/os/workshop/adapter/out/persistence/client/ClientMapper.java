@@ -9,13 +9,13 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ClientMapper {
 
-    @Mapping(target = "cpf", source = "cpf.value")
+    @Mapping(target = "document", source = "document.value")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     ClientEntity toEntity(Client client);
 
-    @Mapping(target = "cpf", source = "cpf.value")
+    @Mapping(target = "document", source = "document.value")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -25,7 +25,7 @@ public interface ClientMapper {
         return Client.reconstitute(
                 entity.getId(),
                 entity.getName(),
-                entity.getCpf(),
+                entity.getDocument(),
                 entity.getEmail(),
                 entity.getPhone(),
                 entity.isActive(),

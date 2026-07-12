@@ -11,4 +11,6 @@ public interface ServiceOrderRepository {
     Optional<ServiceOrder> findById(UUID id);
     List<ServiceOrder> findAll();
     List<ServiceOrder> findByCpfCnpj(String cpfCnpj);
+
+    List<ServiceOrder> findActiveOrdersSorted();
 }

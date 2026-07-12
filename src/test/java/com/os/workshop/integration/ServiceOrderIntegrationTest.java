@@ -61,7 +61,7 @@ class ServiceOrderIntegrationTest extends IntegrationTestBase {
         assertThat(createResponse.getBody().get("placaVeiculo")).isEqualTo("XYZ9A88");
 
         // Step 4: Find order by ID
-        var findResponse = restTemplate.exchange("/order/" + orderId, HttpMethod.GET,
+        var findResponse = restTemplate.exchange("/order/id/" + orderId, HttpMethod.GET,
                 new HttpEntity<>(authHeaders(token)), Map.class);
         assertThat(findResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(findResponse.getBody().get("id")).isEqualTo(orderId);
@@ -75,9 +75,13 @@ class ServiceOrderIntegrationTest extends IntegrationTestBase {
         // Step 6: Update order status to EM_DIAGNOSTICO
         var updateBody = Map.of("status", "EM_DIAGNOSTICO");
         var updateResponse = restTemplate.exchange("/order/" + orderId, HttpMethod.PATCH,
-                new HttpEntity<>(updateBody, authHeaders(token)), Map.class);
-        assertThat(updateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(updateResponse.getBody().get("serviceStatus")).isEqualTo("EM_DIAGNOSTICO");
+                new HttpEntity<>(updateBody, authHeaders(token)), Void.class);
+        assertThat(updateResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // Verify status changed by fetching the order
+        var verifyResponse = restTemplate.exchange("/order/id/" + orderId, HttpMethod.GET,
+                new HttpEntity<>(authHeaders(token)), Map.class);
+        assertThat(verifyResponse.getBody().get("serviceStatus")).isEqualTo("EM_DIAGNOSTICO");
 
         // Step 7: Verify services were created for this OS
         var servicesResponse = restTemplate.exchange("/services/os/" + orderId, HttpMethod.GET,

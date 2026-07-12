@@ -1,6 +1,7 @@
 package com.os.workshop.adapter.out.persistence.serviceorder;
 
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
+import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import com.os.workshop.infrastructure.persistence.serviceorder.ServiceOrderEntity;
 import com.os.workshop.infrastructure.persistence.serviceorder.ServiceOrderJpaRepository;
@@ -19,14 +20,7 @@ public class ServiceOrderPersistenceAdapter implements ServiceOrderRepository {
 
     @Override
     public ServiceOrder save(ServiceOrder order) {
-        ServiceOrderEntity entity = ServiceOrderEntity.builder()
-                .id(order.getId())
-                .serviceTypeName(order.getServiceTypeName())
-                .serviceStatus(order.getServiceStatus())
-                .listService(order.getListService())
-                .cpfCnpj(order.getCpfCnpj())
-                .placaVeiculo(order.getPlacaVeiculo())
-                .build();
+        ServiceOrderEntity entity = toEntity(order);
         ServiceOrderEntity saved = jpaRepository.save(entity);
         return toDomain(saved);
     }
@@ -46,14 +40,41 @@ public class ServiceOrderPersistenceAdapter implements ServiceOrderRepository {
         return jpaRepository.findByCpfCnpj(cpfCnpj).stream().map(this::toDomain).toList();
     }
 
-    private ServiceOrder toDomain(ServiceOrderEntity entity) {
-        return ServiceOrder.builder()
-                .id(entity.getId())
-                .serviceTypeName(entity.getServiceTypeName())
-                .serviceStatus(entity.getServiceStatus())
-                .listService(entity.getListService())
-                .cpfCnpj(entity.getCpfCnpj())
-                .placaVeiculo(entity.getPlacaVeiculo())
+    @Override
+    public List<ServiceOrder> findActiveOrdersSorted() {
+        return jpaRepository.findActiveOrdersSorted().stream().map(this::toDomain).toList();
+    }
+
+    private ServiceOrderEntity toEntity(ServiceOrder order) {
+        ServiceOrderEntity entity = ServiceOrderEntity.builder()
+                .id(order.getId())
+                .serviceTypeName(order.getServiceTypeName())
+                .serviceStatus(order.getServiceStatus())
+                .listService(order.getListService())
+                .cpfCnpj(order.getCpfCnpj())
+                .placaVeiculo(order.getPlacaVeiculo())
+                .rejectionReason(order.getRejectionReason())
                 .build();
+        if (order.getCreatedAt() != null) {
+            entity.setCreatedAt(order.getCreatedAt());
+        }
+        if (order.getUpdatedAt() != null) {
+            entity.setUpdatedAt(order.getUpdatedAt());
+        }
+        return entity;
+    }
+
+    private ServiceOrder toDomain(ServiceOrderEntity entity) {
+        return ServiceOrder.reconstitute(
+                entity.getId(),
+                entity.getCpfCnpj(),
+                entity.getPlacaVeiculo(),
+                entity.getListService(),
+                entity.getServiceTypeName(),
+                OrderServiceStatusEnum.valueOf(entity.getServiceStatus()),
+                entity.getRejectionReason(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
+        );
     }
 }

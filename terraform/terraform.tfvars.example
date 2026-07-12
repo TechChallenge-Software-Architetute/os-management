@@ -1,0 +1,72 @@
+# =============================================================================
+# Copie este arquivo para terraform.tfvars e preencha os valores.
+# NUNCA comite terraform.tfvars — ele já está no .gitignore.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Modo de deployment
+# false = Kind/Minikube local | true = EKS + RDS na AWS
+# -----------------------------------------------------------------------------
+use_aws = false
+
+# -----------------------------------------------------------------------------
+# GitHub
+# PAT necessário com escopos: repo, secrets
+# -----------------------------------------------------------------------------
+github_token    = "ghp_SEU_TOKEN_AQUI"
+github_owner    = "TechChallenge-Software-Architetute"
+repository_name = "os-management"
+
+# -----------------------------------------------------------------------------
+# Banco de dados
+# -----------------------------------------------------------------------------
+db_name     = "workshop"
+db_user     = "user"
+db_password = "troque-esta-senha"
+
+# Local: host do postgres dentro do cluster
+db_host = "postgres.os-management.svc.cluster.local"
+db_port = 5432
+
+# -----------------------------------------------------------------------------
+# JWT
+# -----------------------------------------------------------------------------
+jwt_secret     = "troque-por-uma-chave-segura-com-pelo-menos-256-bits"
+jwt_expiration = 86400000
+
+# =============================================================================
+# Modo LOCAL (use_aws = false)
+# Preencha com os dados do kubeconfig do seu cluster Kind/Minikube.
+# Obtenha com:
+#   kubectl config view --minify --raw
+# =============================================================================
+
+# kubernetes_host             = "https://127.0.0.1:PORTA"
+# kubernetes_token            = "TOKEN_DO_SERVICE_ACCOUNT"
+# kubernetes_ca_certificate   = "BASE64_DO_CA_CRT"
+# kube_config                 = "KUBECONFIG_COMPLETO_EM_BASE64"
+
+# =============================================================================
+# Modo AWS (use_aws = true)
+# Preencha as variáveis abaixo e comente o bloco LOCAL acima.
+# =============================================================================
+
+# aws_region          = "us-east-1"
+# app_name            = "os-management"
+# environment         = "dev"
+
+# --- EKS ---
+# eks_cluster_version = "1.30"
+# vpc_cidr            = "10.0.0.0/16"
+# availability_zones  = ["us-east-1a", "us-east-1b"]
+# private_subnets     = ["10.0.1.0/24", "10.0.2.0/24"]
+# public_subnets      = ["10.0.101.0/24", "10.0.102.0/24"]
+# node_instance_type  = "t3.medium"
+# node_min_size       = 1
+# node_max_size       = 3
+# node_desired_size   = 2
+
+# --- RDS ---
+# rds_instance_class    = "db.t3.micro"
+# rds_allocated_storage = 20
+# rds_multi_az          = false

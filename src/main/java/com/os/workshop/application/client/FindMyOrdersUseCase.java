@@ -22,6 +22,6 @@ public class FindMyOrdersUseCase {
     public List<ServiceOrder> execute(String email) {
         Client client = clientRepository.findByEmail(email)
                 .orElseThrow(() -> new ClientNotFoundException("email: " + email));
-        return serviceOrderRepository.findByCpfCnpj(client.getCpf().getValue());
+        return serviceOrderRepository.findByCpfCnpj(client.getDocument().getValue());
     }
 }
