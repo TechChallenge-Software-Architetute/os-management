@@ -345,7 +345,7 @@ jobs:
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="node_instance_type=t3.micro" \
+            -var="node_instance_type=t3.small" \
             -var="node_desired_size=1" \
             -var="node_max_size=2"
 
@@ -365,6 +365,9 @@ jobs:
           DB_USER="${{ secrets.DB_USER }}"
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
+
+          # Metrics Server (necessário para o HPA funcionar)
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
           # Namespace
           kubectl apply -f k8s/namespace.yaml
