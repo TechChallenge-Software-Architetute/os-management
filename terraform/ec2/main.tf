@@ -147,21 +147,64 @@ resource "aws_db_instance" "postgres" {
 }
 
 # =============================================================================
-# EC2 t2.micro — free tier (750h/mes no 1o ano)
+# IAM Role para a EC2 — permite publicar no SNS sem credenciais hardcoded
+# Criada somente quando sns_topic_arn for fornecido
+# =============================================================================
+resource "aws_iam_role" "ec2_role" {
+  count = var.sns_topic_arn != "" ? 1 : 0
+  name  = "os-management-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "sns_publish" {
+  count = var.sns_topic_arn != "" ? 1 : 0
+  name  = "os-management-sns-publish"
+  role  = aws_iam_role.ec2_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "sns:Publish"
+      Resource = var.sns_topic_arn
+    }]
+  })
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  count = var.sns_topic_arn != "" ? 1 : 0
+  name  = "os-management-ec2-profile"
+  role  = aws_iam_role.ec2_role[0].name
+}
+
+# =============================================================================
+# EC2 t3.micro — free tier (750h/mes no 1o ano)
 # Instala Docker e sobe o container da aplicacao
 # =============================================================================
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.micro"
   vpc_security_group_ids = [aws_security_group.app.id]
+  iam_instance_profile   = var.sns_topic_arn != "" ? aws_iam_instance_profile.ec2_profile[0].name : null
 
   # Script executado na inicializacao da instancia
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    db_url      = "jdbc:postgresql://${aws_db_instance.postgres.address}:5432/${var.db_name}"
-    db_user     = var.db_user
-    db_password = var.db_password
-    jwt_secret  = var.jwt_secret
-    app_image   = var.app_image
+    db_url        = "jdbc:postgresql://${aws_db_instance.postgres.address}:5432/${var.db_name}"
+    db_name       = var.db_name
+    db_user       = var.db_user
+    db_password   = var.db_password
+    jwt_secret    = var.jwt_secret
+    app_image     = var.app_image
+    sns_topic_arn = var.sns_topic_arn
+    aws_region    = var.aws_region
   })
 
   # Aguarda o RDS estar disponivel antes de subir a EC2

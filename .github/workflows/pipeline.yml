@@ -281,7 +281,8 @@ jobs:
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
+            -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}" \
+            -var="sns_topic_arn=${{ secrets.AWS_SNS_TOPIC_ARN }}"
 
       - name: Exibir URL da aplicacao
         working-directory: terraform/ec2
