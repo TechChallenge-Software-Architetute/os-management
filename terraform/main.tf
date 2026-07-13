@@ -18,13 +18,11 @@ terraform {
 
   # Backend S3 para estado remoto — ativado pelo pipeline via arquivo de config.
   # Local: state fica em terraform.tfstate (sem necessidade de bucket).
-  # Pipeline EKS: terraform init -backend-config=backend.hcl
+  # Pipeline EKS: gera backend.tf dinamicamente antes do init.
   #
-  # Para uso manual com S3, crie um arquivo backend.hcl:
-  #   bucket = "seu-bucket"
-  #   key    = "eks/terraform.tfstate"
-  #   region = "us-east-1"
-  # E rode: terraform init -backend-config=backend.hcl
+  # Para uso manual com S3, crie um arquivo backend.tf:
+  #   terraform { backend "s3" { bucket="seu-bucket" key="eks/terraform.tfstate" region="us-east-1" } }
+  # E rode: terraform init
 }
 
 # =============================================================================
@@ -56,19 +54,14 @@ provider "github" {
   token = var.github_token
 }
 
-# O provider kubectl conecta ao cluster.
-# use_aws = false → usa variáveis kubernetes_* passadas manualmente (Kind local).
-# use_aws = true  → lê endpoint/token/CA diretamente do módulo EKS.
-# NOTA: Na primeira execução (EKS ainda não existe), o pipeline faz apply em 2 etapas:
-#   1. terraform apply -target=module.eks -target=module.rds (cria infra AWS)
-#   2. terraform apply (aplica manifests K8s no cluster já criado)
+# O provider kubectl é usado APENAS no modo local (use_aws = false).
+# No modo AWS (use_aws = true), os manifests K8s são aplicados pelo pipeline
+# via kubectl direto, após o Terraform criar o EKS + RDS.
 provider "kubectl" {
-  host = var.use_aws ? module.eks[0].cluster_endpoint : var.kubernetes_host
-  token = var.use_aws ? module.eks[0].cluster_token : var.kubernetes_token
-  cluster_ca_certificate = base64decode(
-    var.use_aws ? module.eks[0].cluster_ca_certificate : var.kubernetes_ca_certificate
-  )
-  load_config_file = false
+  host                   = var.kubernetes_host
+  token                  = var.kubernetes_token
+  cluster_ca_certificate = var.kubernetes_ca_certificate != "" ? base64decode(var.kubernetes_ca_certificate) : ""
+  load_config_file       = false
 }
 
 # =============================================================================
@@ -131,10 +124,11 @@ module "rds" {
 }
 
 # =============================================================================
-# Kubernetes Manifests
-# Estrutura plana em k8s/ — arquivos usados diretamente pelo Terraform.
-# Os arquivos .tpl injetam credenciais/URL dinâmicos sem hardcode.
-# Os arquivos .yaml estáticos são lidos via kubectl_path_documents (suporte multi-doc).
+# Kubernetes Manifests — APENAS modo local (use_aws = false)
+#
+# No modo AWS (use_aws = true), os manifests são aplicados pelo pipeline via
+# kubectl após o EKS estar ativo. Isso evita o problema de o provider kubectl
+# não conseguir se autenticar antes do cluster existir.
 # =============================================================================
 locals {
   k8s_path = "${path.module}/../k8s"
@@ -142,19 +136,20 @@ locals {
 
 # --- Namespace (deve ser o primeiro) ---
 resource "kubectl_manifest" "namespace" {
+  count     = var.use_aws ? 0 : 1
   yaml_body = file("${local.k8s_path}/namespace.yaml")
 }
 
 # --- ConfigMap da aplicação (SPRING_DATASOURCE_URL dinâmica) ---
-# Local: postgres in-cluster | AWS: endpoint do RDS
 resource "kubectl_manifest" "app_configmap" {
+  count = var.use_aws ? 0 : 1
   yaml_body = templatefile("${local.k8s_path}/app-configmap.yaml.tpl", {
-    datasource_url = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://postgres:5432/${var.db_name}"
+    datasource_url = "jdbc:postgresql://postgres:5432/${var.db_name}"
   })
   depends_on = [kubectl_manifest.namespace]
 }
 
-# --- ConfigMap do Postgres (apenas modo local, RDS não precisa) ---
+# --- ConfigMap do Postgres (apenas modo local) ---
 resource "kubectl_manifest" "postgres_configmap" {
   count = var.use_aws ? 0 : 1
   yaml_body = templatefile("${local.k8s_path}/postgres-configmap.yaml.tpl", {
@@ -166,6 +161,7 @@ resource "kubectl_manifest" "postgres_configmap" {
 
 # --- Secret da aplicação (credenciais nunca hardcoded) ---
 resource "kubectl_manifest" "app_secret" {
+  count = var.use_aws ? 0 : 1
   yaml_body = templatefile("${local.k8s_path}/app-secret.yaml.tpl", {
     db_user        = var.db_user
     db_password    = var.db_password
@@ -185,8 +181,6 @@ resource "kubectl_manifest" "postgres_secret" {
 }
 
 # --- Postgres in-cluster (apenas modo local) ---
-# postgres.yaml tem múltiplos documentos (PVC + Deployment + Service).
-# kubectl_path_documents divide o arquivo em manifests individuais.
 data "kubectl_path_documents" "postgres" {
   pattern = "${local.k8s_path}/postgres.yaml"
 }
@@ -194,7 +188,7 @@ data "kubectl_path_documents" "postgres" {
 resource "kubectl_manifest" "postgres" {
   for_each         = var.use_aws ? {} : data.kubectl_path_documents.postgres.manifests
   yaml_body        = each.value
-  wait_for_rollout = false  # evita timeout no Kind — pod verificado via kubectl rollout
+  wait_for_rollout = false
 
   depends_on = [
     kubectl_manifest.postgres_configmap,
@@ -202,34 +196,33 @@ resource "kubectl_manifest" "postgres" {
   ]
 }
 
-# --- Aplicação principal ---
-# app.yaml tem dois documentos (Deployment + Service).
-# A imagem do container é gerenciada pelo pipeline via kubectl set image após o apply.
+# --- Aplicação principal (apenas modo local) ---
 data "kubectl_path_documents" "app" {
   pattern = "${local.k8s_path}/app.yaml"
 }
 
 resource "kubectl_manifest" "app" {
-  for_each         = data.kubectl_path_documents.app.manifests
+  for_each         = var.use_aws ? {} : data.kubectl_path_documents.app.manifests
   yaml_body        = each.value
-  wait_for_rollout = false  # rollout verificado separadamente via kubectl rollout status
+  wait_for_rollout = false
 
   depends_on = [
     kubectl_manifest.app_configmap,
     kubectl_manifest.app_secret,
     kubectl_manifest.postgres,
-    module.rds,
   ]
 }
 
-# --- HPA ---
+# --- HPA (apenas modo local) ---
 resource "kubectl_manifest" "hpa" {
+  count      = var.use_aws ? 0 : 1
   yaml_body  = file("${local.k8s_path}/hpa.yaml")
   depends_on = [kubectl_manifest.app]
 }
 
-# --- Ingress ---
+# --- Ingress (apenas modo local) ---
 resource "kubectl_manifest" "ingress" {
+  count      = var.use_aws ? 0 : 1
   yaml_body  = file("${local.k8s_path}/ingress.yaml")
   depends_on = [kubectl_manifest.namespace]
 }

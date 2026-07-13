@@ -296,7 +296,8 @@ jobs:
   # ---------------------------------------------------------------------------
   # Terraform AWS — EKS + RDS (Kubernetes gerenciado na AWS)
   # Roda quando USE_EKS == 'true'.
-  # Cria: VPC + EKS cluster + node group (t3.micro) + RDS PostgreSQL + manifests K8s.
+  # Cria: VPC + EKS cluster + node group (t3.micro) + RDS PostgreSQL.
+  # Manifests K8s são aplicados via kubectl após o cluster estar ativo.
   # Usa backend S3 para persistir o state entre execucoes.
   # ---------------------------------------------------------------------------
   terraform-eks:
@@ -335,12 +336,10 @@ jobs:
           EOF
           terraform init
 
-      - name: Terraform Apply — Criar infra AWS (EKS + RDS)
+      - name: Terraform Apply — Criar EKS + RDS
         working-directory: terraform
         run: |
           terraform apply -auto-approve \
-            -target=module.eks \
-            -target=module.rds \
             -var="use_aws=true" \
             -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
             -var="db_user=${{ secrets.DB_USER }}" \
@@ -350,22 +349,44 @@ jobs:
             -var="node_desired_size=1" \
             -var="node_max_size=2"
 
-      - name: Terraform Apply — Aplicar manifests Kubernetes
+      - name: Obter JDBC URL do RDS
+        id: rds
         working-directory: terraform
         run: |
-          terraform apply -auto-approve \
-            -var="use_aws=true" \
-            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
-            -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="node_instance_type=t3.micro" \
-            -var="node_desired_size=1" \
-            -var="node_max_size=2"
+          echo "jdbc_url=$(terraform output -raw rds_jdbc_url)" >> "$GITHUB_OUTPUT"
 
       - name: Configurar kubectl para o EKS
         run: |
           aws eks update-kubeconfig --name os-management --region ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Aplicar manifests Kubernetes
+        run: |
+          JDBC_URL="${{ steps.rds.outputs.jdbc_url }}"
+          DB_USER="${{ secrets.DB_USER }}"
+          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+
+          # Namespace
+          kubectl apply -f k8s/namespace.yaml
+
+          # ConfigMap da app (substitui variável do template)
+          sed "s|\${datasource_url}|${JDBC_URL}|g" k8s/app-configmap.yaml.tpl | kubectl apply -f -
+
+          # Secret da app (substitui variáveis do template)
+          sed -e "s|\${db_user}|${DB_USER}|g" \
+              -e "s|\${db_password}|${DB_PASSWORD}|g" \
+              -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
+              -e "s|\${external_token}|change-me|g" \
+              k8s/app-secret.yaml.tpl | kubectl apply -f -
+
+          # App Deployment + Service
+          kubectl apply -f k8s/app.yaml
+
+          # HPA
+          kubectl apply -f k8s/hpa.yaml
+
+          # Ingress
+          kubectl apply -f k8s/ingress.yaml
 
       - name: Atualizar imagem do Deployment
         run: |
@@ -385,6 +406,6 @@ jobs:
           echo "  http://localhost:8080/swagger-ui/index.html"
           echo "========================================"
           echo ""
-          echo "LoadBalancer (se disponivel):"
+          echo "LoadBalancer:"
           kubectl get svc os-management -n os-management -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "(ainda provisionando...)"
           echo ""
