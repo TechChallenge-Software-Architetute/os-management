@@ -284,6 +284,7 @@ jobs:
             -var="sns_topic_arn=${{ vars.AWS_SNS_TOPIC_ARN }}" \
             -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
 
+            
       - name: Exibir URL da aplicacao
         working-directory: terraform/ec2
         run: |
