@@ -270,7 +270,7 @@ jobs:
         working-directory: terraform/ec2
         run: |
           terraform init \
-            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
             -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
 
       - name: Terraform Apply
