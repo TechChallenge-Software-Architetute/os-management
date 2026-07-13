@@ -105,13 +105,13 @@ FROM clients c WHERE c.document='07124632080' AND NOT EXISTS (SELECT 1 FROM vehi
 
 SELECT setval('vehicles_seq', GREATEST((SELECT COALESCE(MAX(id),1) FROM vehicles),1));
 
--- Service types
-INSERT INTO service_type (name, description) SELECT 'TROCA_OLEO',   'Troca de oleo do motor e filtro'        WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='TROCA_OLEO');
-INSERT INTO service_type (name, description) SELECT 'ALINHAMENTO',  'Ajuste da geometria das rodas'          WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='ALINHAMENTO');
-INSERT INTO service_type (name, description) SELECT 'BALANCEAMENTO','Equilibracao das rodas'                 WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='BALANCEAMENTO');
-INSERT INTO service_type (name, description) SELECT 'REVISAO_GERAL','Verificacao completa do veiculo'        WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='REVISAO_GERAL');
-INSERT INTO service_type (name, description) SELECT 'TROCA_FILTROS','Substituicao de filtros'                WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='TROCA_FILTROS');
-INSERT INTO service_type (name, description) SELECT 'REPARO_FREIOS','Manutencao do sistema de freios'        WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='REPARO_FREIOS');
+-- Service types (id explicito pois Hibernate nao define DEFAULT na coluna)
+INSERT INTO service_type (id, name, description) SELECT gen_random_uuid(), 'TROCA_OLEO',   'Troca de oleo do motor e filtro'   WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='TROCA_OLEO');
+INSERT INTO service_type (id, name, description) SELECT gen_random_uuid(), 'ALINHAMENTO',  'Ajuste da geometria das rodas'     WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='ALINHAMENTO');
+INSERT INTO service_type (id, name, description) SELECT gen_random_uuid(), 'BALANCEAMENTO','Equilibracao das rodas'            WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='BALANCEAMENTO');
+INSERT INTO service_type (id, name, description) SELECT gen_random_uuid(), 'REVISAO_GERAL','Verificacao completa do veiculo'   WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='REVISAO_GERAL');
+INSERT INTO service_type (id, name, description) SELECT gen_random_uuid(), 'TROCA_FILTROS','Substituicao de filtros'           WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='TROCA_FILTROS');
+INSERT INTO service_type (id, name, description) SELECT gen_random_uuid(), 'REPARO_FREIOS','Manutencao do sistema de freios'   WHERE NOT EXISTS (SELECT 1 FROM service_type WHERE name='REPARO_FREIOS');
 
 -- Products + Parts + Supplies
 INSERT INTO products (id,product_type,name,sku,unit,category,brand,cost_price,sale_price,active,created_at,updated_at)
@@ -130,11 +130,10 @@ SELECT 2,TRUE,1.00 WHERE NOT EXISTS (SELECT 1 FROM supplies WHERE id=2);
 
 SELECT setval('product_seq', GREATEST((SELECT COALESCE(MAX(id),1) FROM products),1));
 
--- Stocks
-INSERT INTO stocks (product_id,quantity,reserved_quantity,minimum_quantity,created_at,updated_at)
-SELECT 1,100.00,0.00,10.00,NOW(),NOW() WHERE NOT EXISTS (SELECT 1 FROM stocks WHERE product_id=1);
-
-SELECT setval('stock_seq', GREATEST((SELECT COALESCE(MAX(id),1) FROM stocks),1));
+-- Stocks (id via nextval pois Hibernate nao define DEFAULT na coluna)
+INSERT INTO stocks (id, product_id, quantity, reserved_quantity, minimum_quantity, created_at, updated_at)
+SELECT nextval('stock_seq'), 1, 100.00, 0.00, 10.00, NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM stocks WHERE product_id=1);
 
 EOSQL
 
