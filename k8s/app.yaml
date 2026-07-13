@@ -31,18 +31,18 @@ spec:
             httpGet:
               path: /v3/api-docs
               port: http
-            initialDelaySeconds: 90
+            initialDelaySeconds: 150
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 6
+            failureThreshold: 10
           livenessProbe:
             httpGet:
               path: /v3/api-docs
               port: http
-            initialDelaySeconds: 120
+            initialDelaySeconds: 150
             periodSeconds: 20
             timeoutSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 10
           resources:
             requests:
               cpu: 250m
