@@ -181,7 +181,7 @@ jobs:
   terraform-local:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS != 'true' && github.ref == 'refs/heads/develop'
+    if: vars.USE_AWS != 'true' && vars.USE_EKS != 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do código
@@ -242,13 +242,13 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Terraform AWS — EC2 t3.micro + RDS db.t3.micro (free tier)
-  # Roda quando AWS_ACCESS_KEY_ID esta configurado nos secrets do GitHub.
+  # Roda quando USE_AWS == 'true' e USE_EKS != 'true'.
   # Usa backend S3 para persistir o state entre execucoes (bucket: TF_STATE_BUCKET).
   # ---------------------------------------------------------------------------
   terraform-ec2:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS == 'true' && github.ref == 'refs/heads/develop'
+    if: vars.USE_AWS == 'true' && vars.USE_EKS != 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do codigo
@@ -292,3 +292,84 @@ jobs:
           echo "App URL: $(terraform output -raw app_url)"
           echo "========================================"
           echo "Aguarde ~3 minutos para o user_data terminar (Docker install + container start)"
+
+  # ---------------------------------------------------------------------------
+  # Terraform AWS — EKS + RDS (Kubernetes gerenciado na AWS)
+  # Roda quando USE_EKS == 'true'.
+  # Cria: VPC + EKS cluster + node group (t3.micro) + RDS PostgreSQL + manifests K8s.
+  # Usa backend S3 para persistir o state entre execucoes.
+  # ---------------------------------------------------------------------------
+  terraform-eks:
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    if: vars.USE_EKS == 'true' && github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Fazer checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          cat > backend.tf << EOF
+          terraform {
+            backend "s3" {
+              bucket = "${{ vars.TF_STATE_BUCKET }}"
+              key    = "eks/terraform.tfstate"
+              region = "${{ vars.AWS_REGION || 'us-east-1' }}"
+            }
+          }
+          EOF
+          terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve \
+            -var="use_aws=true" \
+            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+            -var="db_user=${{ secrets.DB_USER }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -var="node_instance_type=t3.micro" \
+            -var="node_desired_size=1" \
+            -var="node_max_size=2"
+
+      - name: Configurar kubectl para o EKS
+        run: |
+          aws eks update-kubeconfig --name os-management --region ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Atualizar imagem do Deployment
+        run: |
+          IMAGE="${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
+          kubectl set image deployment/os-management os-management=$IMAGE -n os-management
+          kubectl rollout status deployment/os-management -n os-management --timeout=300s
+
+      - name: Exibir acesso a aplicacao
+        run: |
+          echo "========================================"
+          echo "EKS Cluster: os-management"
+          echo "Namespace: os-management"
+          echo "========================================"
+          echo "Para acessar localmente:"
+          echo "  aws eks update-kubeconfig --name os-management --region ${{ vars.AWS_REGION || 'us-east-1' }}"
+          echo "  kubectl port-forward svc/os-management 8080:8080 -n os-management"
+          echo "  http://localhost:8080/swagger-ui/index.html"
+          echo "========================================"
+          echo ""
+          echo "LoadBalancer (se disponivel):"
+          kubectl get svc os-management -n os-management -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "(ainda provisionando...)"
+          echo ""

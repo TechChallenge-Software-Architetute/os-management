@@ -16,17 +16,15 @@ terraform {
     }
   }
 
-  # Backend S3 para estado remoto — necessário em CI/CD e trabalho em equipe.
-  # Para uso local inicial, comente este bloco (estado fica em terraform.tfstate local).
-  # Ative após criar o bucket e a tabela DynamoDB uma vez manualmente.
+  # Backend S3 para estado remoto — ativado pelo pipeline via arquivo de config.
+  # Local: state fica em terraform.tfstate (sem necessidade de bucket).
+  # Pipeline EKS: terraform init -backend-config=backend.hcl
   #
-  # backend "s3" {
-  #   bucket         = "os-management-terraform-state"
-  #   key            = "os-management/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "os-management-terraform-locks"
-  #   encrypt        = true
-  # }
+  # Para uso manual com S3, crie um arquivo backend.hcl:
+  #   bucket = "seu-bucket"
+  #   key    = "eks/terraform.tfstate"
+  #   region = "us-east-1"
+  # E rode: terraform init -backend-config=backend.hcl
 }
 
 # =============================================================================

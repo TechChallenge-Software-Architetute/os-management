@@ -23,6 +23,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Backend config gerado dinamicamente pelo pipeline
+backend.tf
+
 # CLI configuration files
 .terraformrc
 terraform.rc

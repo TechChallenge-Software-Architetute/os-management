@@ -82,7 +82,7 @@ variable "public_subnets" {
 
 variable "node_instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "t3.micro"
 }
 
 variable "node_min_size" {
@@ -97,7 +97,7 @@ variable "node_max_size" {
 
 variable "node_desired_size" {
   type    = number
-  default = 2
+  default = 1
 }
 
 # --- RDS ---

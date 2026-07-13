@@ -45,7 +45,7 @@ variable "public_subnets" {
 variable "node_instance_type" {
   type        = string
   description = "Tipo de instância EC2 dos nodes"
-  default     = "t3.medium"
+  default     = "t3.micro"
 }
 
 variable "node_min_size" {
