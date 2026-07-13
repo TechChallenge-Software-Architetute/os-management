@@ -56,6 +56,9 @@ module "eks" {
   subnet_ids                     = module.vpc.private_subnets
   cluster_endpoint_public_access = true   # API Server acessível pela internet (necessário para CI/CD)
 
+  # Permite que o IAM user/role que criou o cluster tenha acesso admin ao K8s API
+  enable_cluster_creator_admin_permissions = true
+
   # Add-ons gerenciados pela AWS
   cluster_addons = {
     coredns    = { most_recent = true }
