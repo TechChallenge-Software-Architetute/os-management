@@ -6,7 +6,7 @@ metadata:
   labels:
     app: os-management
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: os-management
