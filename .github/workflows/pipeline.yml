@@ -340,14 +340,15 @@ jobs:
         working-directory: terraform
         run: |
           terraform apply -auto-approve \
-            -var="use_aws=true" \
-            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
-            -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="node_instance_type=t3.small" \
-            -var="node_desired_size=2" \
-            -var="node_max_size=3"
+              -var="use_aws=true" \
+              -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+              -var="db_user=${{ secrets.DB_USER }}" \
+              -var="db_password=${{ secrets.DB_PASSWORD }}" \
+              -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+              -var="node_instance_type=t3.small" \
+              -var="node_min_size=2" \
+              -var="node_desired_size=2" \
+              -var="node_max_size=3"
 
       - name: Obter JDBC URL do RDS
         id: rds
