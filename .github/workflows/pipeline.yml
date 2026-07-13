@@ -335,7 +335,22 @@ jobs:
           EOF
           terraform init
 
-      - name: Terraform Apply
+      - name: Terraform Apply — Criar infra AWS (EKS + RDS)
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve \
+            -target=module.eks \
+            -target=module.rds \
+            -var="use_aws=true" \
+            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+            -var="db_user=${{ secrets.DB_USER }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+            -var="node_instance_type=t3.micro" \
+            -var="node_desired_size=1" \
+            -var="node_max_size=2"
+
+      - name: Terraform Apply — Aplicar manifests Kubernetes
         working-directory: terraform
         run: |
           terraform apply -auto-approve \

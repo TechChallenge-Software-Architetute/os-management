@@ -59,6 +59,9 @@ provider "github" {
 # O provider kubectl conecta ao cluster.
 # use_aws = false → usa variáveis kubernetes_* passadas manualmente (Kind local).
 # use_aws = true  → lê endpoint/token/CA diretamente do módulo EKS.
+# NOTA: Na primeira execução (EKS ainda não existe), o pipeline faz apply em 2 etapas:
+#   1. terraform apply -target=module.eks -target=module.rds (cria infra AWS)
+#   2. terraform apply (aplica manifests K8s no cluster já criado)
 provider "kubectl" {
   host = var.use_aws ? module.eks[0].cluster_endpoint : var.kubernetes_host
   token = var.use_aws ? module.eks[0].cluster_token : var.kubernetes_token
