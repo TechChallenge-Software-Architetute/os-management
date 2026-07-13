@@ -259,7 +259,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -270,20 +270,21 @@ jobs:
         working-directory: terraform/ec2
         run: |
           terraform init \
-            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-            -backend-config="region=${{ secrets.AWS_REGION || 'us-east-1' }}"
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
 
       - name: Terraform Apply
         working-directory: terraform/ec2
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ secrets.AWS_REGION || 'us-east-1' }}" \
+            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="sns_topic_arn=${{ secrets.AWS_SNS_TOPIC_ARN }}" \
+            -var="sns_topic_arn=${{ vars.AWS_SNS_TOPIC_ARN }}" \
             -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
 
+            
       - name: Exibir URL da aplicacao
         working-directory: terraform/ec2
         run: |
