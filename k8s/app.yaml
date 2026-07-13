@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: os-management
-          image: favilafrr/os-management:latest
-          imagePullPolicy: IfNotPresent
+          image: kelvosk/os-management:v1.0.0
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080

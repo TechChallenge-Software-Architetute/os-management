@@ -27,23 +27,23 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-    CREATE TABLE users (
+    CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         email VARCHAR(255) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL
     );
 
-    CREATE TABLE roles (
+    CREATE TABLE IF NOT EXISTS roles (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(50) NOT NULL UNIQUE
     );
 
-    CREATE TABLE groups (
+    CREATE TABLE IF NOT EXISTS groups (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         name VARCHAR(100) NOT NULL UNIQUE
     );
 
-    CREATE TABLE user_roles (
+    CREATE TABLE IF NOT EXISTS user_roles (
         user_id UUID NOT NULL,
         role_id UUID NOT NULL,
 
@@ -58,7 +58,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
             ON DELETE CASCADE
     );
 
-    CREATE TABLE user_groups (
+    CREATE TABLE IF NOT EXISTS user_groups (
         user_id UUID NOT NULL,
         group_id UUID NOT NULL,
 
@@ -76,22 +76,40 @@ EOSQL
 
 echo "✓ Inserindo users..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-'EOSQL'
-    INSERT INTO roles (id, name) VALUES
-    (uuid_generate_v4(), 'ROLE_ADMIN'),
-    (uuid_generate_v4(), 'ROLE_USER'),
-    (uuid_generate_v4(), 'ROLE_TECHNICIAN');
+    INSERT INTO roles (id, name)
+    SELECT uuid_generate_v4(), role_name
+    FROM (VALUES
+        ('ROLE_ADMIN'),
+        ('ROLE_USER'),
+        ('ROLE_TECHNICIAN')
+    ) AS seed(role_name)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM roles WHERE name = seed.role_name
+    );
+
+    UPDATE users
+    SET password = '$2a$12$RJVIgDQpKX6.CtZiY9BQB.RNqNiDU7Y0Y6AMMlLUrxyApokRvMVrC'
+    WHERE email = 'superadmin@system.com';
 
     INSERT INTO users (id, email, password)
-    VALUES (
+    SELECT
         uuid_generate_v4(),
         'superadmin@system.com',
         '$2a$12$RJVIgDQpKX6.CtZiY9BQB.RNqNiDU7Y0Y6AMMlLUrxyApokRvMVrC' --coxinha123
+    WHERE NOT EXISTS (
+        SELECT 1 FROM users WHERE email = 'superadmin@system.com'
     );
 
     INSERT INTO user_roles (user_id, role_id)
     SELECT u.id, r.id
     FROM users u, roles r
-    WHERE u.email = 'superadmin@system.com';
+    WHERE u.email = 'superadmin@system.com'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM user_roles ur
+          WHERE ur.user_id = u.id
+            AND ur.role_id = r.id
+      );
 EOSQL
 
 echo "✓ Verificando dados inseridos em Users..."
@@ -123,20 +141,25 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    ALTER TABLE clients ADD COLUMN IF NOT EXISTS document VARCHAR(14);
+    ALTER TABLE clients ADD COLUMN IF NOT EXISTS cpf VARCHAR(11);
+    UPDATE clients SET document = cpf WHERE document IS NULL AND cpf IS NOT NULL;
+    UPDATE clients SET cpf = document WHERE cpf IS NULL AND document IS NOT NULL;
 EOSQL
 
 echo "✓ Inserindo dados mock na tabela 'clients'..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    INSERT INTO clients (id, name, document, email, phone, active, created_at, updated_at)
-    SELECT 1, 'JOAO DA SILVA', '52998224725', 'joao.silva@email.com', '(11) 99999-1234', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    INSERT INTO clients (id, name, document, cpf, email, phone, active, created_at, updated_at)
+    SELECT 1, 'JOAO DA SILVA', '52998224725', '52998224725', 'joao.silva@email.com', '(11) 99999-1234', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     WHERE NOT EXISTS (SELECT 1 FROM clients WHERE document = '52998224725');
 
-    INSERT INTO clients (id, name, document, email, phone, active, created_at, updated_at)
-    SELECT 2, 'MARIA SOUZA', '07124632080', 'maria.souza@email.com', '(21) 98888-5678', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    INSERT INTO clients (id, name, document, cpf, email, phone, active, created_at, updated_at)
+    SELECT 2, 'MARIA SOUZA', '07124632080', '07124632080', 'maria.souza@email.com', '(21) 98888-5678', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     WHERE NOT EXISTS (SELECT 1 FROM clients WHERE document = '07124632080');
 
-    INSERT INTO clients (id, name, document, email, phone, active, created_at, updated_at)
-    SELECT 3, 'CARLOS OLIVEIRA', '18746880011', 'carlos.oliveira@email.com', '(31) 97777-9012', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+    INSERT INTO clients (id, name, document, cpf, email, phone, active, created_at, updated_at)
+    SELECT 3, 'CARLOS OLIVEIRA', '18746880011', '18746880011', 'carlos.oliveira@email.com', '(31) 97777-9012', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     WHERE NOT EXISTS (SELECT 1 FROM clients WHERE document = '18746880011');
 
     SELECT setval('clients_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM clients), 1));
@@ -255,8 +278,11 @@ EOSQL
 
 echo "✓ Inserindo dados mock na tabela 'service'"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    INSERT INTO service (service_type_name, id_os, service_status) VALUES
-    ('TROCA_OLEO', 'a46ac51b-5ca6-439b-ba52-a36bd52e8647', '[{"status":"TO_DO","changedAt":"2026-04-30T14:35:00"}]'::jsonb);
+    INSERT INTO service (service_type_name, id_os, service_status)
+    SELECT 'TROCA_OLEO', 'a46ac51b-5ca6-439b-ba52-a36bd52e8647', '[{"status":"TO_DO","changedAt":"2026-04-30T14:35:00"}]'
+    WHERE NOT EXISTS (
+        SELECT 1 FROM service WHERE id_os = 'a46ac51b-5ca6-439b-ba52-a36bd52e8647'
+    );
 EOSQL
 
 echo "✓ Verificando dados inseridos em service..."
@@ -287,7 +313,13 @@ EOSQL
 echo "✓ Inserindo dados mock na tabela 'service_order'"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     INSERT INTO service_order (id, service_type_name, list_service, cpf_cnpj, placa) VALUES
-    ('b46ac51b-5ca6-439b-ba52-a36bd52e8648', 'TROCA_OLEO', '["TROCA_OLEO", "ALINHAMENTO"]'::jsonb, '529.982.247-25', 'ABC-1234');
+    ('b46ac51b-5ca6-439b-ba52-a36bd52e8648', 'TROCA_OLEO', '["TROCA_OLEO", "ALINHAMENTO"]', '529.982.247-25', 'ABC-1234')
+    ON CONFLICT (id) DO UPDATE SET
+        service_type_name = EXCLUDED.service_type_name,
+        list_service = EXCLUDED.list_service,
+        cpf_cnpj = EXCLUDED.cpf_cnpj,
+        placa = EXCLUDED.placa,
+        updated_at = NOW();
 EOSQL
 
 echo "✓ Verificando dados inseridos em service_order..."
