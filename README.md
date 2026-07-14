@@ -255,7 +255,7 @@ A collection completa das APIs esta em `bruno/os-management-api/` e cobre todos 
 
 ## Video Demonstrativo
 
-> **Link do video:** *(sera publicado apos gravacao)*
+> **Link do video:** https://youtu.be/f40Gc7sNNQA
 
 O video de ate 15 minutos demonstra:
 
