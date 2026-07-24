@@ -181,7 +181,8 @@ jobs:
   terraform-local:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS != 'true' && vars.USE_EKS != 'true' && github.ref == 'refs/heads/develop'
+   
+    if: vars.USE_AWS != 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do código
@@ -248,7 +249,8 @@ jobs:
   terraform-ec2:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS == 'true' && vars.USE_EKS != 'true' && github.ref == 'refs/heads/develop'
+
+    if: vars.USE_AWS == 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do codigo
@@ -281,8 +283,8 @@ jobs:
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="sns_topic_arn=${{ vars.AWS_SNS_TOPIC_ARN }}" \
-            -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
+            -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}" \
+            -var="sns_topic_arn=${{ secrets.AWS_SNS_TOPIC_ARN }}"
 
             
       - name: Exibir URL da aplicacao

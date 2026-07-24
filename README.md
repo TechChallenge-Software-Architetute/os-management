@@ -161,6 +161,9 @@ k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
 | `aws_security_group.app` | SG | Ingress 8080 e 22, egress all |
 | `aws_security_group.rds` | SG | Ingress 5432 apenas do SG da EC2 |
 | `aws_db_subnet_group.default` | Subnet Group | Subnets da VPC default |
+| `aws_iam_role.ec2_role` | IAM Role | Permite EC2 publicar no SNS sem credenciais hardcoded |
+| `aws_iam_role_policy.sns_publish` | IAM Policy | Permissao sns:Publish no topico configurado |
+| `aws_iam_instance_profile.ec2_profile` | Instance Profile | Anexa a role a instancia EC2 |
 
 ---
 
@@ -199,15 +202,16 @@ k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
 │  └──────┬───────────┘                                                │
 │         │                                                            │
 │         ├─────────────────────────┐                                  │
-│         │ AWS_ACCESS_KEY_ID vazio │ AWS_ACCESS_KEY_ID preenchido     │
+│         │  USE_AWS != 'true'      │  USE_AWS == 'true'               │
+│         │  (branch develop)       │  (branch develop)                │
 │         ▼                         ▼                                  │
 │  ┌─────────────┐        ┌──────────────────┐                        │
-│  │terraform-   │        │  terraform-aws   │                        │
-│  │local (Kind) │        │  EKS + RDS       │                        │
+│  │terraform-   │        │  terraform-ec2   │                        │
+│  │local (Kind) │        │  EC2 + RDS       │                        │
 │  │             │        │                  │                        │
 │  │ terraform   │        │ terraform apply  │                        │
-│  │ apply       │        │ kubectl set image│                        │
-│  │ kubectl set │        │ rollout status   │                        │
+│  │ apply       │        │ (EC2 recriada    │                        │
+│  │ kubectl set │        │  via user_data)  │                        │
 │  │ image       │        └──────────────────┘                        │
 │  └─────────────┘                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -251,7 +255,7 @@ A collection completa das APIs esta em `bruno/os-management-api/` e cobre todos 
 
 ## Video Demonstrativo
 
-> **Link do video:** *(sera publicado apos gravacao)*
+> **Link do video:** https://youtu.be/f40Gc7sNNQA
 
 O video de ate 15 minutos demonstra:
 

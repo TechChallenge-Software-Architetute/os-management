@@ -30,5 +30,7 @@ variable "app_image" {
 
 variable "sns_topic_arn" {
   type        = string
-  description = "ARN do topico SNS para notificacoes de email (ex: arn:aws:sns:us-east-1:123456789:os-management-notifications)"
+  description = "ARN do topico SNS para notificacoes de email. Deixe vazio para desabilitar SNS."
+  default     = ""
+
 }
