@@ -56,6 +56,9 @@ module "eks" {
   subnet_ids                     = module.vpc.private_subnets
   cluster_endpoint_public_access = true   # API Server acessível pela internet (necessário para CI/CD)
 
+  # Permite que o IAM user/role que criou o cluster tenha acesso admin ao K8s API
+  enable_cluster_creator_admin_permissions = true
+
   # Add-ons gerenciados pela AWS
   cluster_addons = {
     coredns    = { most_recent = true }
@@ -69,7 +72,7 @@ module "eks" {
       instance_types = [var.node_instance_type]
       min_size       = var.node_min_size
       max_size       = var.node_max_size
-      desired_size   = var.node_desired_size
+      desired_size   = max(var.node_desired_size, var.node_min_size)
 
       # Nodes nas subnets privadas — não expostos diretamente
       subnet_ids = module.vpc.private_subnets

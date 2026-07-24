@@ -32,4 +32,5 @@ variable "sns_topic_arn" {
   type        = string
   description = "ARN do topico SNS para notificacoes de email. Deixe vazio para desabilitar SNS."
   default     = ""
+
 }

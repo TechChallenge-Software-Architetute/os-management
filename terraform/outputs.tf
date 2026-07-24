@@ -8,16 +8,16 @@ output "github_secrets_created" {
 }
 
 # =============================================================================
-# Kubernetes manifests aplicados
+# Kubernetes manifests aplicados (apenas modo local)
 # =============================================================================
 output "namespace_applied" {
-  description = "Namespace criado pelo Terraform"
-  value       = kubectl_manifest.namespace.uid
+  description = "Namespace criado pelo Terraform (modo local)"
+  value       = var.use_aws ? null : kubectl_manifest.namespace[0].uid
 }
 
 output "app_resources_applied" {
-  description = "Manifests de aplicação aplicados"
-  value       = keys(kubectl_manifest.app)
+  description = "Manifests de aplicação aplicados (modo local)"
+  value       = var.use_aws ? null : keys(kubectl_manifest.app)
 }
 
 # =============================================================================

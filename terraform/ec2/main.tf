@@ -148,11 +148,13 @@ resource "aws_db_instance" "postgres" {
 
 # =============================================================================
 # IAM Role para a EC2 — permite publicar no SNS sem credenciais hardcoded
+
 # Criada somente quando sns_topic_arn for fornecido
 # =============================================================================
 resource "aws_iam_role" "ec2_role" {
   count = var.sns_topic_arn != "" ? 1 : 0
   name  = "os-management-ec2-role"
+
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -168,6 +170,7 @@ resource "aws_iam_role_policy" "sns_publish" {
   count = var.sns_topic_arn != "" ? 1 : 0
   name  = "os-management-sns-publish"
   role  = aws_iam_role.ec2_role[0].id
+
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -194,6 +197,7 @@ resource "aws_instance" "app" {
   instance_type          = "t3.micro"
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = var.sns_topic_arn != "" ? aws_iam_instance_profile.ec2_profile[0].name : null
+
 
   # Script executado na inicializacao da instancia
   user_data = templatefile("${path.module}/user_data.sh.tpl", {

@@ -82,12 +82,12 @@ variable "public_subnets" {
 
 variable "node_instance_type" {
   type    = string
-  default = "t3.medium"
+  default = "t3.micro"
 }
 
 variable "node_min_size" {
   type    = number
-  default = 1
+  default = 2
 }
 
 variable "node_max_size" {

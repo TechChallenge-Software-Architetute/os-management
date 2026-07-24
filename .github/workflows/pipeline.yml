@@ -181,7 +181,8 @@ jobs:
   terraform-local:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS != 'true'
+   
+    if: vars.USE_AWS != 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do código
@@ -242,13 +243,14 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Terraform AWS — EC2 t3.micro + RDS db.t3.micro (free tier)
-  # Roda quando AWS_ACCESS_KEY_ID esta configurado nos secrets do GitHub.
+  # Roda quando USE_AWS == 'true' e USE_EKS != 'true'.
   # Usa backend S3 para persistir o state entre execucoes (bucket: TF_STATE_BUCKET).
   # ---------------------------------------------------------------------------
   terraform-ec2:
     runs-on: ubuntu-latest
     needs: docker-build-push
-    if: vars.USE_AWS == 'true'
+
+    if: vars.USE_AWS == 'true' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Fazer checkout do codigo
@@ -259,7 +261,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -270,20 +272,21 @@ jobs:
         working-directory: terraform/ec2
         run: |
           terraform init \
-            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
-            -backend-config="region=${{ secrets.AWS_REGION || 'us-east-1' }}"
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
 
       - name: Terraform Apply
         working-directory: terraform/ec2
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ secrets.AWS_REGION || 'us-east-1' }}" \
+            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}" \
             -var="sns_topic_arn=${{ secrets.AWS_SNS_TOPIC_ARN }}"
 
+            
       - name: Exibir URL da aplicacao
         working-directory: terraform/ec2
         run: |
@@ -291,3 +294,141 @@ jobs:
           echo "App URL: $(terraform output -raw app_url)"
           echo "========================================"
           echo "Aguarde ~3 minutos para o user_data terminar (Docker install + container start)"
+
+  # ---------------------------------------------------------------------------
+  # Terraform AWS — EKS + RDS (Kubernetes gerenciado na AWS)
+  # Roda quando USE_EKS == 'true'.
+  # Cria: VPC + EKS cluster + node group (t3.micro) + RDS PostgreSQL.
+  # Manifests K8s são aplicados via kubectl após o cluster estar ativo.
+  # Usa backend S3 para persistir o state entre execucoes.
+  # ---------------------------------------------------------------------------
+  terraform-eks:
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    if: vars.USE_EKS == 'true' && github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Fazer checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: |
+          cat > backend.tf << EOF
+          terraform {
+            backend "s3" {
+              bucket = "${{ vars.TF_STATE_BUCKET }}"
+              key    = "eks/terraform.tfstate"
+              region = "${{ vars.AWS_REGION || 'us-east-1' }}"
+            }
+          }
+          EOF
+          terraform init
+
+      - name: Garantir escala minima do node group
+        run: |
+          if aws eks describe-nodegroup \
+            --cluster-name os-management \
+            --nodegroup-name default \
+            --region ${{ vars.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
+            aws eks update-nodegroup-config \
+              --cluster-name os-management \
+              --nodegroup-name default \
+              --region ${{ vars.AWS_REGION || 'us-east-1' }} \
+              --scaling-config minSize=2,desiredSize=2,maxSize=3
+            aws eks wait nodegroup-active \
+              --cluster-name os-management \
+              --nodegroup-name default \
+              --region ${{ vars.AWS_REGION || 'us-east-1' }}
+          fi
+
+      - name: Terraform Apply — Criar EKS + RDS
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve \
+              -var="use_aws=true" \
+              -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+              -var="db_user=${{ secrets.DB_USER }}" \
+              -var="db_password=${{ secrets.DB_PASSWORD }}" \
+              -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
+              -var="node_instance_type=t3.small" \
+              -var="node_min_size=2" \
+              -var="node_desired_size=2" \
+              -var="node_max_size=3"
+
+      - name: Obter JDBC URL do RDS
+        id: rds
+        working-directory: terraform
+        run: |
+          echo "jdbc_url=$(terraform output -raw rds_jdbc_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Configurar kubectl para o EKS
+        run: |
+          aws eks update-kubeconfig --name os-management --region ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Aplicar manifests Kubernetes
+        run: |
+          JDBC_URL="${{ steps.rds.outputs.jdbc_url }}"
+          DB_USER="${{ secrets.DB_USER }}"
+          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+
+          # Metrics Server (necessário para o HPA funcionar)
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+          # Namespace
+          kubectl apply -f k8s/namespace.yaml
+
+          # ConfigMap da app (substitui variável do template)
+          sed "s|\${datasource_url}|${JDBC_URL}|g" k8s/app-configmap.yaml.tpl | kubectl apply -f -
+
+          # Secret da app (substitui variáveis do template)
+          sed -e "s|\${db_user}|${DB_USER}|g" \
+              -e "s|\${db_password}|${DB_PASSWORD}|g" \
+              -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
+              -e "s|\${external_token}|change-me|g" \
+              k8s/app-secret.yaml.tpl | kubectl apply -f -
+
+          # App Deployment + Service
+          kubectl apply -f k8s/app.yaml
+
+          # HPA
+          kubectl apply -f k8s/hpa.yaml
+
+          # Ingress
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Atualizar imagem do Deployment
+        run: |
+          IMAGE="${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
+          kubectl set image deployment/os-management os-management=$IMAGE -n os-management
+          kubectl rollout status deployment/os-management -n os-management --timeout=300s
+
+      - name: Exibir acesso a aplicacao
+        run: |
+          echo "========================================"
+          echo "EKS Cluster: os-management"
+          echo "Namespace: os-management"
+          echo "========================================"
+          echo "Para acessar localmente:"
+          echo "  aws eks update-kubeconfig --name os-management --region ${{ vars.AWS_REGION || 'us-east-1' }}"
+          echo "  kubectl port-forward svc/os-management 8080:8080 -n os-management"
+          echo "  http://localhost:8080/swagger-ui/index.html"
+          echo "========================================"
+          echo ""
+          echo "LoadBalancer:"
+          kubectl get svc os-management -n os-management -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "(ainda provisionando...)"
+          echo ""

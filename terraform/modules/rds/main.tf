@@ -92,8 +92,8 @@ resource "aws_db_instance" "postgres" {
   # Alta disponibilidade
   multi_az = var.multi_az
 
-  # Backups automáticos (7 dias de retenção)
-  backup_retention_period = 7
+  # Backups automáticos (1 dia — limite do free tier)
+  backup_retention_period = 1
   backup_window           = "03:00-04:00"
   maintenance_window      = "Mon:04:00-Mon:05:00"
 
@@ -105,8 +105,8 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot       = var.skip_final_snapshot
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.db_identifier}-final-snapshot"
 
-  # Performance Insights (monitoramento de queries lentas)
-  performance_insights_enabled = true
+  # Performance Insights — desativado no free tier (db.t3.micro não suporta)
+  performance_insights_enabled = false
 
   tags = merge(var.tags, {
     Name = var.db_identifier

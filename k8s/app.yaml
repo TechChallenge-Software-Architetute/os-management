@@ -6,7 +6,7 @@ metadata:
   labels:
     app: os-management
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: os-management
@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: os-management
-          image: favilafrr/os-management:latest
-          imagePullPolicy: IfNotPresent
+          image: kelvosk/os-management:v1.0.0
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
@@ -31,18 +31,18 @@ spec:
             httpGet:
               path: /v3/api-docs
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 150
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 6
+            failureThreshold: 10
           livenessProbe:
             httpGet:
               path: /v3/api-docs
               port: http
-            initialDelaySeconds: 60
+            initialDelaySeconds: 150
             periodSeconds: 20
             timeoutSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 10
           resources:
             requests:
               cpu: 250m

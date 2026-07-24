@@ -4,7 +4,7 @@ spring:
   # PostgreSQL connection — defaults match docker-compose setup.
   # Override via environment variables (DB_USERNAME, DB_PASSWORD) for other environments.
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/workshop}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/workshop}
     uername: ${SPRING_DATASOURCE_USERNAME:user}
     password: ${SPRING_DATASOURCE_PASSWORD:password}
 
@@ -23,6 +23,12 @@ spring:
         format_sql: true
         # Explicitly sets PostgreSQL dialect for correct SQL generation.
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  file:
+    name: /tmp/app.log
+  level:
+    root: INFO
 
 server:
   port: 8080
