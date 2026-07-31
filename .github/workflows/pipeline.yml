@@ -85,6 +85,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: build
+    # Publica no GitHub Packages apenas em develop/main — evita acumular
+    # versoes a cada push de feature branch (estoura a cota de storage).
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     outputs:
       publish_version: ${{ steps.publish-version.outputs.publish_version }}
     permissions:
