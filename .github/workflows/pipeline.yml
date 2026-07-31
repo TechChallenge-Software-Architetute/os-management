@@ -35,9 +35,12 @@ jobs:
 
       - name: Fazer upload do relatório JaCoCo
         uses: actions/upload-artifact@v4.4.0
+        continue-on-error: true
         with:
           name: jacoco-report
           path: target/site/jacoco
+          retention-days: 7
+          overwrite: true
 
   code-analysis:
     runs-on: ubuntu-latest
