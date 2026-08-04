@@ -101,7 +101,7 @@ echo "--------------------------------------------------------------------------
 echo " - 4. Mecanico consulta ordem de servico."
 echo "------------------------------------------------------------------------------"
 run_curl --request GET \
-  --url "$APP_URL/order/$ORDER_ID" \
+  --url "$APP_URL/order/id/$ORDER_ID" \
   --header "Authorization: Bearer $TOKEN"
 
 sleep $TIMEOUT_CONST
@@ -235,17 +235,35 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 14. Cliente Joao aprova o orcamento [APROVADO]."
+echo " - 14. Cliente Joao aprova o orcamento [APROVADO] via endpoint de decisao."
 echo "------------------------------------------------------------------------------"
-run_curl --request PATCH \
-  --url "$APP_URL/api/clients/my-orders/$ORDER_ID/approve" \
-  --header "Authorization: Bearer $JOAO_TOKEN"
+run_curl --request POST \
+  --url "$APP_URL/api/clients/my-orders/$ORDER_ID/decision" \
+  --header "Authorization: Bearer $JOAO_TOKEN" \
+  --header 'content-type: application/json' \
+  --data '{
+  "decision": "APPROVED"
+}'
 
 sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 15. Mecanico visualiza servicos a serem feitos."
+echo " - 15. Atualizando OS para em execucao [EM_EXECUCAO]."
+echo "------------------------------------------------------------------------------"
+run_curl --request PATCH \
+  --url "$APP_URL/order/$ORDER_ID" \
+  --header "Authorization: Bearer $TOKEN" \
+  --header 'content-type: application/json' \
+  --data '{
+  "status": "EM_EXECUCAO"
+}'
+
+sleep $TIMEOUT_CONST
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 16. Mecanico visualiza servicos a serem feitos."
 echo "------------------------------------------------------------------------------"
 SERVICES_RESPONSE="$(curl --silent --show-error --fail --request GET \
   --url "$APP_URL/services/os/$ORDER_ID" \
@@ -276,7 +294,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 16. Mecanico inicia execucao do primeiro servico [DOING]."
+echo " - 17. Mecanico inicia execucao do primeiro servico [DOING]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -291,7 +309,7 @@ sleep 5
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 17. Mecanico finaliza execucao do primeiro servico [DONE]."
+echo " - 18. Mecanico finaliza execucao do primeiro servico [DONE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -306,7 +324,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 18. Mecanico inicia execucao do segundo servico [DOING]."
+echo " - 19. Mecanico inicia execucao do segundo servico [DOING]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -321,7 +339,7 @@ sleep 7
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 19. Mecanico finaliza execucao do segundo servico [DONE]."
+echo " - 20. Mecanico finaliza execucao do segundo servico [DONE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/services/update-status" \
@@ -336,7 +354,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 20. Finalizando ordem de servico [FINALIZADA]."
+echo " - 21. Finalizando ordem de servico [FINALIZADA]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
@@ -350,7 +368,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 21. Entregando veiculo ao cliente [ENTREGUE]."
+echo " - 22. Entregando veiculo ao cliente [ENTREGUE]."
 echo "------------------------------------------------------------------------------"
 run_curl --request PATCH \
   --url "$APP_URL/order/$ORDER_ID" \
@@ -364,7 +382,7 @@ sleep $TIMEOUT_CONST
 echo " "
 echo " "
 echo "------------------------------------------------------------------------------"
-echo " - 22. Monitoracao de tempo de execucao por servico."
+echo " - 23. Monitoracao de tempo de execucao por servico."
 echo "------------------------------------------------------------------------------"
 run_curl --request POST \
   --url "$APP_URL/monitoring/all" \
@@ -373,3 +391,28 @@ run_curl --request POST \
   --data '{
   "timeUnit": "SECONDS"
 }'
+
+sleep $TIMEOUT_CONST
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 24. Listagem de OS ativas (ordenada por prioridade)."
+echo "------------------------------------------------------------------------------"
+run_curl --request GET \
+  --url "$APP_URL/order" \
+  --header "Authorization: Bearer $TOKEN"
+
+sleep $TIMEOUT_CONST
+echo " "
+echo " "
+echo "------------------------------------------------------------------------------"
+echo " - 25. Busca de OS por documento do cliente."
+echo "------------------------------------------------------------------------------"
+run_curl --request GET \
+  --url "$APP_URL/order/document/52998224725" \
+  --header "Authorization: Bearer $TOKEN"
+
+echo " "
+echo "=========================================="
+echo "Validacao de fluxo concluida com sucesso!"
+echo "=========================================="

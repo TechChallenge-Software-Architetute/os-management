@@ -1,0 +1,23 @@
+meta {
+  name: Decide Order (Reject)
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/clients/my-orders/{{serviceOrderId}}/decision
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{clientToken}}
+}
+
+body:json {
+  {
+    "decision": "REJECTED",
+    "reason": "Preco muito alto"
+  }
+}

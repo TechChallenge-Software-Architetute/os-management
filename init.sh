@@ -6,11 +6,26 @@ echo "Iniciando script de inicialização do PostgreSQL"
 echo "=========================================="
 
 echo "=========================================="
+echo "        RECRIANDO DATABASE WORKSHOP       "
+echo "=========================================="
+echo "✓ Dropando e recriando database '$POSTGRES_DB'..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "postgres" --set=db_name="$POSTGRES_DB" <<-'EOSQL'
+    SELECT pg_terminate_backend(pid)
+    FROM pg_stat_activity
+    WHERE datname = :'db_name'
+      AND pid <> pg_backend_pid();
+
+    DROP DATABASE IF EXISTS :"db_name";
+    CREATE DATABASE :"db_name";
+EOSQL
+
+echo "=========================================="
 echo "          TABLE USERS AND ROLES           "
 echo "=========================================="
 echo "✓ Criando tabelas de usuários, roles e grupos..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
     CREATE TABLE users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -101,7 +116,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE TABLE IF NOT EXISTS clients (
         id BIGINT PRIMARY KEY DEFAULT nextval('clients_seq'),
         name VARCHAR(255) NOT NULL,
-        cpf VARCHAR(11) NOT NULL UNIQUE,
+        document VARCHAR(14) NOT NULL UNIQUE,
         email VARCHAR(255),
         phone VARCHAR(255),
         active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -112,17 +127,17 @@ EOSQL
 
 echo "✓ Inserindo dados mock na tabela 'clients'..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
+    INSERT INTO clients (id, name, document, email, phone, active, created_at, updated_at)
     SELECT 1, 'JOAO DA SILVA', '52998224725', 'joao.silva@email.com', '(11) 99999-1234', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '52998224725');
+    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE document = '52998224725');
 
-    INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
+    INSERT INTO clients (id, name, document, email, phone, active, created_at, updated_at)
     SELECT 2, 'MARIA SOUZA', '07124632080', 'maria.souza@email.com', '(21) 98888-5678', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '07124632080');
+    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE document = '07124632080');
 
-    INSERT INTO clients (id, name, cpf, email, phone, active, created_at, updated_at)
+    INSERT INTO clients (id, name, document, email, phone, active, created_at, updated_at)
     SELECT 3, 'CARLOS OLIVEIRA', '18746880011', 'carlos.oliveira@email.com', '(31) 97777-9012', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE cpf = '18746880011');
+    WHERE NOT EXISTS (SELECT 1 FROM clients WHERE document = '18746880011');
 
     SELECT setval('clients_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM clients), 1));
 EOSQL
@@ -130,7 +145,7 @@ EOSQL
 echo "✓ Verificando tabela clients..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     SELECT COUNT(*) as total_clients FROM clients;
-    SELECT id, name, cpf, email, phone, active FROM clients ORDER BY id;
+    SELECT id, name, document, email, phone, active FROM clients ORDER BY id;
 EOSQL
 
 
@@ -169,19 +184,19 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     INSERT INTO vehicles (id, client_id, plate, brand, model, year, color, type, active, created_at, updated_at)
     SELECT 1, c.id, 'ABC1234', 'TOYOTA', 'COROLLA', 2020, 'PRATA', 'CAR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     FROM clients c
-    WHERE c.cpf = '52998224725'
+    WHERE c.document = '52998224725'
       AND NOT EXISTS (SELECT 1 FROM vehicles WHERE plate = 'ABC1234');
 
     INSERT INTO vehicles (id, client_id, plate, brand, model, year, color, type, active, created_at, updated_at)
     SELECT 2, c.id, 'XYZ1A23', 'HONDA', 'CIVIC', 2021, 'PRETO', 'CAR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     FROM clients c
-    WHERE c.cpf = '52998224725'
+    WHERE c.document = '52998224725'
       AND NOT EXISTS (SELECT 1 FROM vehicles WHERE plate = 'XYZ1A23');
 
     INSERT INTO vehicles (id, client_id, plate, brand, model, year, color, type, active, created_at, updated_at)
     SELECT 3, c.id, 'DEF5678', 'VOLKSWAGEN', 'GOL', 2019, 'BRANCO', 'CAR', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
     FROM clients c
-    WHERE c.cpf = '07124632080'
+    WHERE c.document = '07124632080'
       AND NOT EXISTS (SELECT 1 FROM vehicles WHERE plate = 'DEF5678');
 
     SELECT setval('vehicles_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM vehicles), 1));
@@ -259,10 +274,13 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE TABLE IF NOT EXISTS service_order (
         id UUID PRIMARY KEY,
         service_type_name VARCHAR(255) NOT NULL,
-        service_status VARCHAR(10) DEFAULT 'RECEBIDA',
+        service_status VARCHAR(30) DEFAULT 'RECEBIDA',
         list_service VARCHAR(255) NOT NULL,
         cpf_cnpj VARCHAR(50) NOT NULL,
-        placa VARCHAR(20) NOT NULL
+        placa VARCHAR(20) NOT NULL,
+        rejection_reason VARCHAR(500),
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 EOSQL
 

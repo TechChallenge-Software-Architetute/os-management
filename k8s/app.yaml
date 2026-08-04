@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: os-management
+  namespace: os-management
+  labels:
+    app: os-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: os-management
+  template:
+    metadata:
+      labels:
+        app: os-management
+    spec:
+      containers:
+        - name: os-management
+          image: kelvosk/os-management:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: os-management-config
+            - secretRef:
+                name: os-management-secret
+          readinessProbe:
+            httpGet:
+              path: /v3/api-docs
+              port: http
+            initialDelaySeconds: 150
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /v3/api-docs
+              port: http
+            initialDelaySeconds: 150
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: os-management
+  namespace: os-management
+  labels:
+    app: os-management
+spec:
+  type: LoadBalancer
+  selector:
+    app: os-management
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

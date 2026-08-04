@@ -5,7 +5,7 @@
 }
 
 get {
-  url: {{baseUrl}}/order/{{serviceOrderId}}
+  url: {{baseUrl}}/order/id/{{serviceOrderId}}
   body: none
   auth: none
 }
@@ -14,4 +14,3 @@ headers {
   Content-Type: application/json
   Authorization: Bearer {{token}}
 }
-
