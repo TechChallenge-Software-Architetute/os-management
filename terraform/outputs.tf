@@ -48,3 +48,17 @@ output "rds_jdbc_url" {
   value       = var.use_aws ? module.rds[0].jdbc_url : null
   sensitive   = true
 }
+
+# =============================================================================
+# Rede compartilhada — consumida pelo repositório os-management-lambda
+# via terraform_remote_state (subnets + SG dos nodes para a Function acessar o RDS).
+# =============================================================================
+output "private_subnet_ids" {
+  description = "IDs das subnets privadas (nodes EKS + RDS). Consumido pela Lambda de autenticação."
+  value       = var.use_aws ? module.eks[0].private_subnet_ids : null
+}
+
+output "node_security_group_id" {
+  description = "Security Group dos nodes EKS (liberado no RDS na porta 5432). Consumido pela Lambda de autenticação."
+  value       = var.use_aws ? module.eks[0].node_security_group_id : null
+}
