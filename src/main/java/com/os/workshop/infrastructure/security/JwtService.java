@@ -49,6 +49,21 @@ public class JwtService {
 
     public String extractUsername(String token) { return getClaims(token).getSubject(); }
 
+    /** Safely parses and verifies a token; empty when invalid/expired. */
+    public java.util.Optional<Claims> tryParseClaims(String token) {
+        try {
+            return java.util.Optional.of(getClaims(token));
+        } catch (Exception e) {
+            log.debug("Invalid JWT token: {}", e.getMessage());
+            return java.util.Optional.empty();
+        }
+    }
+
+    /** A client (CPF) token issued by the auth Lambda carries a clientId claim. */
+    public boolean isClientToken(Claims claims) {
+        return claims.get("clientId") != null;
+    }
+
     private boolean isTokenExpired(String token) {
         return getClaims(token).getExpiration().before(new Date());
     }

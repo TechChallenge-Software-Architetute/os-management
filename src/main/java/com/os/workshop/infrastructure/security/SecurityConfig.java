@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/clients/my-orders/**").hasAnyRole("USER", "ADMIN", "TECHNICIAN")
+                        .requestMatchers("/api/clients/my-orders/**").hasAnyRole("CLIENT", "USER", "ADMIN", "TECHNICIAN")
                         .anyRequest().hasAnyRole("ADMIN", "TECHNICIAN"))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, exAuth) ->
