@@ -169,11 +169,11 @@ class DecisionIntegrationTest extends IntegrationTestBase {
     private String createAndAuthenticateClient(String email, String document) {
         var adminToken = authenticateAsAdmin();
 
-        var signupBody = Map.of("email", email, "password", "Test123456", "roles", List.of("USER"));
+        var signupBody = Map.of("email", email, "cpf", randomValidCpf(), "password", "Test123456", "roles", List.of("USER"));
         restTemplate.exchange("/signup", HttpMethod.POST,
                 new HttpEntity<>(signupBody, authHeaders(adminToken)), Map.class);
 
-        var loginBody = Map.of("email", email, "password", "Test123456");
+        var loginBody = Map.of("login", email, "password", "Test123456");
         var loginResponse = restTemplate.exchange("/auth/login", HttpMethod.POST,
                 new HttpEntity<>(loginBody, jsonHeaders()), Map.class);
         return (String) loginResponse.getBody().get("token");

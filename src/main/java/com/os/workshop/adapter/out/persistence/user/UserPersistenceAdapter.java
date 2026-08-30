@@ -25,9 +25,15 @@ public class UserPersistenceAdapter implements UserRepository {
     }
 
     @Override
-    public SignUpResult save(String email, String encryptedPassword, Set<String> roles) {
+    public Optional<User> findByCpf(String cpf) {
+        return jpaUserRepository.findByCpf(cpf).map(userMapper::toDomain);
+    }
+
+    @Override
+    public SignUpResult save(String email, String cpf, String encryptedPassword, Set<String> roles) {
         UserEntity user = new UserEntity();
         user.setEmail(email);
+        user.setCpf(cpf);
         user.setPassword(encryptedPassword);
 
         Set<RoleEntity> roleEntities = roles != null
@@ -36,7 +42,7 @@ public class UserPersistenceAdapter implements UserRepository {
         user.setRoles(roleEntities);
 
         UserEntity saved = jpaUserRepository.save(user);
-        return new SignUpResult(saved.getId(), saved.getEmail(),
+        return new SignUpResult(saved.getId(), saved.getEmail(), saved.getCpf(),
                 saved.getRoles().stream().map(RoleEntity::getName).collect(Collectors.toSet()));
     }
 

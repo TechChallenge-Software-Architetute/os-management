@@ -8,7 +8,8 @@ import java.util.UUID;
 
 public interface UserRepository {
     Optional<User> findByEmail(String email);
-    SignUpResult save(String email, String encryptedPassword, Set<String> roles);
+    Optional<User> findByCpf(String cpf);
+    SignUpResult save(String email, String cpf, String encryptedPassword, Set<String> roles);
 
-    record SignUpResult(UUID id, String email, Set<String> roles) {}
+    record SignUpResult(UUID id, String email, String cpf, Set<String> roles) {}
 }

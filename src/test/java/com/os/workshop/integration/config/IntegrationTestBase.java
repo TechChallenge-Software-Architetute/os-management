@@ -23,32 +23,61 @@ public abstract class IntegrationTestBase {
     protected TestRestTemplate restTemplate;
 
     private static final String ADMIN_EMAIL = "admin-test@workshop.com";
+    private static final String ADMIN_CPF = "52998224725";
     private static final String ADMIN_PASSWORD = "Admin@123";
 
     // ==================== Auth Helpers ====================
 
     protected String authenticateAsAdmin() {
-        signUp(ADMIN_EMAIL, ADMIN_PASSWORD, Set.of("ADMIN"));
+        signUp(ADMIN_EMAIL, ADMIN_CPF, ADMIN_PASSWORD, Set.of("ADMIN"));
         return login(ADMIN_EMAIL, ADMIN_PASSWORD);
     }
 
     protected String authenticateAsUser(String email, String password) {
-        signUp(email, password, Set.of("USER"));
+        signUp(email, randomValidCpf(), password, Set.of("USER"));
         return login(email, password);
     }
 
-    protected void signUp(String email, String password, Set<String> roles) {
-        var body = Map.of("email", email, "password", password, "roles", roles);
+    protected void signUp(String email, String cpf, String password, Set<String> roles) {
+        var body = Map.of("email", email, "cpf", cpf, "password", password, "roles", roles);
         restTemplate.postForEntity("/signup", body, Object.class);
     }
 
-    protected String login(String email, String password) {
-        var body = Map.of("email", email, "password", password);
+    protected String login(String login, String password) {
+        var body = Map.of("login", login, "password", password);
         var response = restTemplate.postForEntity("/auth/login", body, Map.class);
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             return (String) response.getBody().get("token");
         }
         throw new RuntimeException("Failed to login: " + response.getStatusCode());
+    }
+
+    /** Gera um CPF aleatório com dígitos verificadores válidos, para uso em massa de testes. */
+    protected static String randomValidCpf() {
+        var random = new java.util.Random();
+        int[] base = new int[9];
+        for (int i = 0; i < base.length; i++) {
+            base[i] = random.nextInt(10);
+        }
+        int firstDigit = cpfCheckDigit(base, 10);
+        int[] withFirstDigit = Arrays.copyOf(base, 10);
+        withFirstDigit[9] = firstDigit;
+        int secondDigit = cpfCheckDigit(withFirstDigit, 11);
+
+        var sb = new StringBuilder();
+        for (int d : base) sb.append(d);
+        sb.append(firstDigit).append(secondDigit);
+        return sb.toString();
+    }
+
+    private static int cpfCheckDigit(int[] digits, int startWeight) {
+        int sum = 0;
+        int weight = startWeight;
+        for (int d : digits) {
+            sum += d * weight--;
+        }
+        int digit = 11 - (sum % 11);
+        return digit >= 10 ? 0 : digit;
     }
 
     protected HttpHeaders authHeaders(String token) {

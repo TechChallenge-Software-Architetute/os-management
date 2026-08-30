@@ -10,7 +10,10 @@ import java.util.UUID;
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
 public class UserEntity {
     @Id @GeneratedValue private UUID id;
+    @Column(unique = true)
     private String email;
+    @Column(unique = true)
+    private String cpf;
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))

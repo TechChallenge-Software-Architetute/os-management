@@ -1,9 +1,10 @@
-package com.os.workshop.domain.client;
+package com.os.workshop.domain.shared;
 
 import java.util.regex.Pattern;
 
 /**
  * Value object que representa um CPF brasileiro.
+ * Compartilhado entre os domínios que precisam de CPF (client, user, ...).
  */
 public final class Cpf {
 

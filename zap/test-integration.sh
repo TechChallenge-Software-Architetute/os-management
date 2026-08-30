@@ -52,7 +52,7 @@ echo "[3/5] Autenticação JWT..."
 AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" \
     -X POST "$APP_URL/auth/login" \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"$ZAP_AUTH_EMAIL\",\"password\":\"$ZAP_AUTH_PASSWORD\"}" 2>/dev/null)
+    -d "{\"login\":\"$ZAP_AUTH_EMAIL\",\"password\":\"$ZAP_AUTH_PASSWORD\"}" 2>/dev/null)
 
 AUTH_CODE=$(echo "$AUTH_RESPONSE" | tail -n 1)
 LOGIN_BODY=$(echo "$AUTH_RESPONSE" | sed '$d')

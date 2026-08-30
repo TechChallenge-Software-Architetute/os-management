@@ -1,5 +1,6 @@
 package com.os.workshop.domain.client;
 
+import com.os.workshop.domain.shared.Cpf;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

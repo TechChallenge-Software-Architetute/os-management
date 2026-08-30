@@ -48,7 +48,7 @@ echo "[2/4] Autenticando em $APP_URL/auth/login ..."
 AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" \
     -X POST "$APP_URL/auth/login" \
     -H "Content-Type: application/json" \
-    -d "{\"email\":\"$ZAP_AUTH_EMAIL\",\"password\":\"$ZAP_AUTH_PASSWORD\"}" \
+    -d "{\"login\":\"$ZAP_AUTH_EMAIL\",\"password\":\"$ZAP_AUTH_PASSWORD\"}" \
     2>/dev/null)
 
 AUTH_CODE=$(echo "$AUTH_RESPONSE" | tail -n 1)

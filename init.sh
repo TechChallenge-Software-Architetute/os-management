@@ -30,6 +30,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE TABLE users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         email VARCHAR(255) NOT NULL UNIQUE,
+        cpf VARCHAR(11) UNIQUE,
         password VARCHAR(255) NOT NULL
     );
 
@@ -81,10 +82,11 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-'
     (uuid_generate_v4(), 'ROLE_USER'),
     (uuid_generate_v4(), 'ROLE_TECHNICIAN');
 
-    INSERT INTO users (id, email, password)
+    INSERT INTO users (id, email, cpf, password)
     VALUES (
         uuid_generate_v4(),
         'superadmin@system.com',
+        '11144477735',
         '$2a$12$RJVIgDQpKX6.CtZiY9BQB.RNqNiDU7Y0Y6AMMlLUrxyApokRvMVrC' --coxinha123
     );
 

@@ -1,5 +1,7 @@
 package com.os.workshop.domain.client;
 
+import com.os.workshop.domain.shared.Cpf;
+
 import java.util.regex.Pattern;
 
 public final class Document {

@@ -15,6 +15,7 @@ import java.util.UUID;
 public class User {
     private UUID id;
     private String email;
+    private String cpf;
     private String password;
     private Set<Role> roles;
     private Set<Group> groups;

@@ -34,7 +34,7 @@ LOGIN_RESPONSE="$(curl --silent --show-error --fail --request POST \
   --url "$APP_URL/auth/login" \
   --header 'content-type: application/json' \
   --data '{
-  "email": "superadmin@system.com",
+  "login": "superadmin@system.com",
   "password": "coxinha123"
 }')"
 
@@ -180,6 +180,7 @@ run_curl --request POST \
   --header 'content-type: application/json' \
   --data '{
   "email": "joao.silva@email.com",
+  "cpf": "529.982.247-25",
   "password": "Coxinha321",
   "roles": [
     "USER"
@@ -197,7 +198,7 @@ JOAO_LOGIN_RESPONSE="$(curl --silent --show-error --fail --request POST \
   --header "Authorization: Bearer $TOKEN" \
   --header 'content-type: application/json' \
   --data '{
-  "email": "joao.silva@email.com",
+  "login": "joao.silva@email.com",
   "password": "Coxinha321"
 }')"
 

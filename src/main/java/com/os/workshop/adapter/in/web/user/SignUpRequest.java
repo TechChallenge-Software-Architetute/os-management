@@ -6,6 +6,7 @@ import java.util.Set;
 
 public record SignUpRequest(
         @Email @NotBlank String email,
+        @NotBlank(message = "CPF is a mandatory field") String cpf,
         @NotBlank String password,
         Set<String> roles
 ) {}
