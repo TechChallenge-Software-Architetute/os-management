@@ -35,6 +35,8 @@ Para resolver esses problemas, desenvolvemos o **OS Management** — um sistema 
 
 > **Projeto de Pos-Graduacao** — FIAP Pos Tech
 
+📖 **Documentacao da API (Swagger UI):** [`http://localhost:8080/swagger-ui/index.html`](http://localhost:8080/swagger-ui/index.html) — especificacao OpenAPI completa em [Documentacao da API](#documentacao-da-api).
+
 ---
 
 ## Sumario
