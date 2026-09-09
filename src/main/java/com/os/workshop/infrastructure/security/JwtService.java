@@ -47,6 +47,23 @@ public class JwtService {
         }
     }
 
+    /**
+     * Verifies the signature and expiration and returns the claims.
+     * Throws {@link io.jsonwebtoken.JwtException} when the token is invalid, tampered or expired.
+     */
+    public Claims parseClaims(String token) {
+        return getClaims(token);
+    }
+
+    /**
+     * True when the token was minted by the serverless CPF authentication function
+     * (os-management-lambda). Those tokens carry a {@code clientId} claim and have the
+     * client's CPF/CNPJ as the subject — there is no matching row in the {@code users} table.
+     */
+    public boolean isClientToken(Claims claims) {
+        return claims.get("clientId") != null;
+    }
+
     public String extractUsername(String token) { return getClaims(token).getSubject(); }
 
     private boolean isTokenExpired(String token) {

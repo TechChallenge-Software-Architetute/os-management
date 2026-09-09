@@ -4,7 +4,6 @@ import com.os.workshop.application.client.port.out.ClientRepository;
 import com.os.workshop.application.notification.OrderStatusNotificationService;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.client.Client;
-import com.os.workshop.domain.client.ClientNotFoundException;
 import com.os.workshop.domain.serviceorder.Decision;
 import com.os.workshop.domain.serviceorder.OrderRejectedEvent;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
@@ -27,9 +26,8 @@ public class DecideOrderUseCase {
     private final OrderStatusNotificationService notificationService;
 
     @Transactional
-    public void execute(String email, UUID orderId, Decision decision, String reason) {
-        Client client = clientRepository.findByEmail(email)
-                .orElseThrow(() -> new ClientNotFoundException("email: " + email));
+    public void execute(String clientIdentifier, UUID orderId, Decision decision, String reason) {
+        Client client = ClientLookup.resolve(clientRepository, clientIdentifier);
 
         ServiceOrder order = serviceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new NoSuchElementException("Order not found with id: " + orderId));

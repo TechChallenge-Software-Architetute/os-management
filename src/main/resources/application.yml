@@ -5,7 +5,7 @@ spring:
   # Override via environment variables (DB_USERNAME, DB_PASSWORD) for other environments.
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/workshop}
-    uername: ${SPRING_DATASOURCE_USERNAME:user}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
     password: ${SPRING_DATASOURCE_PASSWORD:password}
 
   jpa:
@@ -34,6 +34,9 @@ server:
   port: 8080
 
 jwt:
+  # HS256 signing key. MUST be the exact same value as JWT_SECRET in os-management-lambda
+  # (the serverless CPF auth function) so client tokens issued there verify here.
+  # Minimum 32 characters (256 bits).
   secret: ${JWT_SECRET:akmsdkmasfnjsgknakmsdkmasdkmsadfkmdsakmdkmsadsa}
   expiration: ${JWT_EXPIRATION:86400000}
 

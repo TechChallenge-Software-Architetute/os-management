@@ -5,7 +5,6 @@ import com.os.workshop.application.client.port.out.ClientRepository;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.budget.Budget;
 import com.os.workshop.domain.client.Client;
-import com.os.workshop.domain.client.ClientNotFoundException;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,9 +21,8 @@ public class FindMyOrderDetailUseCase {
     private final FindBudgetByServiceOrderUseCase findBudgetByServiceOrderUseCase;
 
     @Transactional(readOnly = true)
-    public FindMyOrderDetailResult execute(String email, UUID orderId) {
-        Client client = clientRepository.findByEmail(email)
-                .orElseThrow(() -> new ClientNotFoundException("email: " + email));
+    public FindMyOrderDetailResult execute(String clientIdentifier, UUID orderId) {
+        Client client = ClientLookup.resolve(clientRepository, clientIdentifier);
 
         ServiceOrder order = serviceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));

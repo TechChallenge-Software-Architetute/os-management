@@ -12,6 +12,12 @@ get {
 
 headers {
   Content-Type: application/json
-  Authorization: Bearer {{token}}
+  Authorization: Bearer {{clientToken}}
+}
+
+docs {
+  Client portal — lists the authenticated client's own service orders.
+  Requires a CPF token (run "01 - Auth / 03 - Login via CPF (Serverless)" first).
+  Swap {{baseUrl}} for {{gatewayUrl}} to exercise the protected route end to end.
 }
 

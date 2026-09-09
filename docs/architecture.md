@@ -175,10 +175,15 @@ stateDiagram-v2
 
 | Aspecto | Implementacao |
 |---------|--------------|
-| Autenticacao | JWT stateless (Bearer token) |
-| Autorizacao | Role-based (ADMIN, TECHNICIAN, USER) |
-| Ownership | Email JWT -> Client -> Document == OS.cpfCnpj |
+| Autenticacao (staff) | `POST /auth/login` (email + senha) -> JWT stateless, `sub` = email |
+| Autenticacao (cliente) | Function Serverless `POST /auth` (CPF) na AWS, validada no API Gateway -> JWT `sub` = CPF, claim `clientId`, sem linha em `users` |
+| Autorizacao | Role-based (ADMIN, TECHNICIAN, USER, CLIENT) |
+| Ownership | JWT (`sub`) -> Client (por documento ou email) -> Document == OS.cpfCnpj |
 | Container | Usuario non-root no Dockerfile |
-| Endpoints publicos | /auth/login, /swagger-ui/**, /v3/api-docs/** |
-| Endpoints cliente | /api/clients/my-orders/** (ROLE_USER) |
+| Endpoints publicos | /auth/**, /swagger-ui/**, /v3/api-docs/** |
+| Endpoints cliente | /api/clients/my-orders/** (ROLE_CLIENT, ROLE_USER, ROLE_ADMIN, ROLE_TECHNICIAN) |
 | Demais endpoints | ROLE_ADMIN ou ROLE_TECHNICIAN |
+
+> O `JwtFilter` distingue os dois tokens pela presenca do claim `clientId`. Token de cliente
+> recebe `ROLE_CLIENT` sem consulta ao banco `users`; token de staff resolve as roles pela
+> tabela `users`. Token ausente/invalido/expirado nunca lanca excecao — cai em 401/403.

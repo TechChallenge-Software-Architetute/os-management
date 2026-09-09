@@ -3,7 +3,6 @@ package com.os.workshop.application.client;
 import com.os.workshop.application.client.port.out.ClientRepository;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.client.Client;
-import com.os.workshop.domain.client.ClientNotFoundException;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,9 +18,8 @@ public class FindMyOrdersUseCase {
     private final ServiceOrderRepository serviceOrderRepository;
 
     @Transactional(readOnly = true)
-    public List<ServiceOrder> execute(String email) {
-        Client client = clientRepository.findByEmail(email)
-                .orElseThrow(() -> new ClientNotFoundException("email: " + email));
+    public List<ServiceOrder> execute(String clientIdentifier) {
+        Client client = ClientLookup.resolve(clientRepository, clientIdentifier);
         return serviceOrderRepository.findByCpfCnpj(client.getDocument().getValue());
     }
 }

@@ -62,6 +62,18 @@ class DecideOrderUseCaseTest {
     }
 
     @Test
+    void resolvesClientByCpfSubjectFromServerlessToken() {
+        when(clientRepository.findByDocument(CLIENT_DOC)).thenReturn(Optional.of(createClient()));
+        when(serviceOrderRepository.findById(ORDER_ID)).thenReturn(Optional.of(createOrderAguardando()));
+        when(serviceOrderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        useCase.execute(CLIENT_DOC, ORDER_ID, Decision.APPROVED, null);
+
+        verify(serviceOrderRepository).save(any());
+        verify(notificationService).notifyStatusChange(any());
+    }
+
+    @Test
     void rejectsOrderSuccessfully() {
         when(clientRepository.findByEmail(CLIENT_EMAIL)).thenReturn(Optional.of(createClient()));
         when(serviceOrderRepository.findById(ORDER_ID)).thenReturn(Optional.of(createOrderAguardando()));

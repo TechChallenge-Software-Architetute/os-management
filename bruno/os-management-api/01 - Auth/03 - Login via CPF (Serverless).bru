@@ -1,0 +1,43 @@
+meta {
+  name: Login via CPF (Serverless)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{gatewayUrl}}/auth
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "cpf": "{{clientCpf}}"
+  }
+}
+
+script:post-response {
+  if (res.getStatus() === 200 && res.getBody() && res.getBody().token) {
+    bru.setEnvVar("clientToken", res.getBody().token);
+  }
+}
+
+docs {
+  Authenticates a workshop client by CPF against the AWS API Gateway.
+
+  The request hits the serverless CPF auth function (os-management-lambda), which:
+  1. validates the CPF check digits;
+  2. looks the client up in the database and checks it is active;
+  3. returns a signed JWT (sub = CPF, roles = ["CLIENT"]).
+
+  The token is stored in the `clientToken` environment variable and is used by the
+  "My Orders" / "Decide Order" requests. Point `gatewayUrl` at the `auth_endpoint`
+  output of the os-management-gateway Terraform stack (without the trailing /auth).
+
+  Staff (ADMIN / TECHNICIAN) still authenticate with "01 - Login" straight against
+  the backend `baseUrl`.
+}

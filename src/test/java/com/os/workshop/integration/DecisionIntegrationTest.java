@@ -40,7 +40,7 @@ class DecisionIntegrationTest extends IntegrationTestBase {
         advanceStatus(adminToken, orderId, "EM_DIAGNOSTICO");
         advanceStatus(adminToken, orderId, "AGUARDANDO_APROVACAO");
 
-        var clientToken = createAndAuthenticateClient("client.approve@test.com", "45532895004");
+        var clientToken = clientToken("45532895004", clientId);
 
         var decisionBody = Map.of("decision", "APPROVED");
         var response = restTemplate.exchange(
@@ -61,7 +61,7 @@ class DecisionIntegrationTest extends IntegrationTestBase {
     void should_reject_order_and_release_reservations() {
         var adminToken = authenticateAsAdmin();
 
-        var clientId = createClient(adminToken, "71855sjp906");
+        var clientId = createClient(adminToken, "71855906906");
         createVehicle(adminToken, clientId, "DEC2B02");
 
         var orderId = createServiceOrder(adminToken, "71855906906", "DEC2B02");
@@ -69,7 +69,7 @@ class DecisionIntegrationTest extends IntegrationTestBase {
         advanceStatus(adminToken, orderId, "EM_DIAGNOSTICO");
         advanceStatus(adminToken, orderId, "AGUARDANDO_APROVACAO");
 
-        var clientToken = createAndAuthenticateClient("client.reject@test.com", "71855906906");
+        var clientToken = clientToken("71855906906", clientId);
 
         var decisionBody = Map.of("decision", "REJECTED", "reason", "Muito caro");
         var response = restTemplate.exchange(
@@ -100,7 +100,7 @@ class DecisionIntegrationTest extends IntegrationTestBase {
         advanceStatus(adminToken, orderId, "AGUARDANDO_APROVACAO");
 
         var otherClientId = createClient(adminToken, "19131243004");
-        var otherToken = createAndAuthenticateClient("other.client@test.com", "19131243004");
+        var otherToken = clientToken("19131243004", otherClientId);
 
         var decisionBody = Map.of("decision", "APPROVED");
         var response = restTemplate.exchange(
@@ -121,7 +121,7 @@ class DecisionIntegrationTest extends IntegrationTestBase {
 
         var orderId = createServiceOrder(adminToken, "30455923059", "DEC4D04");
 
-        var clientToken = createAndAuthenticateClient("client.invalid@test.com", "30455923059");
+        var clientToken = clientToken("30455923059", clientId);
 
         var decisionBody = Map.of("decision", "APPROVED");
         var response = restTemplate.exchange(
@@ -164,24 +164,5 @@ class DecisionIntegrationTest extends IntegrationTestBase {
         var body = Map.of("status", status);
         restTemplate.exchange("/order/" + orderId, HttpMethod.PATCH,
                 new HttpEntity<>(body, authHeaders(token)), Void.class);
-    }
-
-    private String createAndAuthenticateClient(String email, String document) {
-        var adminToken = authenticateAsAdmin();
-
-        var signupBody = Map.of("email", email, "password", "Test123456", "roles", List.of("USER"));
-        restTemplate.exchange("/signup", HttpMethod.POST,
-                new HttpEntity<>(signupBody, authHeaders(adminToken)), Map.class);
-
-        var loginBody = Map.of("email", email, "password", "Test123456");
-        var loginResponse = restTemplate.exchange("/auth/login", HttpMethod.POST,
-                new HttpEntity<>(loginBody, jsonHeaders()), Map.class);
-        return (String) loginResponse.getBody().get("token");
-    }
-
-    private HttpHeaders jsonHeaders() {
-        var headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return headers;
     }
 }
