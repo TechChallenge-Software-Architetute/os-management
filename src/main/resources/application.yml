@@ -4,7 +4,8 @@ spring:
   # A URL do banco deve ser fornecida pelo ambiente de execução.
   # O valor padrão é usado apenas no desenvolvimento local com Docker Compose.
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://workshop.cyv0ccwg29gy.us-east-1.rds.amazonaws.com:5432/workshop}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/workshop} # Local
+    # url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://workshop.cyv0ccwg29gy.us-east-1.rds.amazonaws.com:5432/workshop}  # aws
     username: ${SPRING_DATASOURCE_USERNAME:dbadmin}
     password: ${SPRING_DATASOURCE_PASSWORD:senha-super-segura}
     hikari:
