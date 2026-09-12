@@ -2,7 +2,15 @@ name: pipeline
 
 on:
   push:
-
+    branches-ignore:
+      - main
+      - develop
+      - homol
+  pull_request:
+    branches:
+      - main
+      - develop
+      - homol
 jobs:
 
   unit-test:
