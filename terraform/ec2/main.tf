@@ -145,7 +145,7 @@ resource "aws_instance" "app" {
 
   # Script executado na inicializacao da instancia
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
-    db_url        = "jdbc:postgresql://${aws_db_instance.postgres.address}:5432/${var.db_name}"
+    db_url        = var.db_url
     db_name       = var.db_name
     db_user       = var.db_user
     db_password   = var.db_password
