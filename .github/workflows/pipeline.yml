@@ -266,6 +266,14 @@ jobs:
 
     if: vars.USE_AWS == 'true' && github.ref == 'refs/heads/develop'
 
+    env:
+      TF_VAR_db_url: ${{ secrets.DB_URL }}
+      TF_VAR_db_user: ${{ secrets.DB_USER }}
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+      TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+      TF_VAR_app_image: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
+      TF_VAR_sns_topic_arn: ${{ secrets.AWS_SNS_TOPIC_ARN }}
+
     steps:
       - name: Fazer checkout do codigo
         uses: actions/checkout@v4
