@@ -32,3 +32,4 @@ replay_pid*
 zap-reports/*.html
 zap-reports/*.json
 zap-reports/*.log
+.env
