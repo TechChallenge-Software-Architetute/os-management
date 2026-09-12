@@ -1,17 +1,22 @@
 spring:
   application:
     name: workshop
-  # PostgreSQL connection — defaults match docker-compose setup.
-  # Override via environment variables (DB_USERNAME, DB_PASSWORD) for other environments.
+  # A URL do banco deve ser fornecida pelo ambiente de execução.
+  # O valor padrão é usado apenas no desenvolvimento local com Docker Compose.
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/workshop}
-    uername: ${SPRING_DATASOURCE_USERNAME:user}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/workshop} # Local
+    # url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://workshop.cyv0ccwg29gy.us-east-1.rds.amazonaws.com:5432/workshop}  # aws
+    username: ${SPRING_DATASOURCE_USERNAME:dbadmin}
+    password: ${SPRING_DATASOURCE_PASSWORD:senha-super-segura}
+    hikari:
+      max-lifetime: 1740000
+      keepalive-time: 300000
+      validation-timeout: 5000
 
   jpa:
     hibernate:
       # Auto-creates/updates tables from JPA entities. Use 'validate' or a migration tool (Flyway/Liquibase) in production.
-      ddl-auto: update
+      ddl-auto: validate
       #ddl-auto: validate
     # Logs SQL queries to console — useful for development debugging.
     show-sql: false
