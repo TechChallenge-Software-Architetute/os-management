@@ -281,6 +281,53 @@ jobs:
             -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
             -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
 
+      - name: Importar recursos AWS existentes
+        working-directory: terraform/ec2
+        shell: bash
+        env:
+          AWS_VPC_ID: ${{ secrets.AWS_VPC_IC }}
+        run: |
+          import_if_missing() {
+            local address="$1"
+            local resource_id="$2"
+
+            if ! terraform state show "$address" >/dev/null 2>&1; then
+              terraform import -input=false "$address" "$resource_id"
+            fi
+          }
+
+          app_sg_id=$(aws ec2 describe-security-groups \
+            --filters \
+              "Name=vpc-id,Values=$AWS_VPC_ID" \
+              "Name=group-name,Values=os-management-app-sg" \
+            --query 'SecurityGroups[0].GroupId' \
+            --output text 2>/dev/null || true)
+
+          if [ "$app_sg_id" != "None" ] && [ -n "$app_sg_id" ]; then
+            import_if_missing "aws_security_group.app" "$app_sg_id"
+          fi
+
+          if aws iam get-role \
+            --role-name os-management-ec2-role >/dev/null 2>&1; then
+            import_if_missing \
+              "aws_iam_role.ec2_role[0]" \
+              "os-management-ec2-role"
+          fi
+
+          if aws iam get-role \
+            --role-name os-management-ec2-role >/dev/null 2>&1; then
+            import_if_missing \
+              "aws_iam_role_policy.sns_publish[0]" \
+              "os-management-ec2-role:os-management-sns-publish"
+          fi
+
+          if aws iam get-instance-profile \
+            --instance-profile-name os-management-ec2-profile >/dev/null 2>&1; then
+            import_if_missing \
+              "aws_iam_instance_profile.ec2_profile[0]" \
+              "os-management-ec2-profile"
+          fi
+
       - name: Terraform Apply
         working-directory: terraform/ec2
         run: |
