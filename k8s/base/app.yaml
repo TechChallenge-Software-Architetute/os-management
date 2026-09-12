@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: os-management
+  namespace: os-management
+  labels:
+    app: os-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: os-management
+  template:
+    metadata:
+      labels:
+        app: os-management
+        tags.datadoghq.com/env: ${datadog_env}
+        tags.datadoghq.com/service: os-management
+        tags.datadoghq.com/version: "1.0.41"
+      annotations:
+        # The Datadog Admission Controller injects the compatible Java library,
+        # volume mount and JVM options when APM instrumentation is enabled.
+        admission.datadoghq.com/java-lib.version: "1"
+        # Collect this container's JSON stdout logs without enabling collection
+        # for every workload in the cluster.
+        ad.datadoghq.com/os-management.logs: '[{"source":"java","service":"os-management"}]'
+        # Datadog Agent HTTP check; emits http.can_connect for the uptime monitor.
+        ad.datadoghq.com/os-management.checks: '{"http_check":{"init_config":{},"instances":[{"name":"os-management-health","url":"http://%%host%%:8080/actuator/health","timeout":5}]}}'
+    spec:
+      containers:
+        - name: os-management
+          image: kelvosk/os-management:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: os-management-config
+            - secretRef:
+                name: os-management-secret
+          env:
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: DD_ENTITY_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: DD_SERVICE
+              value: os-management
+            - name: DD_ENV
+              value: ${datadog_env}
+            - name: DD_VERSION
+              value: "1.0.41"
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_PROFILING_ENABLED
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 150
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 150
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: os-management
+  namespace: os-management
+  labels:
+    app: os-management
+spec:
+  type: LoadBalancer
+  selector:
+    app: os-management
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

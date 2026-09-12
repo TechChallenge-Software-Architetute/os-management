@@ -10,3 +10,4 @@ data:
   SPRING_JPA_HIBERNATE_DDL_AUTO: update
   SPRING_JPA_SHOW_SQL: "false"
   JWT_EXPIRATION: "86400000"
+  DD_METRICS_ENABLED: "${datadog_metrics_enabled}"

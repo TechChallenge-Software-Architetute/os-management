@@ -6,6 +6,8 @@ metadata:
 data:
   SERVER_PORT: "8080"
   SPRING_APPLICATION_NAME: workshop
+  # Requires DD_API_KEY in os-management-secret.
+  DD_METRICS_ENABLED: "true"
   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:15432/workshop
   SPRING_JPA_HIBERNATE_DDL_AUTO: update
   SPRING_JPA_SHOW_SQL: "false"

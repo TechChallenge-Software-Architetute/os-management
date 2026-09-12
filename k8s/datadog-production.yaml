@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: os-management
+  namespace: os-management
+spec:
+  template:
+    metadata:
+      labels:
+        tags.datadoghq.com/env: production
+    spec:
+      containers:
+        - name: os-management
+          env:
+            - name: DD_ENV
+              value: production

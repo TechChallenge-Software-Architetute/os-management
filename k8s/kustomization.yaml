@@ -7,9 +7,12 @@ resources:
   - secret.yaml
   - postgres.yaml
   - postgres-init-job.yaml
-  - app.yaml
+  - base
   - ingress.yaml
   - hpa.yaml
+
+patches:
+  - path: datadog-production.yaml
 
 configMapGenerator:
   - name: postgres-init

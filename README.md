@@ -878,3 +878,142 @@ Cenarios cobertos:
 ## Licenca
 
 Projeto academico desenvolvido como Trabalho de Conclusao de Curso — FIAP Pos Tech.
+
+---
+
+# Observabilidade
+
+A integração Datadog está documentada em [datadog/README.md](datadog/README.md). Ela inclui APM, logs JSON correlacionáveis, métricas de negócio, sondas de saúde Kubernetes, dashboard e definições de alertas.
+
+## Executar Datadog localmente com Kind
+
+Este procedimento foi validado no cluster Kind deste projeto usando o site europeu do Datadog (`datadoghq.eu`). Ele habilita APM Java automático, logs JSON, métricas de negócio, métricas de CPU/memória Kubernetes e o check HTTP de uptime.
+
+Antes de começar, tenha `kind`, `kubectl`, `helm`, uma conta Datadog EU e uma API key do Datadog. Nunca versione nem cole uma chave real nos manifestos.
+
+1. Crie o cluster e o namespace do Datadog caso ainda não existam:
+
+```bash
+kind create cluster --name os-management
+kubectl create namespace datadog --dry-run=client -o yaml | kubectl apply -f -
+```
+
+2. Informe a API key de forma segura e crie o Secret usado pelo Helm. O comando não exibe a chave:
+
+```bash
+read -s "DD_API_KEY?Datadog API key: "
+echo
+
+kubectl create secret generic datadog-secret \
+  -n datadog \
+  --from-literal=api-key="$DD_API_KEY" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+3. Instale o Agent, o Cluster Agent e o Admission Controller. `datadog.kubelet.tlsVerify=false` é necessário para o kubelet do Kind; `libVersions.java="1"` injeta somente a biblioteca Java compatível na aplicação.
+
+```bash
+helm repo add datadog https://helm.datadoghq.com
+helm repo update
+
+helm upgrade --install datadog datadog/datadog \
+  --namespace datadog \
+  --set datadog.apiKeyExistingSecret=datadog-secret \
+  --set datadog.site=datadoghq.eu \
+  --set datadog.hostname=os-management-kind \
+  --set datadog.logs.enabled=true \
+  --set datadog.logs.containerCollectAll=false \
+  --set datadog.processAgent.processCollection=true \
+  --set datadog.orchestratorExplorer.enabled=true \
+  --set datadog.kubeStateMetricsCore.enabled=true \
+  --set-string datadog.kubelet.tlsVerify=false \
+  --set datadog.apm.portEnabled=true \
+  --set datadog.apm.socketEnabled=true \
+  --set datadog.apm.instrumentation.enabled=true \
+  --set-string datadog.apm.instrumentation.libVersions.java=1 \
+  --set clusterAgent.enabled=true \
+  --set clusterAgent.admissionController.enabled=true
+```
+
+4. Suba PostgreSQL e a aplicação conforme a seção de execução Kubernetes deste README. Depois, configure a API key também no Secret da aplicação: ela é usada pelo Micrometer para enviar as métricas de negócio diretamente ao Datadog. Este comando pressupõe que `DD_API_KEY` continua na sessão atual.
+
+```bash
+kubectl patch secret os-management-secret -n os-management \
+  --type=merge \
+  -p "{\"stringData\":{\"DD_API_KEY\":\"${DD_API_KEY}\"}}"
+
+kubectl patch configmap os-management-config -n os-management \
+  --type=merge \
+  -p '{"data":{"DD_METRICS_ENABLED":"true"}}'
+
+kubectl set env deployment/os-management -n os-management \
+  DD_METRICS_URI=https://api.datadoghq.eu
+
+kubectl rollout restart deployment/os-management -n os-management
+kubectl rollout status deployment/os-management -n os-management
+```
+
+5. Defina o ambiente Datadog. Para o ambiente local de desenvolvimento, esta alteração preserva a imagem atual do Deployment e só atualiza as tags que chegam em traces, logs e métricas:
+
+```bash
+kubectl patch deployment os-management -n os-management \
+  --type=merge \
+  -p '{"spec":{"template":{"metadata":{"labels":{"tags.datadoghq.com/env":"developer"}}}}}'
+
+kubectl set env deployment/os-management -n os-management DD_ENV=developer
+kubectl rollout status deployment/os-management -n os-management
+```
+
+Use `homolog` ou `production` no lugar de `developer` para os outros ambientes. Para novos clusters, há também os overlays em `k8s/overlays/`.
+
+6. Valide a instalação local. O Agent deve ficar `3/3 Running`, a aplicação `1/1 Running`, e o pod da aplicação deve listar os init containers `datadog-lib-java-init` e `datadog-init-apm-inject`.
+
+```bash
+kubectl get pods -n datadog
+kubectl get pods -n os-management
+
+kubectl exec -n os-management deployment/os-management -- sh -c '
+  echo "DD_ENV=$DD_ENV"
+  echo "DD_METRICS_ENABLED=$DD_METRICS_ENABLED"
+  echo "DD_METRICS_URI=$DD_METRICS_URI"
+  test -n "$DD_API_KEY" && echo "DD_API_KEY=present" || echo "DD_API_KEY=missing"
+'
+
+kubectl exec -n os-management deployment/os-management -- \
+  sh -c 'wget -qO- http://localhost:8080/actuator/health/readiness'
+```
+
+O resultado esperado do healthcheck é `{"status":"UP"}` e `DD_METRICS_URI` deve ser `https://api.datadoghq.eu`.
+
+7. Importe os artefatos. Para criar ou atualizar dashboards e monitores, crie uma Application Key no Datadog com permissões de leitura/escrita de dashboards e monitores.
+
+```bash
+export DD_SITE=datadoghq.eu
+read -s "DD_APP_KEY?Datadog Application key: "
+echo
+
+curl -sSf -X POST "https://api.${DD_SITE}/api/v1/dashboard" \
+  -H "DD-API-KEY: ${DD_API_KEY}" \
+  -H "DD-APPLICATION-KEY: ${DD_APP_KEY}" \
+  -H "Content-Type: application/json" \
+  -d @datadog/dashboards/os-management.json
+
+for file in datadog/monitors/*.json; do
+  curl -sSf -X POST "https://api.${DD_SITE}/api/v1/monitor" \
+    -H "DD-API-KEY: ${DD_API_KEY}" \
+    -H "DD-APPLICATION-KEY: ${DD_APP_KEY}" \
+    -H "Content-Type: application/json" \
+    -d @"$file"
+done
+```
+
+8. Gere tráfego e valide no Datadog após até dois minutos. Crie uma OS pela aplicação para incrementar o volume diário; conclua transições de status para gerar o tempo por etapa. O dashboard aceita `developer`, `homolog` e `production` no filtro `env`.
+
+```text
+Volume diário: sum:workshop.service_orders.created{service:os-management,env:developer}.as_count().rollup(sum, 86400)
+Tempo médio: avg:workshop.service_orders.status.duration.avg{service:os-management,env:developer} by {status}
+CPU: avg:kubernetes.cpu.usage.total{kube_namespace:os-management} by {pod_name}
+Memória: avg:kubernetes.memory.usage{kube_namespace:os-management} by {pod_name}
+```
+
+No Datadog, confirme em **APM → Services → os-management** as traces e a latência; em **Logs**, filtre por `service:os-management env:developer`; e em **Infrastructure → Kubernetes**, confirme CPU e memória dos pods. O erro de SNS sem credenciais AWS no Kind é um caso de teste válido para `workshop.integrations.failed`; não é necessário cadastrar credenciais AWS só para validar observabilidade.

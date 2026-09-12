@@ -54,6 +54,17 @@ variable "environment" {
   }
 }
 
+variable "datadog_environment" {
+  type        = string
+  description = "Tag env enviada para Datadog pela aplicacao: developer | homolog | production"
+  default     = "production"
+
+  validation {
+    condition     = contains(["developer", "homolog", "production"], var.datadog_environment)
+    error_message = "Deve ser developer, homolog ou production."
+  }
+}
+
 # --- EKS ---
 variable "eks_cluster_version" {
   type    = string
@@ -181,6 +192,19 @@ variable "db_port" {
 variable "jwt_secret" {
   type      = string
   sensitive = true
+}
+
+variable "datadog_api_key" {
+  description = "Datadog API key used only for application business metrics. Keep it in a secret manager/TF_VAR_datadog_api_key."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "datadog_metrics_enabled" {
+  description = "Enables Micrometer's direct Datadog metrics export. Set true only when datadog_api_key is supplied."
+  type        = bool
+  default     = false
 }
 
 variable "jwt_expiration" {

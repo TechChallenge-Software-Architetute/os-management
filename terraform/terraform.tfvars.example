@@ -32,6 +32,10 @@ db_port = 5432
 # JWT
 # -----------------------------------------------------------------------------
 jwt_secret     = "troque-por-uma-chave-segura-com-pelo-menos-256-bits"
+datadog_api_key = ""
+datadog_metrics_enabled = false
+# Valores aceitos: developer, homolog, production.
+datadog_environment = "developer"
 jwt_expiration = 86400000
 
 # =============================================================================

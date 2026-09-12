@@ -72,7 +72,7 @@ module "github_secrets" {
   source = "./modules/github"
 
   repository  = var.repository_name
-  db_url      = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://postgres:5432/${var.db_name}"
+  db_url      = var.use_aws ? module.rds[0].jdbc_url : "jdbc:postgresql://postgres:15432/${var.db_name}"
   db_user     = var.db_user
   db_password = var.db_password
   jwt_secret  = var.jwt_secret
@@ -132,6 +132,11 @@ module "rds" {
 # =============================================================================
 locals {
   k8s_path = "${path.module}/../k8s"
+  app_manifests = {
+    for manifest in split("\n---\n", trimspace(templatefile("${path.module}/../k8s/base/app.yaml", {
+      datadog_env = var.datadog_environment
+    }))) : sha1(manifest) => manifest
+  }
 }
 
 # --- Namespace (deve ser o primeiro) ---
@@ -144,7 +149,9 @@ resource "kubectl_manifest" "namespace" {
 resource "kubectl_manifest" "app_configmap" {
   count = var.use_aws ? 0 : 1
   yaml_body = templatefile("${local.k8s_path}/app-configmap.yaml.tpl", {
-    datasource_url = "jdbc:postgresql://postgres:5432/${var.db_name}"
+    # Kubernetes Service exposes PostgreSQL on 15432 (targeting container 5432).
+    datasource_url          = "jdbc:postgresql://postgres:15432/${var.db_name}"
+    datadog_metrics_enabled = var.datadog_metrics_enabled
   })
   depends_on = [kubectl_manifest.namespace]
 }
@@ -163,10 +170,11 @@ resource "kubectl_manifest" "postgres_configmap" {
 resource "kubectl_manifest" "app_secret" {
   count = var.use_aws ? 0 : 1
   yaml_body = templatefile("${local.k8s_path}/app-secret.yaml.tpl", {
-    db_user        = var.db_user
-    db_password    = var.db_password
-    jwt_secret     = var.jwt_secret
-    external_token = "change-me"
+    db_user         = var.db_user
+    db_password     = var.db_password
+    jwt_secret      = var.jwt_secret
+    external_token  = "change-me"
+    datadog_api_key = var.datadog_api_key
   })
   depends_on = [kubectl_manifest.namespace]
 }
@@ -176,6 +184,24 @@ resource "kubectl_manifest" "postgres_secret" {
   count = var.use_aws ? 0 : 1
   yaml_body = templatefile("${local.k8s_path}/postgres-secret.yaml.tpl", {
     db_password = var.db_password
+  })
+  depends_on = [kubectl_manifest.namespace]
+}
+
+# The kustomize workflow creates this ConfigMap via configMapGenerator. Terraform
+# applies manifests directly, so it must create the same initialization script.
+resource "kubectl_manifest" "postgres_init" {
+  count = var.use_aws ? 0 : 1
+  yaml_body = yamlencode({
+    apiVersion = "v1"
+    kind       = "ConfigMap"
+    metadata = {
+      name      = "postgres-init"
+      namespace = "os-management"
+    }
+    data = {
+      "init.sh" = file("${local.k8s_path}/init.sh")
+    }
   })
   depends_on = [kubectl_manifest.namespace]
 }
@@ -193,16 +219,13 @@ resource "kubectl_manifest" "postgres" {
   depends_on = [
     kubectl_manifest.postgres_configmap,
     kubectl_manifest.postgres_secret,
+    kubectl_manifest.postgres_init,
   ]
 }
 
 # --- Aplicação principal (apenas modo local) ---
-data "kubectl_path_documents" "app" {
-  pattern = "${local.k8s_path}/app.yaml"
-}
-
 resource "kubectl_manifest" "app" {
-  for_each         = var.use_aws ? {} : data.kubectl_path_documents.app.manifests
+  for_each         = var.use_aws ? {} : local.app_manifests
   yaml_body        = each.value
   wait_for_rollout = false
 

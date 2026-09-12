@@ -9,3 +9,4 @@ stringData:
   SPRING_DATASOURCE_PASSWORD: "${db_password}"
   JWT_SECRET: "${jwt_secret}"
   EXTERNAL_SERVICE_TOKEN: "${external_token}"
+  DD_API_KEY: "${datadog_api_key}"
