@@ -99,29 +99,6 @@ module "eks" {
   node_desired_size  = var.node_desired_size
 }
 
-# =============================================================================
-# AWS: RDS PostgreSQL gerenciado (ativado quando use_aws = true)
-# Substitui o postgres Deployment que roda in-cluster no modo local.
-# =============================================================================
-module "rds" {
-  count  = var.use_aws ? 1 : 0
-  source = "./modules/rds"
-
-  db_identifier             = "${var.app_name}-postgres"
-  db_name                   = var.db_name
-  db_user                   = var.db_user
-  db_password               = var.db_password
-  instance_class            = var.rds_instance_class
-  allocated_storage         = var.rds_allocated_storage
-  multi_az                  = var.rds_multi_az
-  skip_final_snapshot       = var.environment != "prod"
-  deletion_protection       = var.environment == "prod"
-  vpc_id                    = module.eks[0].vpc_id
-  subnet_ids                = module.eks[0].private_subnet_ids
-  allowed_security_group_id = module.eks[0].node_security_group_id
-
-  depends_on = [module.eks]
-}
 
 # =============================================================================
 # Kubernetes Manifests — APENAS modo local (use_aws = false)
