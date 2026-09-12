@@ -116,6 +116,7 @@ jobs:
           cache: maven
 
       - name: Incrementar versão no pom.xml
+        if: github.ref == 'refs/heads/develop'
         run: |
           mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} -DgenerateBackupPoms=false
 
@@ -138,6 +139,7 @@ jobs:
           mvn versions:set -DnewVersion="${{ steps.publish-version.outputs.release_version }}" -DgenerateBackupPoms=false
 
       - name: Fazer commit e enviar atualização de versão
+        if: github.ref == 'refs/heads/develop'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
