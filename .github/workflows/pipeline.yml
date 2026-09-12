@@ -301,12 +301,12 @@ jobs:
         working-directory: terraform/ec2
         shell: bash
         env:
-          AWS_VPC_ID: ${{ secrets.AWS_VPC_IC }}
+          AWS_VPC_ID: ${{ secrets.AWS_VPC_ID }}
         run: |
           set -euo pipefail
 
           if [ -z "$AWS_VPC_ID" ]; then
-            echo "AWS_VPC_IC não está configurada."
+            echo "AWS_VPC_ID não está configurada."
             exit 1
           fi
 
