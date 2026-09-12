@@ -3,6 +3,11 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "db_url" {
+  type    = string
+  default = "jdbc:postgresql://workshop.cyv0ccwg29gy.us-east-1.rds.amazonaws.com:5432/workshop"
+}
+
 variable "db_name" {
   type    = string
   default = "workshop"
