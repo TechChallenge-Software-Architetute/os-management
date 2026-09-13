@@ -12,7 +12,7 @@ datadog:
   # API key is read from a pre-created secret so it never lives in git.
   # Secret key MUST be named "api-key".
   apiKeyExistingSecret: datadog-secret
-  site: datadoghq.com
+  site: datadoghq.eu
   clusterName: os-management
   # kube-state-metrics powers kubernetes.cpu.* / kubernetes.memory.* panels.
   kubeStateMetricsEnabled: true

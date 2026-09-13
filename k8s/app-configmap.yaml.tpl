@@ -16,4 +16,4 @@ data:
   DD_SERVICE: "os-management"
   DD_VERSION: "1.0.0"
   DD_METRICS_ENABLED: "true"
-  DD_METRICS_URI: "https://api.datadoghq.com"
+  DD_METRICS_URI: "https://api.datadoghq.eu"
