@@ -224,12 +224,36 @@ under the same name. `AWS_REGION` is a normal repo/environment variable (not suf
   `gateway/develop`, and the `main` equivalents).
 - Recommended: add **required reviewers** on the `main` environment for a prod approval gate.
 - \* **Name mismatch to fix:** the database repo currently calls it `DB_USERNAME` while the
-  lambda/app use `DB_USER`. They must hold the **same value**; the names are being aligned
-  during the Path B migration.
+  lambda/app use `DB_USER`. They must hold the **same value**; the names intentionally stay
+  different (`DB_USERNAME` in the database, `DB_USER` in the lambda/app).
 - `k8s-terraform` only needs `AWS_REGION` here (plus the org-level four) — no DB/JWT/Docker values.
-- Some rows shrink after the migration: the database's `VPC_ID`/`SUBNET_IDS` secrets are
-  replaced by a remote-state read from `k8s-terraform`, and the app's `DB_URL` is sourced from
-  the database state.
+
+### 5.0.1 Manually-synced Terraform outputs (temporary)
+
+> **Note (Path B, current state):** we decided **not** to wire the downstream repos to
+> `k8s-terraform` / `database` via `terraform_remote_state`. Instead, every repo takes its
+> infrastructure inputs as **explicit secrets** ("deployment-independent" — no cross-repo state
+> reads, no deploy-order coupling). The trade-off is that a few Terraform **outputs must be
+> copied by hand into secrets** after the upstream stack is applied. Until we (optionally)
+> switch to remote state, keep these in sync **manually** whenever the network or database is
+> recreated:
+
+| Source Terraform output | Copy into (secret, per env `_MAIN`/`_DEVELOP`) | Consumed by |
+|---|---|---|
+| `k8s-terraform` → `vpc_id` | `VPC_ID_MAIN` / `VPC_ID_DEVELOP` | database |
+| `k8s-terraform` → `private_subnet_ids` | `SUBNET_IDS_MAIN` / `SUBNET_IDS_DEVELOP` | database + lambda |
+| `k8s-terraform` → `node_security_group_id` | `VPC_SECURITY_GROUP_IDS_MAIN` / `_DEVELOP` | lambda |
+| `database` → `aurora_jdbc_url` | `DB_URL_MAIN` / `DB_URL_DEVELOP` | lambda (and app) |
+| `k8s-terraform` → `cluster_name` (or derive `os-management-<env>`) | app deploy `aws eks update-kubeconfig` (Part 3, TBD) | app |
+
+- **Why manual:** the database and lambda were built deployment-independent by the team, so they
+  read these values from secrets rather than `terraform_remote_state`. `k8s-terraform` still
+  *produces* the outputs; they're just not auto-consumed.
+- **Risk:** if `k8s-terraform` recreates the VPC/subnets (new IDs) and the secrets aren't
+  refreshed, RDS and the Lambda land in a stale/mismatched VPC and connectivity breaks. Treat
+  "re-apply k8s-terraform" and "refresh these secrets" as a single operation.
+- **Order:** apply `k8s-terraform` → copy its outputs into the secrets above → apply `database`
+  → copy `aurora_jdbc_url` into `DB_URL_*` → apply `lambda`.
 
 ### 5.1 Shared across all IaC repos
 | Name | Type | Purpose | How to get it |
