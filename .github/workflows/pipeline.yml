@@ -422,6 +422,10 @@ jobs:
           DB_USER="${{ secrets.DB_USER }}"
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          # Overlay Datadog por ambiente: develop -> homolog, main -> production.
+          DD_OVERLAY="${{ github.ref_name == 'main' && 'production' || 'homolog' }}"
+          # Só habilita o export de métricas quando há uma DD_API_KEY.
+          DD_METRICS_ENABLED=$([ -n "${DD_API_KEY}" ] && echo true || echo false)
 
           # Metrics Server (necessário para o HPA funcionar)
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -429,18 +433,22 @@ jobs:
           # Namespace
           kubectl apply -f k8s/namespace.yaml
 
-          # ConfigMap da app (substitui variável do template)
-          sed "s|\${datasource_url}|${JDBC_URL}|g" k8s/app-configmap.yaml.tpl | kubectl apply -f -
+          # ConfigMap da app (substitui variáveis do template, incl. Datadog)
+          sed -e "s|\${datasource_url}|${JDBC_URL}|g" \
+              -e "s|\${datadog_metrics_enabled}|${DD_METRICS_ENABLED}|g" \
+              k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
-          # Secret da app (substitui variáveis do template)
+          # Secret da app (substitui variáveis do template, incl. DD_API_KEY)
           sed -e "s|\${db_user}|${DB_USER}|g" \
               -e "s|\${db_password}|${DB_PASSWORD}|g" \
               -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
               -e "s|\${external_token}|change-me|g" \
+              -e "s|\${datadog_api_key}|${DD_API_KEY}|g" \
               k8s/app-secret.yaml.tpl | kubectl apply -f -
 
-          # App Deployment + Service
-          kubectl apply -f k8s/app.yaml
+          # App Deployment + Service via overlay Datadog (base/app.yaml + patch de
+          # DD_ENV/label). Substitui o antigo k8s/app.yaml (movido para k8s/base/).
+          kubectl apply -k k8s/overlays/${DD_OVERLAY}
 
           # HPA
           kubectl apply -f k8s/hpa.yaml
@@ -593,6 +601,10 @@ jobs:
           DB_USER="${{ secrets.DB_USER }}"
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          # Overlay Datadog por ambiente: develop -> homolog, main -> production.
+          DD_OVERLAY="${{ github.ref_name == 'main' && 'production' || 'homolog' }}"
+          # Só habilita o export de métricas quando há uma DD_API_KEY.
+          DD_METRICS_ENABLED=$([ -n "${DD_API_KEY}" ] && echo true || echo false)
 
           # Metrics Server (necessário para o HPA funcionar)
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -600,18 +612,22 @@ jobs:
           # Namespace
           kubectl apply -f k8s/namespace.yaml
 
-          # ConfigMap da app (substitui variável do template)
-          sed "s|\${datasource_url}|${JDBC_URL}|g" k8s/app-configmap.yaml.tpl | kubectl apply -f -
+          # ConfigMap da app (substitui variáveis do template, incl. Datadog)
+          sed -e "s|\${datasource_url}|${JDBC_URL}|g" \
+              -e "s|\${datadog_metrics_enabled}|${DD_METRICS_ENABLED}|g" \
+              k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
-          # Secret da app (substitui variáveis do template)
+          # Secret da app (substitui variáveis do template, incl. DD_API_KEY)
           sed -e "s|\${db_user}|${DB_USER}|g" \
               -e "s|\${db_password}|${DB_PASSWORD}|g" \
               -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
               -e "s|\${external_token}|change-me|g" \
+              -e "s|\${datadog_api_key}|${DD_API_KEY}|g" \
               k8s/app-secret.yaml.tpl | kubectl apply -f -
 
-          # App Deployment + Service
-          kubectl apply -f k8s/app.yaml
+          # App Deployment + Service via overlay Datadog (base/app.yaml + patch de
+          # DD_ENV/label). Substitui o antigo k8s/app.yaml (movido para k8s/base/).
+          kubectl apply -k k8s/overlays/${DD_OVERLAY}
 
           # HPA
           kubectl apply -f k8s/hpa.yaml
