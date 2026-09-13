@@ -17,7 +17,7 @@ nenhuma infraestrutura**. Não há mais diretório `terraform/` aqui.
 | Aplicação (imagem, manifests K8s, deploy) | `os-management` (este repo) |
 
 O deploy da app **anexa** ao cluster já existente e lê o endpoint do banco a partir
-de um segredo (`DB_URL_<ENV>`), sem `terraform_remote_state` — modelo
+de um segredo (`DB_URL`), sem `terraform_remote_state` — modelo
 "deployment-independent" adotado pelo time (ver `DEPENDENCIES.md`).
 
 ---
@@ -63,6 +63,7 @@ Acesse `Settings → Secrets and variables → Actions`. Convenção do projeto:
 |--------|-----------|
 | `DB_USER` | Usuário do banco (mesmo valor do `os-management-database`) |
 | `DB_PASSWORD` | Senha do banco |
+| `DB_URL` | JDBC URL do RDS (output `aurora_jdbc_url` do `os-management-database`) |
 | `JWT_SECRET` | Chave JWT HS256 (idêntica à do `os-management-lambda`) |
 | `DOCKER_USERNAME` | Usuário do Docker Hub |
 | `DOCKER_HUB_TOKEN` | Token de push do Docker Hub |
@@ -75,7 +76,6 @@ Selecionados por branch (`develop` → `_DEVELOP`, `main` → `_MAIN`):
 | Secret | Descrição |
 |--------|-----------|
 | `AWS_ACCESS_KEY_ID_<ENV>` / `AWS_SECRET_ACCESS_KEY_<ENV>` | Credenciais AWS por conta |
-| `DB_URL_<ENV>` | JDBC URL do RDS (output `aurora_jdbc_url` do `os-management-database`) |
 
 > O nome do cluster **não** é um segredo: é derivado como `os-management-<branch>`
 > (`os-management-develop` / `os-management-main`), o mesmo que o
@@ -173,7 +173,7 @@ docker-compose down
 O deploy **não cria** cluster nem banco. Ele assume que:
 1. `os-management-k8s-terraform` já criou o cluster `os-management-<branch>`.
 2. `os-management-database` já criou o RDS e seu `aurora_jdbc_url` foi copiado
-   para o segredo `DB_URL_<ENV>` (ver `DEPENDENCIES.md §5.0.1`).
+   para o segredo `DB_URL` (ver `DEPENDENCIES.md §5.0.1`).
 
 ### Passo a passo
 
@@ -251,6 +251,6 @@ Local (Kind, kustomize):        AWS (EKS, RDS externo):
 | `deploy-aws` pulado | `USE_AWS` != `true` | Defina a variable `USE_AWS=true` |
 | `update-kubeconfig` falha | Cluster `os-management-<branch>` não existe | Rode o pipeline do `os-management-k8s-terraform` primeiro |
 | `connection refused` no RDS | SG do RDS não libera os nodes do EKS | Ajuste `VPC_SECURITY_GROUP_IDS_<ENV>` no `os-management-database`/lambda |
-| `DB_URL_<ENV>` ausente | Output do banco não sincronizado | Copie `aurora_jdbc_url` para o segredo (`DEPENDENCIES.md §5.0.1`) |
+| `DB_URL` ausente | Output do banco não sincronizado | Copie `aurora_jdbc_url` para o segredo (`DEPENDENCIES.md §5.0.1`) |
 | `ImagePullBackOff` | Imagem não publicada | Verifique o job `docker-build-push` |
 | Postgres em `Pending` (local) | Sem storageClass no Kind | `kubectl get sc` — Kind provê `standard` por padrão |
