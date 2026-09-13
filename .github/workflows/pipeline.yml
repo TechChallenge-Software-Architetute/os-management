@@ -380,6 +380,16 @@ jobs:
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/ingress.yaml
 
+      - name: Diagnosticar rollout (em caso de falha)
+        if: failure()
+        run: |
+          kubectl get pods -n os-management -o wide
+          kubectl describe deployment/os-management -n os-management
+          kubectl get events -n os-management --sort-by='.lastTimestamp' | tail -30
+          POD=$(kubectl get pods -n os-management -l app=os-management --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+          kubectl logs "$POD" -n os-management --tail=100 || true
+          kubectl describe pod "$POD" -n os-management      
+      
       - name: Atualizar imagem do Deployment
         run: |
           kubectl set image deployment/os-management os-management="${IMAGE}" -n os-management
