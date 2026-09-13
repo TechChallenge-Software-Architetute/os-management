@@ -9,6 +9,13 @@ on:
     branches:
       - main
       - develop
+
+# Serialize runs per ref so overlapping merges to develop/main don't race on the
+# "Bump versão" push. Do NOT cancel in progress — let a running publish finish.
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
 
   unit-test:
@@ -143,7 +150,14 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add pom.xml
           git commit -m "Bump versão para próximo build [skip ci]"
-          git push origin HEAD:${{ github.ref_name }}
+          # Rebase onto the latest tip and retry: avoids non-fast-forward when
+          # another run pushed to the same branch between checkout and push.
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin "${{ github.ref_name }}" \
+              && git push origin HEAD:"${{ github.ref_name }}" && break
+            echo "push attempt ${attempt} failed; retrying in 5s..."
+            sleep 5
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
