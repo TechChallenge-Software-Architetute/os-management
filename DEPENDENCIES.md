@@ -187,18 +187,18 @@ Two deploy targets, keyed by branch: `develop` (dev account) and `main` (prod ac
 Deploy jobs declare `environment: ${{ github.ref_name }}`.
 
 **Org-level — set once for the whole org, not per repo.** These four live as **organization**
-secrets/variables with `_PROD` and `_DEVELOP` suffixes; workflows pick the right one by branch
-(`main` → `_PROD`, `develop` → `_DEVELOP`) via an inline expression, e.g.
-`${{ github.ref_name == 'main' && vars.TF_STATE_BUCKET_PROD || vars.TF_STATE_BUCKET_DEVELOP }}`.
+secrets/variables with `_MAIN` and `_DEVELOP` suffixes; workflows pick the right one by branch
+(`main` → `_MAIN`, `develop` → `_DEVELOP`) via an inline expression, e.g.
+`${{ github.ref_name == 'main' && vars.TF_STATE_BUCKET_MAIN || vars.TF_STATE_BUCKET_DEVELOP }}`.
 Grant the org secret/variable visibility to all five repos (Org → Settings → Secrets and
 variables → Actions → *value* → Repository access).
 
 | Name (org, both suffixes) | Type | Purpose |
 |---|---|---|
-| `AWS_ACCESS_KEY_ID_PROD` / `_DEVELOP` | secret | AWS auth per account |
-| `AWS_SECRET_ACCESS_KEY_PROD` / `_DEVELOP` | secret | AWS auth per account |
-| `AWS_ACCOUNT_ID_PROD` / `_DEVELOP` | variable | feeds `allowed_account_ids` guard |
-| `TF_STATE_BUCKET_PROD` / `_DEVELOP` | variable | per-account S3 state bucket |
+| `AWS_ACCESS_KEY_ID_MAIN` / `_DEVELOP` | secret | AWS auth per account |
+| `AWS_SECRET_ACCESS_KEY_MAIN` / `_DEVELOP` | secret | AWS auth per account |
+| `AWS_ACCOUNT_ID_MAIN` / `_DEVELOP` | variable | feeds `allowed_account_ids` guard |
+| `TF_STATE_BUCKET_MAIN` / `_DEVELOP` | variable | per-account S3 state bucket |
 
 **Per-repo, per-environment — GitHub Environments `develop` / `main`.** These differ per
 account but are repo-specific, so set them in each repo's `develop` and `main` environments
