@@ -260,7 +260,7 @@ jobs:
   # ---------------------------------------------------------------------------
   # Terraform AWS — EC2 t3.micro + RDS db.t3.micro (free tier)
   # Roda quando USE_AWS == 'true' e USE_EKS != 'true'.
-  # Usa backend S3 para persistir o state entre execucoes (bucket: TF_STATE_BUCKET).
+  # Usa backend S3 para persistir o state entre execucoes (bucket: TF_STATE_BUCKET_DEVELOP).
   # ---------------------------------------------------------------------------
   terraform-ec2:
     runs-on: ubuntu-latest
@@ -283,9 +283,9 @@ jobs:
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -296,14 +296,14 @@ jobs:
         working-directory: terraform/ec2
         run: |
           terraform init \
-            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
-            -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET_DEVELOP }}" \
+            -backend-config="region=${{ secrets.AWS_REGION || 'us-east-1' }}"
 
       - name: Importar recursos AWS existentes
         working-directory: terraform/ec2
         shell: bash
         env:
-          AWS_VPC_ID: ${{ secrets.AWS_VPC_ID }}
+          AWS_VPC_ID: ${{ secrets.VPC_ID_DEVELOP }}
         run: |
           set -euo pipefail
 
@@ -341,7 +341,7 @@ jobs:
         working-directory: terraform/ec2
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+            -var="aws_region=${{ secrets.AWS_REGION || 'us-east-1' }}" \
             -var="db_url=${{ secrets.DB_URL }}" \
             -var="db_user=${{ secrets.DB_USER }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
@@ -378,9 +378,9 @@ jobs:
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -394,9 +394,9 @@ jobs:
           cat > backend.tf << EOF
           terraform {
             backend "s3" {
-              bucket = "${{ vars.TF_STATE_BUCKET }}"
+              bucket = "${{ secrets.TF_STATE_BUCKET_DEVELOP }}"
               key    = "homol/terraform.tfstate"
-              region = "${{ vars.AWS_REGION || 'us-east-1' }}"
+              region = "${{ secrets.AWS_REGION || 'us-east-1' }}"
             }
           }
           EOF
@@ -407,16 +407,16 @@ jobs:
           if aws eks describe-nodegroup \
             --cluster-name os-management-homol \
             --nodegroup-name default \
-            --region ${{ vars.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
             aws eks update-nodegroup-config \
               --cluster-name os-management-homol \
               --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }} \
+              --region ${{ secrets.AWS_REGION || 'us-east-1' }} \
               --scaling-config minSize=2,desiredSize=2,maxSize=3
             aws eks wait nodegroup-active \
               --cluster-name os-management-homol \
               --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }}
+              --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           fi
 
       - name: Terraform Apply — Criar EKS + RDS
@@ -424,7 +424,7 @@ jobs:
         run: |
           terraform apply -auto-approve \
               -var="use_aws=true" \
-              -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+              -var="aws_region=${{ secrets.AWS_REGION || 'us-east-1' }}" \
               -var="app_name=os-management-homol" \
               -var="environment=staging" \
               -var="db_user=${{ secrets.DB_USER }}" \
@@ -445,7 +445,7 @@ jobs:
 
       - name: Configurar kubectl para o EKS
         run: |
-          aws eks update-kubeconfig --name os-management-homol --region ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws eks update-kubeconfig --name os-management-homol --region ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Aplicar manifests Kubernetes
         run: |
@@ -492,7 +492,7 @@ jobs:
           echo "Namespace: os-management"
           echo "========================================"
           echo "Para acessar localmente:"
-          echo "  aws eks update-kubeconfig --name os-management-homol --region ${{ vars.AWS_REGION || 'us-east-1' }}"
+          echo "  aws eks update-kubeconfig --name os-management-homol --region ${{ secrets.AWS_REGION || 'us-east-1' }}"
           echo "  kubectl port-forward svc/os-management 8080:8080 -n os-management"
           echo "  http://localhost:8080/swagger-ui/index.html"
           echo "========================================"
@@ -523,9 +523,9 @@ jobs:
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_MAIN }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_MAIN }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -539,9 +539,9 @@ jobs:
           cat > backend.tf << EOF
           terraform {
             backend "s3" {
-              bucket = "${{ vars.TF_STATE_BUCKET }}"
+              bucket = "${{ secrets.TF_STATE_BUCKET_MAIN }}"
               key    = "prod/terraform.tfstate"
-              region = "${{ vars.AWS_REGION || 'us-east-1' }}"
+              region = "${{ secrets.AWS_REGION || 'us-east-1' }}"
             }
           }
           EOF
@@ -552,16 +552,16 @@ jobs:
           if aws eks describe-nodegroup \
             --cluster-name os-management-prod \
             --nodegroup-name default \
-            --region ${{ vars.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
+            --region ${{ secrets.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
             aws eks update-nodegroup-config \
               --cluster-name os-management-prod \
               --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }} \
+              --region ${{ secrets.AWS_REGION || 'us-east-1' }} \
               --scaling-config minSize=2,desiredSize=2,maxSize=3
             aws eks wait nodegroup-active \
               --cluster-name os-management-prod \
               --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }}
+              --region ${{ secrets.AWS_REGION || 'us-east-1' }}
           fi
 
       - name: Terraform Apply — Criar EKS + RDS
@@ -569,7 +569,7 @@ jobs:
         run: |
           terraform apply -auto-approve \
               -var="use_aws=true" \
-              -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
+              -var="aws_region=${{ secrets.AWS_REGION || 'us-east-1' }}" \
               -var="app_name=os-management-prod" \
               -var="environment=prod" \
               -var="db_user=${{ secrets.DB_USER }}" \
@@ -590,7 +590,7 @@ jobs:
 
       - name: Configurar kubectl para o EKS
         run: |
-          aws eks update-kubeconfig --name os-management-prod --region ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws eks update-kubeconfig --name os-management-prod --region ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Aplicar manifests Kubernetes
         run: |
@@ -637,7 +637,7 @@ jobs:
           echo "Namespace: os-management"
           echo "========================================"
           echo "Para acessar localmente:"
-          echo "  aws eks update-kubeconfig --name os-management-prod --region ${{ vars.AWS_REGION || 'us-east-1' }}"
+          echo "  aws eks update-kubeconfig --name os-management-prod --region ${{ secrets.AWS_REGION || 'us-east-1' }}"
           echo "  kubectl port-forward svc/os-management 8080:8080 -n os-management"
           echo "  http://localhost:8080/swagger-ui/index.html"
           echo "========================================"
