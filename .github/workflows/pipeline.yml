@@ -353,8 +353,10 @@ jobs:
 
       - name: Aplicar manifests Kubernetes (RDS externo — sem Postgres in-cluster)
         run: |
-          # Metrics Server (necessário para o HPA funcionar no EKS)
-          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+          # Metrics Server: provisionado pelo stack de infra (os-management-k8s-terraform,
+          # helm_release.metrics_server em kube-system). Não instalar aqui — o chart do Helm
+          # e o components.yaml upstream usam spec.selector diferentes e selector é imutável,
+          # o que quebra o `kubectl apply`.
 
           # Namespace
           kubectl apply -f k8s/namespace.yaml
