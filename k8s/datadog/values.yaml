@@ -1,7 +1,11 @@
-# Helm values for the official datadog/datadog chart.
-# Installs the Node Agent (DaemonSet) + Cluster Agent so the dashboard's
-# kubernetes.* metrics and trace.servlet.request (APM) panels get data, which
-# the app-only Micrometer export cannot provide (see DEPENDENCIES.md §2.5).
+# Helm values for the official datadog/datadog chart — trimmed to fit a small
+# node group (e.g. a single t3.small). Keeps the pieces Part 6 actually needs:
+#   * Node Agent (DaemonSet) — kubernetes.cpu/memory.* (from kubelet), logs, APM intake
+#   * Cluster Agent — admission controller that injects dd-java-agent (APM traces)
+# Dropped to save CPU/memory: kube-state-metrics, process agent, orchestrator
+# explorer. Trade-off: kube_* *state* metrics are lost, but the dashboard's
+# kubernetes.cpu.usage.total / kubernetes.memory.usage come from the node agent,
+# so those panels still work. See DEPENDENCIES.md §2.5.
 #
 #   helm repo add datadog https://helm.datadoghq.com
 #   kubectl create secret generic datadog-secret \
@@ -14,22 +18,46 @@ datadog:
   apiKeyExistingSecret: datadog-secret
   site: datadoghq.eu
   clusterName: os-management
-  # kube-state-metrics powers kubernetes.cpu.* / kubernetes.memory.* panels.
-  kubeStateMetricsEnabled: true
+  # Trimmed: these each add a pod/containers and memory pressure.
+  kubeStateMetricsEnabled: false
+  orchestratorExplorer:
+    enabled: false
+  processAgent:
+    enabled: false
   logs:
     enabled: true
-    # Per-pod opt-in via ad.datadoghq.com/<container>.logs annotations, so we
-    # do NOT collect logs from every workload in the cluster.
+    # Per-pod opt-in via ad.datadoghq.com/<container>.logs annotations.
     containerCollectAll: false
   apm:
     # Expose the trace-agent on TCP 8126; the injected dd-java-agent ships
     # traces here → trace.servlet.request.
     portEnabled: true
-  processAgent:
-    enabled: true
+
+# Node Agent DaemonSet — modest requests so it schedules on a small node.
+agents:
+  containers:
+    agent:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+    traceAgent:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
 
 clusterAgent:
   enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 384Mi
   admissionController:
     # Injects dd-java-agent into pods carrying the
     # admission.datadoghq.com/java-lib.version annotation (see k8s/app.yaml).
