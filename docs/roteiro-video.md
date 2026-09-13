@@ -1,6 +1,14 @@
 # Roteiro — Vídeo Demonstrativo OS Management (Fase 2)
 # Duração alvo: ~13-14 minutos
 
+> **⚠️ Aviso de desatualização:** este roteiro descreve a arquitetura **anterior**
+> (Terraform no próprio repo, deploy em EC2 + RDS via `user_data`). A partir do
+> split em múltiplos repositórios, a app **não é mais dona de infraestrutura**:
+> o cluster vem do `os-management-k8s-terraform` e o banco do
+> `os-management-database`; o deploy local usa Kind + `kubectl apply -k k8s/` e o
+> deploy AWS anexa ao EKS `os-management-<branch>`. Consulte `README.md` e
+> `INFRASTRUCTURE.md` para o fluxo atual antes de regravar.
+
 ---
 
 ## PREPARAÇÃO ANTES DE GRAVAR
