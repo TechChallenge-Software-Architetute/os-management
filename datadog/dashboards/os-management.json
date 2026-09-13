@@ -1,0 +1,14 @@
+{
+  "title": "OS Management | Operação",
+  "description": "Dashboard de SLO operacional para ordens de serviço. Tags obrigatórias: service:os-management, env:<ambiente>.",
+  "layout_type": "ordered",
+  "template_variables": [{"name":"env","prefix":"env","default":"production","available_values":["developer","homolog","production"]}],
+  "widgets": [
+    {"definition":{"type":"timeseries","title":"Volume diário de ordens de serviço","requests":[{"q":"sum:workshop.service_orders.created{service:os-management,env:$env}.as_count().rollup(sum, 86400)","display_type":"bars"}]}},
+    {"definition":{"type":"timeseries","title":"Tempo médio por etapa","requests":[{"q":"avg:workshop.service_orders.status.duration.avg{service:os-management,env:$env} by {status}","display_type":"line"}]}},
+    {"definition":{"type":"timeseries","title":"Falhas no processamento de OS","requests":[{"q":"sum:workshop.service_orders.processing.failed{service:os-management,env:$env} by {operation}.as_count()","display_type":"bars"}]}},
+    {"definition":{"type":"timeseries","title":"Erros de integrações","requests":[{"q":"sum:workshop.integrations.failed{service:os-management,env:$env} by {integration}.as_count()","display_type":"bars"}]}},
+    {"definition":{"type":"timeseries","title":"Latência das APIs (p95)","requests":[{"q":"p95:trace.servlet.request{service:os-management,env:$env} by {resource_name}","display_type":"line"}]}},
+    {"definition":{"type":"timeseries","title":"CPU e memória dos pods","requests":[{"q":"avg:kubernetes.cpu.usage.total{service:os-management,env:$env} by {pod_name}","display_type":"line"},{"q":"avg:kubernetes.memory.usage{service:os-management,env:$env} by {pod_name}","display_type":"line"}]}}
+  ]
+}

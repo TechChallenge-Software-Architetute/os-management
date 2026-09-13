@@ -6,6 +6,7 @@ import com.os.workshop.application.service.CreateServiceUseCase;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.application.vehicle.FindVehicleByPlateUseCase;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
+import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,19 +21,26 @@ public class CreateOrderUseCase {
     private final FindVehicleByPlateUseCase findVehicleByPlateUseCase;
     private final ServiceOrderRepository serviceOrderRepository;
     private final OrderStatusNotificationService notificationService;
+    private final ServiceOrderMetrics metrics;
 
     public ServiceOrder execute(String cpfCnpj, String placaVeiculo, List<String> serviceTypes) {
-        findClientByCpfUseCase.execute(cpfCnpj);
-        findVehicleByPlateUseCase.execute(placaVeiculo);
+        try {
+            findClientByCpfUseCase.execute(cpfCnpj);
+            findVehicleByPlateUseCase.execute(placaVeiculo);
 
-        ServiceOrder order = ServiceOrder.create(cpfCnpj, placaVeiculo, serviceTypes);
+            ServiceOrder order = ServiceOrder.create(cpfCnpj, placaVeiculo, serviceTypes);
 
-        serviceTypes.forEach(service -> createServiceUseCase.execute(service, order.getId()));
+            serviceTypes.forEach(service -> createServiceUseCase.execute(service, order.getId()));
 
-        ServiceOrder saved = serviceOrderRepository.save(order);
+            ServiceOrder saved = serviceOrderRepository.save(order);
 
-        notificationService.notifyStatusChange(saved);
+            notificationService.notifyStatusChange(saved);
+            metrics.created();
 
-        return saved;
+            return saved;
+        } catch (RuntimeException exception) {
+            metrics.processingFailed("create");
+            throw exception;
+        }
     }
 }

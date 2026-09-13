@@ -35,6 +35,29 @@ logging:
   level:
     root: INFO
 
+management:
+  metrics:
+    tags:
+      service: ${DD_SERVICE:${spring.application.name}}
+      env: ${DD_ENV:local}
+      version: ${DD_VERSION:local}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  datadog:
+    metrics:
+      export:
+        enabled: ${DD_METRICS_ENABLED:false}
+        api-key: ${DD_API_KEY:}
+        uri: ${DD_METRICS_URI:https://api.datadoghq.com}
+        step: 1m
+
 server:
   port: 8080
 

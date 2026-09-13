@@ -1,0 +1,8 @@
+{
+  "name": "[os-management] Serviço indisponível",
+  "type": "service check",
+  "query": "\"http.can_connect\".over(\"service:os-management\", \"env:production\").by(\"*\").last(3).count_by_status()",
+  "message": "O healthcheck HTTP interno falhou três vezes. Verifique pods e Service Kubernetes. Para disponibilidade externa, adicione um teste Datadog Synthetics. @team-oncall",
+  "tags": ["service:os-management", "env:production", "team:workshop"],
+  "options": {"thresholds": {"critical": 3}, "include_tags": true}
+}
