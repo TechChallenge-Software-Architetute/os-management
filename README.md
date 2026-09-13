@@ -50,7 +50,7 @@ Para resolver esses problemas, desenvolvemos o **OS Management** — um sistema 
 - [Tecnologias](#tecnologias)
 - [Pre-requisitos e Como Executar](#pre-requisitos-e-como-executar)
 - [Deploy em Kubernetes](#deploy-em-kubernetes)
-- [Provisionamento com Terraform](#provisionamento-com-terraform)
+- [Deploy na AWS (EKS)](#deploy-na-aws-eks)
 - [Referencia Rapida de Endpoints](#referencia-rapida-de-endpoints)
 - [Testando a API com Bruno](#testando-a-api-com-bruno)
 - [Scripts](#scripts)
@@ -64,39 +64,34 @@ Para resolver esses problemas, desenvolvemos o **OS Management** — um sistema 
 |----------|-----------|--------|
 | Provisionar cluster Kubernetes local para testes | Docker Desktop / Kind | Concluido |
 | Provisionar banco de dados PostgreSQL | Kubernetes (local) / AWS RDS (nuvem) | Concluido |
-| Gerenciar todos os recursos K8s via Terraform | Provider gavinbunney/kubectl | Concluido |
+| Gerenciar recursos K8s locais | kubectl + kustomize (`kubectl apply -k k8s/`) | Concluido |
 | Pipeline CI/CD completo com versionamento automatico | GitHub Actions | Concluido |
 | Build e publicacao de imagem Docker multiplataforma | Docker Hub (linux/amd64) | Concluido |
-| Deploy em nuvem AWS (EC2 + RDS free tier) | Terraform AWS Provider | Concluido |
-| Escalabilidade automatica de pods | Kubernetes HPA (min 2, max 6 replicas) | Concluido |
+| Deploy em nuvem AWS (EKS gerenciado + RDS externo) | GitHub Actions + kubectl | Concluido |
+| Escalabilidade automatica de pods | Kubernetes HPA (min 1, max 6 replicas) | Concluido |
 
-### Recursos provisionados pelo Terraform
+### Infraestrutura em repositórios separados
+
+Esta aplicação **não provisiona infraestrutura**. O cluster e o banco vivem em
+repositórios dedicados; o deploy da app apenas se **anexa** a eles.
 
 ```
-terraform/
-  main.tf             ← Provider kubectl, AWS, GitHub; todos os recursos K8s
-  variables.tf        ← use_aws, db_*, jwt_*, kubernetes_*, github_token
-  outputs.tf          ← namespace_applied, rds_endpoint, github_secrets_created
-  modules/
-    eks/              ← VPC + EKS cluster + node group (deploy em nuvem)
-    rds/              ← RDS PostgreSQL db.t3.micro gerenciado
-    github/           ← GitHub Actions secrets (DB_URL, JWT_SECRET, KUBE_CONFIG)
-  ec2/                ← Alternativa free tier: EC2 t3.micro + RDS db.t3.micro
-    main.tf
-    user_data.sh.tpl  ← Bootstrap: instala Docker e sobe o container
+os-management-k8s-terraform   ← VPC + EKS + HPA (cluster os-management-<env>)
+os-management-database        ← RDS PostgreSQL (output aurora_jdbc_url → segredo DB_URL_<env>)
+os-management (este repo)      ← imagem Docker + manifests K8s + deploy
 
-k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
+k8s/                  ← Manifestos Kubernetes
   namespace.yaml
-  app.yaml            ← Deployment (2 replicas) + Service
-  hpa.yaml            ← HPA: CPU 70%, Memoria 75%, min 2 / max 6 pods
+  app.yaml            ← Deployment + Service
+  hpa.yaml            ← HPA: CPU 70%, Memoria 75%, min 1 / max 6 pods
   ingress.yaml        ← Ingress nginx
-  configmap.yaml      ← ConfigMap estatico (kustomize do time)
-  secret.yaml         ← Secret estatico (kustomize do time)
-  app-configmap.yaml.tpl      ← Template: SPRING_DATASOURCE_URL dinamica
-  postgres-configmap.yaml.tpl ← Template: config postgres (local only)
-  app-secret.yaml.tpl         ← Template: credenciais da app
-  postgres-secret.yaml.tpl    ← Template: senha postgres (local only)
-  postgres.yaml       ← Deployment + PVC + Service postgres (local only)
+  configmap.yaml      ← ConfigMap (modo local/kustomize)
+  secret.yaml         ← Secret (modo local/kustomize)
+  postgres.yaml       ← Postgres in-cluster (SOMENTE local)
+  postgres-init-job.yaml ← Job de carga do schema (SOMENTE local)
+  kustomization.yaml  ← Entrada do modo local (kubectl apply -k k8s/)
+  app-configmap.yaml.tpl ← Template do ConfigMap (modo AWS, URL → RDS)
+  app-secret.yaml.tpl    ← Template do Secret (modo AWS)
 ```
 
 ---
@@ -131,41 +126,37 @@ k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
             http://localhost:8080
 ```
 
-### Modo AWS (EC2 + RDS — Free Tier)
+### Modo AWS (EKS gerenciado + RDS externo)
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                        AWS us-east-1                              │
 │                                                                   │
-│  ┌──────────────────────────────────┐                            │
-│  │         Default VPC               │                            │
-│  │                                   │                            │
-│  │  ┌────────────────────────────┐  │  ┌─────────────────────┐  │
-│  │  │  EC2 t3.micro (Ubuntu 24)  │  │  │  RDS db.t3.micro    │  │
-│  │  │  Security Group: :8080 :22 │──┼─▶│  PostgreSQL 16      │  │
-│  │  │  user_data:                │  │  │  SG: porta 5432     │  │
-│  │  │    apt install docker      │  │  │  apenas da EC2      │  │
-│  │  │    docker run os-management│  │  └─────────────────────┘  │
-│  │  └───────────────┬────────────┘  │                            │
-│  └──────────────────│───────────────┘                            │
-└─────────────────────│──────────────────────────────────────────  ┘
-                      │  :8080
-              http://IP_PUBLICO:8080
-           /swagger-ui/index.html
+│  os-management-k8s-terraform            os-management-database    │
+│  ┌────────────────────────────┐        ┌─────────────────────┐   │
+│  │  EKS: os-management-<env>   │        │  RDS PostgreSQL     │   │
+│  │  VPC + node group + HPA     │───────▶│  (aurora_jdbc_url)  │   │
+│  └──────────────┬─────────────┘        └─────────────────────┘   │
+│                 │                              ▲                   │
+│   deploy-aws (este repo):                      │ DB_URL_<env>│
+│     aws eks update-kubeconfig                  │ (segredo)         │
+│     kubectl apply (app/hpa/ingress + .tpl) ────┘                   │
+│                 │                                                  │
+│        Service LoadBalancer :8080                                 │
+└─────────────────│──────────────────────────────────────────────  ┘
+                  │
+        http://<lb-hostname>:8080/swagger-ui/index.html
 ```
 
-### Recursos AWS criados pelo Terraform (terraform/ec2/)
+### Onde a infraestrutura é criada
 
-| Recurso | Tipo | Especificacao |
-|---------|------|--------------|
-| `aws_instance.app` | EC2 | t3.micro, Ubuntu 24.04 amd64 |
-| `aws_db_instance.postgres` | RDS | db.t3.micro, PostgreSQL 16, 20GB gp2 |
-| `aws_security_group.app` | SG | Ingress 8080 e 22, egress all |
-| `aws_security_group.rds` | SG | Ingress 5432 apenas do SG da EC2 |
-| `aws_db_subnet_group.default` | Subnet Group | Subnets da VPC default |
-| `aws_iam_role.ec2_role` | IAM Role | Permite EC2 publicar no SNS sem credenciais hardcoded |
-| `aws_iam_role_policy.sns_publish` | IAM Policy | Permissao sns:Publish no topico configurado |
-| `aws_iam_instance_profile.ec2_profile` | Instance Profile | Anexa a role a instancia EC2 |
+O deploy da app **não cria** cluster nem banco — ele se anexa a recursos de
+outros repositórios:
+
+| Recurso | Repositório | Como a app consome |
+|---------|-------------|--------------------|
+| VPC + EKS (`os-management-<env>`) | `os-management-k8s-terraform` | `aws eks update-kubeconfig --name os-management-<branch>` |
+| RDS PostgreSQL | `os-management-database` | segredo `DB_URL_<ENV>` (= output `aurora_jdbc_url`) |
 
 ---
 
@@ -205,21 +196,28 @@ k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
 │         │                                                            │
 │         ├─────────────────────────┐                                  │
 │         │  USE_AWS != 'true'      │  USE_AWS == 'true'               │
-│         │  (branch develop)       │  (branch develop)                │
+│         │  (branch develop)       │  (branch develop / main)         │
 │         ▼                         ▼                                  │
-│  ┌─────────────┐        ┌──────────────────┐                        │
-│  │terraform-   │        │  terraform-ec2   │                        │
-│  │local (Kind) │        │  EC2 + RDS       │                        │
-│  │             │        │                  │                        │
-│  │ terraform   │        │ terraform apply  │                        │
-│  │ apply       │        │ (EC2 recriada    │                        │
-│  │ kubectl set │        │  via user_data)  │                        │
-│  │ image       │        └──────────────────┘                        │
-│  └─────────────┘                                                     │
+│  ┌─────────────┐        ┌──────────────────────┐                    │
+│  │deploy-local │        │     deploy-aws       │                    │
+│  │(Kind efêmero)        │  anexa ao EKS         │                    │
+│  │             │        │  os-management-<branch>                   │
+│  │ kubectl     │        │ update-kubeconfig    │                    │
+│  │ apply -k    │        │ + kubectl apply(.tpl)│                    │
+│  │ + set image │        │ + set image (RDS ext)│                    │
+│  └─────────────┘        └──────────────────────┘                    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Secrets necessarios no GitHub
+### Configuração no GitHub
+
+**Variable** (repositório) — usada em `if:` de job, por isso não é secret:
+
+| Variable | Descricao |
+|----------|-----------|
+| `USE_AWS` | `true` = deploy no EKS · caso contrário = Kind local |
+
+**Secrets por ambiente** (GitHub Environments `develop` / `main`):
 
 | Secret | Descricao | Obrigatorio |
 |--------|-----------|-------------|
@@ -228,9 +226,18 @@ k8s/                  ← Manifestos Kubernetes (aplicados pelo Terraform)
 | `DB_USER` | Usuario do banco | Sempre |
 | `DB_PASSWORD` | Senha do banco | Sempre |
 | `JWT_SECRET` | Chave JWT (min 32 chars) | Sempre |
-| `AWS_ACCESS_KEY_ID` | Credencial AWS | Apenas deploy AWS |
-| `AWS_SECRET_ACCESS_KEY` | Credencial AWS | Apenas deploy AWS |
-| `AWS_REGION` | Ex: `us-east-1` | Apenas deploy AWS |
+| `AWS_REGION` | Ex: `us-east-1` | Deploy AWS |
+
+**Secrets sufixados por branch** (`_DEVELOP` / `_MAIN`, escolhido por branch):
+
+| Secret | Escopo | Descricao | Obrigatorio |
+|--------|--------|-----------|-------------|
+| `DB_URL_<ENV>` | Repositório | JDBC URL do RDS (`aurora_jdbc_url` do `os-management-database`) | Deploy AWS |
+| `AWS_ACCESS_KEY_ID_<ENV>` | Organização | Credencial AWS | Deploy AWS |
+| `AWS_SECRET_ACCESS_KEY_<ENV>` | Organização | Credencial AWS | Deploy AWS |
+
+> `GITHUB_TOKEN` é gerado automaticamente pelo GitHub. O nome do cluster é
+> derivado (`os-management-<branch>`), não é segredo.
 
 ---
 
@@ -262,9 +269,9 @@ A collection completa das APIs esta em `bruno/os-management-api/` e cobre todos 
 O video de ate 15 minutos demonstra:
 
 - Deploy da aplicacao via pipeline GitHub Actions
-- Execucao completa do CI/CD (unit-test → build → publish → docker push → terraform apply)
+- Execucao completa do CI/CD (unit-test → build → publish → docker push → deploy K8s)
 - Consumo das APIs seguindo o fluxo completo de uma OS (login, OS, diagnostico, reserva, orcamento, aprovacao, execucao, entrega)
-- Escalabilidade automatica: simulacao de carga com HPA escalando de 2 para ate 6 replicas (CPU threshold 70%)
+- Escalabilidade automatica: simulacao de carga com HPA escalando de 1 para ate 6 replicas (CPU threshold 70%)
 
 ---
 
@@ -454,11 +461,10 @@ O `docker-compose.yml` le automaticamente o `.env`. Basta atualizar as credencia
 | Spring Data JPA | — | Persistencia de dados |
 | PostgreSQL | 16 | Banco de dados relacional |
 | Docker / Docker Compose | — | Containerizacao e orquestracao |
-| Kubernetes | — | Orquestracao de containers (local e AWS) |
-| Terraform | >= 1.0 | Provisionamento de infraestrutura (IaC) |
+| Kubernetes | — | Orquestracao de containers (local Kind e AWS EKS) |
 | GitHub Actions | — | Pipeline CI/CD |
-| AWS EC2 | t3.micro | Hospedagem da aplicacao (free tier) |
-| AWS RDS | db.t3.micro | PostgreSQL gerenciado (free tier) |
+| AWS EKS | — | Kubernetes gerenciado (cluster em repo separado) |
+| AWS RDS | db.t3.micro | PostgreSQL gerenciado (repo separado) |
 | Maven | — | Gerenciamento de dependencias e build |
 | AWS SNS (SDK v2) | 2.29.1 | Notificacao por email via topico |
 | MapStruct | 1.6.3 | Mapeamento entre DTOs e entidades |
@@ -523,107 +529,79 @@ docker compose --profile quality up     # SonarQube
 
 - Docker Desktop com Kubernetes habilitado (ou Kind instalado)
 - `kubectl` instalado e apontando para o cluster
-- Terraform >= 1.0 instalado
 
-### Passo a passo — Docker Desktop
+### Passo a passo — Kind (local)
 
-**1. Verificar cluster ativo:**
+**1. Criar o cluster e verificar:**
 ```bash
-kubectl cluster-info
+kind create cluster --name os-management
+kubectl cluster-info --context kind-os-management
 ```
 
-**2. Exportar credenciais para o Terraform:**
-```powershell
-# PowerShell
-$KUBE_HOST = kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'
-$KUBE_CA   = kubectl config view --minify --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'
-$bytes     = [System.Text.Encoding]::UTF8.GetBytes((kubectl config view --minify --raw))
-$KUBE_CONFIG = [Convert]::ToBase64String($bytes)
-
-# Criar service account com permissao de cluster-admin
-kubectl create serviceaccount terraform-sa -n kube-system
-kubectl create clusterrolebinding terraform-sa-admin --clusterrole=cluster-admin --serviceaccount=kube-system:terraform-sa
-$KUBE_TOKEN = kubectl create token terraform-sa -n kube-system --duration=24h
-```
-
-**3. Preencher `terraform/terraform.tfvars`:**
-```hcl
-use_aws                   = false
-db_user                   = "user"
-db_password               = "password"
-jwt_secret                = "local-jwt-secret-para-dev"
-github_token              = ""
-kubernetes_host           = "https://kubernetes.docker.internal:6443"
-kubernetes_token          = "<TOKEN_OBTIDO_ACIMA>"
-kubernetes_ca_certificate = "<CA_BASE64>"
-kube_config               = "<KUBECONFIG_BASE64>"
-```
-
-**4. Aplicar o Terraform:**
+**2. Instalar o ingress-nginx:**
 ```bash
-cd terraform
-terraform init
-terraform apply
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
 ```
 
-**5. Verificar e acessar:**
+**3. Aplicar os manifests via kustomize:**
+```bash
+kubectl apply -k k8s/
+```
+
+**4. Verificar e acessar:**
 ```bash
 kubectl get all -n os-management
 kubectl port-forward svc/os-management 8080:8080 -n os-management
 # Acesse: http://localhost:8080/swagger-ui/index.html
 ```
 
-**6. Destruir o ambiente:**
+**5. Destruir o ambiente:**
 ```bash
-cd terraform && terraform destroy
+kind delete cluster --name os-management
 ```
 
-Para o guia completo com Kind e troubleshooting, consulte [`INFRASTRUCTURE.md`](./INFRASTRUCTURE.md).
+Para o guia completo (Kind, AWS e troubleshooting), consulte [`INFRASTRUCTURE.md`](./INFRASTRUCTURE.md).
 
 ---
 
-## Provisionamento com Terraform
+## Deploy na AWS (EKS)
 
-### Modo local (Kubernetes in-cluster)
+O deploy na AWS **não provisiona infraestrutura**: ele se anexa ao cluster EKS
+criado pelo `os-management-k8s-terraform` e usa o RDS do `os-management-database`.
+
+### Pré-requisitos
+
+1. `os-management-k8s-terraform` aplicado → cluster `os-management-<branch>` existe.
+2. `os-management-database` aplicado → `aurora_jdbc_url` copiado para o segredo
+   `DB_URL_<ENV>` (ver `DEPENDENCIES.md §5.0.1`).
+3. Secrets/variables configurados (ver [Configuração no GitHub](#configuração-no-github)).
+
+### Executar
 
 ```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply    # cria namespace, postgres, app, HPA, ingress, secrets, configmaps
+# 1. Definir a variable USE_AWS = true no repositório
+
+# 2. Push para a branch de destino
+git push origin develop   # → cluster os-management-develop
+git push origin main      # → cluster os-management-main (com gate de aprovação)
 ```
 
-### Modo AWS — EC2 + RDS (free tier)
+O job `deploy-aws` configura as credenciais da conta correta (`_DEVELOP`/`_MAIN`),
+roda `aws eks update-kubeconfig --name os-management-<branch>`, renderiza os
+templates `.tpl` apontando o `SPRING_DATASOURCE_URL` para o RDS e aplica os
+manifests (sem Postgres in-cluster).
+
+### Verificar
 
 ```bash
-# 1. Configurar AWS CLI
-aws configure   # ou exportar AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-
-# 2. Preencher terraform/ec2/terraform.tfvars
-cd terraform/ec2
-terraform init
-terraform apply   # cria EC2 t3.micro + RDS db.t3.micro (~8 min)
-
-# 3. Aguardar ~3 min apos o apply (user_data instala Docker e sobe o container)
-# Output mostra: app_url = "http://IP:8080/swagger-ui/index.html"
-
-# 4. Destruir apos testes (evitar custos)
-terraform destroy
+aws eks update-kubeconfig --name os-management-develop --region us-east-1
+kubectl get all -n os-management
+kubectl get svc os-management -n os-management   # hostname do LoadBalancer
 ```
-
-### Variaveis principais
-
-| Variavel | Descricao | Obrigatorio |
-|----------|-----------|-------------|
-| `use_aws` | `true` = EKS+RDS / `false` = local | Sempre |
-| `db_user` | Usuario do banco | Sempre |
-| `db_password` | Senha do banco | Sempre |
-| `jwt_secret` | Chave JWT | Sempre |
-| `kubernetes_host` | URL da API do cluster | Modo local |
-| `kubernetes_token` | Token de autenticacao | Modo local |
-| `kubernetes_ca_certificate` | CA do cluster em base64 | Modo local |
-| `kube_config` | kubeconfig completo em base64 | Modo local |
-| `github_token` | Token GitHub (opcional) | Opcional |
 
 ---
 
