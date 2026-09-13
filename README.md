@@ -77,7 +77,7 @@ repositórios dedicados; o deploy da app apenas se **anexa** a eles.
 
 ```
 os-management-k8s-terraform   ← VPC + EKS + HPA (cluster os-management-<env>)
-os-management-database        ← RDS PostgreSQL (output aurora_jdbc_url → segredo DB_URL)
+os-management-database        ← RDS PostgreSQL (output aurora_jdbc_url → segredo DB_URL_<env>)
 os-management (este repo)      ← imagem Docker + manifests K8s + deploy
 
 k8s/                  ← Manifestos Kubernetes
@@ -138,7 +138,7 @@ k8s/                  ← Manifestos Kubernetes
 │  │  VPC + node group + HPA     │───────▶│  (aurora_jdbc_url)  │   │
 │  └──────────────┬─────────────┘        └─────────────────────┘   │
 │                 │                              ▲                   │
-│   deploy-aws (este repo):                      │ DB_URL      │
+│   deploy-aws (este repo):                      │ DB_URL_<env>│
 │     aws eks update-kubeconfig                  │ (segredo)         │
 │     kubectl apply (app/hpa/ingress + .tpl) ────┘                   │
 │                 │                                                  │
@@ -156,7 +156,7 @@ outros repositórios:
 | Recurso | Repositório | Como a app consome |
 |---------|-------------|--------------------|
 | VPC + EKS (`os-management-<env>`) | `os-management-k8s-terraform` | `aws eks update-kubeconfig --name os-management-<branch>` |
-| RDS PostgreSQL | `os-management-database` | segredo `DB_URL` (= output `aurora_jdbc_url`) |
+| RDS PostgreSQL | `os-management-database` | segredo `DB_URL_<ENV>` (= output `aurora_jdbc_url`) |
 
 ---
 
@@ -225,16 +225,16 @@ outros repositórios:
 | `DOCKER_HUB_TOKEN` | Token Docker Hub | Sempre |
 | `DB_USER` | Usuario do banco | Sempre |
 | `DB_PASSWORD` | Senha do banco | Sempre |
-| `DB_URL` | JDBC URL do RDS (`aurora_jdbc_url` do `os-management-database`) | Deploy AWS |
 | `JWT_SECRET` | Chave JWT (min 32 chars) | Sempre |
 | `AWS_REGION` | Ex: `us-east-1` | Deploy AWS |
 
-**Secrets por conta** (org-level, sufixo `_DEVELOP` / `_MAIN`, escolhido por branch):
+**Secrets sufixados por branch** (`_DEVELOP` / `_MAIN`, escolhido por branch):
 
-| Secret | Descricao | Obrigatorio |
-|--------|-----------|-------------|
-| `AWS_ACCESS_KEY_ID_<ENV>` | Credencial AWS | Deploy AWS |
-| `AWS_SECRET_ACCESS_KEY_<ENV>` | Credencial AWS | Deploy AWS |
+| Secret | Escopo | Descricao | Obrigatorio |
+|--------|--------|-----------|-------------|
+| `DB_URL_<ENV>` | Repositório | JDBC URL do RDS (`aurora_jdbc_url` do `os-management-database`) | Deploy AWS |
+| `AWS_ACCESS_KEY_ID_<ENV>` | Organização | Credencial AWS | Deploy AWS |
+| `AWS_SECRET_ACCESS_KEY_<ENV>` | Organização | Credencial AWS | Deploy AWS |
 
 > `GITHUB_TOKEN` é gerado automaticamente pelo GitHub. O nome do cluster é
 > derivado (`os-management-<branch>`), não é segredo.
@@ -577,7 +577,7 @@ criado pelo `os-management-k8s-terraform` e usa o RDS do `os-management-database
 
 1. `os-management-k8s-terraform` aplicado → cluster `os-management-<branch>` existe.
 2. `os-management-database` aplicado → `aurora_jdbc_url` copiado para o segredo
-   `DB_URL` (ver `DEPENDENCIES.md §5.0.1`).
+   `DB_URL_<ENV>` (ver `DEPENDENCIES.md §5.0.1`).
 3. Secrets/variables configurados (ver [Configuração no GitHub](#configuração-no-github)).
 
 ### Executar

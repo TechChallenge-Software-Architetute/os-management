@@ -237,7 +237,8 @@ jobs:
   # Roda quando USE_AWS == 'true' nas branches develop e main. O nome do ambiente
   # é a branch (develop/main); credenciais AWS por conta usam os sufixos _DEVELOP/_MAIN.
   # O banco é o RDS do repositório os-management-database, cujo endpoint chega
-  # via segredo de ambiente DB_URL (sincronizado a partir do output aurora_jdbc_url).
+  # via secret de repositório DB_URL_<ENV> (DB_URL_DEVELOP/DB_URL_MAIN), escolhido
+  # por branch e sincronizado a partir do output aurora_jdbc_url.
   # ---------------------------------------------------------------------------
   deploy-aws:
     runs-on: ubuntu-latest
@@ -250,8 +251,8 @@ jobs:
       # Cluster criado pelo os-management-k8s-terraform: os-management-<branch>.
       CLUSTER_NAME: os-management-${{ github.ref_name }}
       # RDS do os-management-database (output aurora_jdbc_url).
-      # Secret de ambiente (GitHub Environments develop/main), não org-level.
-      DB_URL: ${{ secrets.DB_URL }}
+      # Secret de repositório, sufixado por branch (main -> _MAIN, develop -> _DEVELOP).
+      DB_URL: ${{ github.ref_name == 'main' && secrets.DB_URL_MAIN || secrets.DB_URL_DEVELOP }}
       # Segredos por ambiente (GitHub Environments develop/main).
       DB_USER: ${{ secrets.DB_USER }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -264,7 +265,7 @@ jobs:
 
       - name: Validar entradas de infraestrutura
         run: |
-          test -n "${DB_URL}"      || { echo "::error::Segredo DB_URL ausente."; exit 1; }
+          test -n "${DB_URL}"      || { echo "::error::Segredo DB_URL_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."; exit 1; }
           test -n "${DB_USER}"     || { echo "::error::Segredo DB_USER ausente."; exit 1; }
           test -n "${DB_PASSWORD}" || { echo "::error::Segredo DB_PASSWORD ausente."; exit 1; }
           test -n "${JWT_SECRET}"  || { echo "::error::Segredo JWT_SECRET ausente."; exit 1; }
