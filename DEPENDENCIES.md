@@ -181,6 +181,51 @@ The order matters because of `terraform_remote_state` dependencies:
 > everything credential-like is a **secret**. Keep `JWT_SECRET` **identical** in the app and
 > the lambda.
 
+### 5.0 Configuration matrix (GitHub Environments, per repo)
+
+Deployments use **GitHub Environments** named after the branch: `develop` (dev account) and
+`main` (prod account). `develop` and `main` deploy to **different AWS accounts**, so each
+value below is configured at the **repo → Settings → Environments** level and set **twice**
+— once in the `develop` environment (dev-account value) and once in the `main` environment
+(prod-account value), under the **same name**. Deploy jobs declare
+`environment: ${{ github.ref_name }}`, so every `vars.*` / `secrets.*` reference resolves to
+the right account automatically — no branch conditionals, no name suffixes.
+
+Org-level secrets can't be environment-scoped, so they don't fit the two-account model; keep
+these at the repo-environment level. Recommended: add **required reviewers** on the `main`
+environment for a prod approval gate.
+
+✓ = configure it in that repo (in **both** environments).
+
+| Name | Type | k8s-terraform | database | lambda | gateway | app |
+|---|---|:--:|:--:|:--:|:--:|:--:|
+| `AWS_ACCESS_KEY_ID` | secret | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `AWS_SECRET_ACCESS_KEY` | secret | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `AWS_ACCOUNT_ID` | variable | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `TF_STATE_BUCKET` | variable | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `AWS_REGION` | variable | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `DB_PASSWORD` | secret | | ✓ | ✓ | | ✓ |
+| `DB_USERNAME` / `DB_USER`\* | secret | | ✓ | ✓ | | ✓ |
+| `JWT_SECRET` | secret | | | ✓ | | ✓ |
+| `ORIGIN_URL` | secret | | | | ✓ | |
+| `DOCKER_USERNAME`, `DOCKER_HUB_TOKEN` | secret | | | | | ✓ |
+| `DB_URL` | secret | | | | | ✓ |
+| `AWS_SNS_TOPIC_ARN` | secret | | | | | ✓ |
+
+- `AWS_ACCOUNT_ID` feeds the provider guard `allowed_account_ids = [var.aws_account_id]`, which
+  fails a deploy fast if the active credentials point at the wrong account.
+- Each account gets **its own** S3 state bucket (versioning on); no cross-account bucket policy
+  is needed because every `terraform_remote_state` read stays within one environment/account,
+  and state keys are branch-scoped (`k8s/develop`, `database/develop`, `lambda/develop`,
+  `gateway/develop`, and the `main` equivalents).
+- \* **Name mismatch to fix:** the database repo currently calls it `DB_USERNAME` while the
+  lambda/app use `DB_USER`. They must hold the **same value**; the names are being aligned
+  during the Path B migration.
+- `k8s-terraform` only needs the 5 shared rows — no DB/JWT/Docker values.
+- Some rows shrink after the migration: the database's `VPC_ID`/`SUBNET_IDS` secrets are
+  replaced by a remote-state read from `k8s-terraform`, and the app's `DB_URL` is sourced from
+  the database state.
+
 ### 5.1 Shared across all IaC repos
 | Name | Type | Purpose | How to get it |
 |---|---|---|---|
