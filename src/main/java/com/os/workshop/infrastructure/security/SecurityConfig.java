@@ -28,6 +28,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Kubernetes probes and external uptime monitors must be able to
+                        // read health without a JWT. Other actuator endpoints remain protected.
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/clients/my-orders/**").hasAnyRole("USER", "ADMIN", "TECHNICIAN")
                         .anyRequest().hasAnyRole("ADMIN", "TECHNICIAN"))
