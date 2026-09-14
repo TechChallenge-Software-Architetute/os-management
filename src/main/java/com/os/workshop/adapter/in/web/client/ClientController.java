@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/clients")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Clients", description = "Gestao de Clientes e Decisao de Orcamento")
 public class ClientController {
 
@@ -32,8 +34,10 @@ public class ClientController {
 
     @PostMapping
     public ResponseEntity<ClientResponse> create(@Valid @RequestBody CreateClientRequest request) {
-        var client = createClientUseCase.execute(request.name(), request.document(), request.email(), request.phone());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ClientResponse.from(client));
+        var response = ClientResponse.from(
+                createClientUseCase.execute(request.name(), request.document(), request.email(), request.phone()));
+        log.info("Client created: id={}", response.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -56,12 +60,14 @@ public class ClientController {
     public ResponseEntity<ClientResponse> update(@PathVariable Long id,
                                                   @Valid @RequestBody UpdateClientRequest request) {
         var client = updateClientUseCase.execute(id, request.name(), request.email(), request.phone());
+        log.info("Client updated: id={}", id);
         return ResponseEntity.ok(ClientResponse.from(client));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         deactivateClientUseCase.execute(id);
+        log.info("Client deactivated: id={}", id);
         return ResponseEntity.noContent().build();
     }
 
@@ -95,6 +101,7 @@ public class ClientController {
         } else {
             decideOrderUseCase.execute(userDetails.getUsername(), orderId, request.decision(), request.reason());
         }
+        log.info("Order decision recorded: orderId={}, decision={}", orderId, request.decision());
         return ResponseEntity.noContent().build();
     }
 

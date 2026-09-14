@@ -42,3 +42,33 @@ Repita o segundo comando para os demais arquivos em `monitors/`. O monitor `upti
 - APM fornece latência HTTP e traces; health endpoints alimentam readiness/liveness e uptime.
 - O Agent coleta `kubernetes.cpu.usage.total` e `kubernetes.memory.usage`.
 - Métricas de negócio: `workshop.service_orders.created`, `workshop.service_orders.status.duration`, `workshop.service_orders.processing.failed` e `workshop.integrations.failed`.
+
+## Logs estruturados e correlação
+
+A aplicação emite logs em JSON (logback + `logstash-logback-encoder`) e o Agent
+os coleta com `source:java` (annotation `ad.datadoghq.com/os-management.logs`),
+que ativa o parsing automático do pipeline Java do Datadog. Campos padronizados
+em cada linha:
+
+| Campo | Origem | Uso |
+|---|---|---|
+| `@timestamp`, `level`, `logger_name`, `thread_name`, `message` | providers do logback | atributos reservados do Datadog |
+| `request_id` | `RequestCorrelationFilter` (MDC) | correlação por requisição; também devolvido no header `X-Request-Id` |
+| `user` | `JwtFilter` (MDC, após autenticação) | principal autenticado |
+| `dd.trace_id`, `dd.span_id` | `dd-java-agent` via `DD_LOGS_INJECTION=true` | pivô Logs ↔ APM |
+
+O `request_id` é propagado para threads de `@Async` pelo `MdcTaskDecorator`, de
+modo que logs em background mantêm a mesma correlação da requisição de origem.
+
+### Facet do `request_id`
+
+`dd.trace_id`/`dd.span_id` já correlacionam logs e traces automaticamente. Para
+buscar/agrupar por `request_id` (e por `user`), promova-os a facets uma vez por
+org — é uma ação de UI, não versionável via API:
+
+1. Logs → abra uma linha que contenha `request_id`.
+2. No painel do atributo, clique em `request_id` → **Create facet** (tipo String).
+3. Repita para `user`.
+
+Depois disso, filtre ponta a ponta com `service:os-management @request_id:<id>`
+e pivote de um trace do APM para os logs da mesma requisição.
