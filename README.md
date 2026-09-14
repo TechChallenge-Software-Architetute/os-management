@@ -687,7 +687,7 @@ kubectl get svc os-management -n os-management   # hostname do LoadBalancer
 | GET | /api/stocks/product/{productId} | Buscar por produto |
 | PATCH | /api/stocks/product/{productId}/entry | Entrada de estoque |
 | PATCH | /api/stocks/product/{productId}/exit | Saida de estoque |
-| PATCH | /api/stocks/product/{productId}/minimum | Atualizar minimo |
+| PATCH | /api/stocks/product/{productId}/minimum | Atualizar minimo (query param `?minimumQuantity=`) |
 | GET | /api/stocks/product/{productId}/movements | Historico movimentacoes |
 
 ### Reservas de Estoque
@@ -739,6 +739,7 @@ Dentro do mesmo status: mais antigas primeiro (createdAt ASC).
 | GET | /services | Listar todos |
 | GET | /services/{id} | Buscar por ID |
 | GET | /services/os/{idOS} | Listar servicos de uma OS |
+| PUT | /services/{id} | Atualizar servico (serviceType e idOS) |
 | PATCH | /services/update-status | Atualizar status do servico |
 | GET | /service-types | Listar tipos disponiveis |
 
@@ -753,7 +754,7 @@ Dentro do mesmo status: mais antigas primeiro (createdAt ASC).
 | Metodo | Endpoint | Descricao |
 |---|---|---|
 | POST | /monitoring/all | Tempo medio por tipo de servico |
-| GET | /monitoring/{serviceType} | Tempo medio de um tipo |
+| POST | /monitoring/by-id | Tempo medio de uma OS (por UUID) |
 
 ---
 
