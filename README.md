@@ -891,6 +891,11 @@ Cenarios cobertos:
 
 ---
 
+## Notas de Entrega
+
+- Lembrar de adicionar o usuário **`soat-architecture`** a este repositório
+  (requisito de entrega do Tech Challenge).
+
 ## Licenca
 
 Projeto academico desenvolvido como Trabalho de Conclusao de Curso — FIAP Pos Tech.

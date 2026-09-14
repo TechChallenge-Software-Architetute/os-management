@@ -74,7 +74,9 @@ public class ClientController {
     @GetMapping("/my-orders")
     public ResponseEntity<List<FindMyOrdersResponse>> findMyOrders(
             @AuthenticationPrincipal UserDetails userDetails) {
-        var orders = findMyOrdersUseCase.execute(userDetails.getUsername()).stream()
+        var orders = (isClient(userDetails)
+                ? findMyOrdersUseCase.executeByDocument(userDetails.getUsername())
+                : findMyOrdersUseCase.execute(userDetails.getUsername())).stream()
                 .map(FindMyOrdersResponse::from).toList();
         return ResponseEntity.ok(orders);
     }
@@ -82,7 +84,9 @@ public class ClientController {
     @GetMapping("/my-orders/{orderId}")
     public ResponseEntity<FindMyOrderDetailResponse> findMyOrderDetail(
             @AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID orderId) {
-        var result = findMyOrderDetailUseCase.execute(userDetails.getUsername(), orderId);
+        var result = isClient(userDetails)
+                ? findMyOrderDetailUseCase.executeByDocument(userDetails.getUsername(), orderId)
+                : findMyOrderDetailUseCase.execute(userDetails.getUsername(), orderId);
         return ResponseEntity.ok(FindMyOrderDetailResponse.from(result.order(), result.budget()));
     }
 
@@ -92,8 +96,18 @@ public class ClientController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID orderId,
             @Valid @RequestBody DecisionRequest request) {
-        decideOrderUseCase.execute(userDetails.getUsername(), orderId, request.decision(), request.reason());
+        if (isClient(userDetails)) {
+            decideOrderUseCase.executeByDocument(userDetails.getUsername(), orderId, request.decision(), request.reason());
+        } else {
+            decideOrderUseCase.execute(userDetails.getUsername(), orderId, request.decision(), request.reason());
+        }
         log.info("Order decision recorded: orderId={}, decision={}", orderId, request.decision());
         return ResponseEntity.noContent().build();
+    }
+
+    // Client (CPF) tokens authenticate with ROLE_CLIENT; their username is the CPF.
+    private boolean isClient(UserDetails userDetails) {
+        return userDetails.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_CLIENT".equals(a.getAuthority()));
     }
 }

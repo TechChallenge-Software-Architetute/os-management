@@ -390,13 +390,13 @@ jobs:
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/ingress.yaml
 
+
           # As métricas kubernetes.* vêm do node Agent, que deriva a tag env da
           # label tags.datadoghq.com/env do pod (não do DD_ENV do container). Sem
           # ela o widget de CPU/memória (env:$env) fica vazio. Injeta a mesma env
           # mapeada aqui para não precisar templatar o app.yaml (usado no kustomize local).
           kubectl patch deployment os-management -n os-management --type merge \
             -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"tags.datadoghq.com/env\":\"${DD_ENV_TAG}\"}}}}}"
-
       - name: Atualizar imagem do Deployment
         run: |
           kubectl set image deployment/os-management os-management="${IMAGE}" -n os-management

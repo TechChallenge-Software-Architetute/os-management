@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -34,20 +35,46 @@ public class JwtFilter extends OncePerRequestFilter {
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
-                String username = jwtService.extractUsername(token);
-                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    if (jwtService.isValid(token, userDetails)) {
-                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                        SecurityContextHolder.getContext().setAuthentication(auth);
-                        MDC.put(USER, userDetails.getUsername());
-                    }
+                if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                    jwtService.tryParseClaims(token).ifPresent(claims -> {
+                        if (jwtService.isClientToken(claims)) {
+                            authenticateClient(claims);
+                        } else {
+                            authenticateUser(token, claims.getSubject());
+                        }
+                    });
+                }
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null) {
+                    MDC.put(USER, authentication.getName());
                 }
             }
             filterChain.doFilter(request, response);
         } finally {
             MDC.remove(USER);
+        }
+    }
+
+    // Client (CPF) token: trust the verified claims, grant ROLE_CLIENT.
+    // Principal username is the CPF (token subject); no users-table lookup.
+    private void authenticateClient(io.jsonwebtoken.Claims claims) {
+        var authorities = java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_CLIENT"));
+        UserDetails principal = new org.springframework.security.core.userdetails.User(
+                claims.getSubject(), "", authorities);
+        var auth = new UsernamePasswordAuthenticationToken(principal, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    // Staff (email) token: resolve against the users table as before.
+    private void authenticateUser(String token, String username) {
+        if (username == null) {
+            return;
+        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        if (jwtService.isValid(token, userDetails)) {
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
     }
 }

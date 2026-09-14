@@ -32,7 +32,7 @@ public class SecurityConfig {
                         // read health without a JWT. Other actuator endpoints remain protected.
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/auth/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/clients/my-orders/**").hasAnyRole("USER", "ADMIN", "TECHNICIAN")
+                        .requestMatchers("/api/clients/my-orders/**").hasAnyRole("CLIENT", "USER", "ADMIN", "TECHNICIAN")
                         .anyRequest().hasAnyRole("ADMIN", "TECHNICIAN"))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, exAuth) ->

@@ -5,6 +5,7 @@ import com.os.workshop.application.notification.OrderStatusNotificationService;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.domain.client.Cpf;
 import com.os.workshop.domain.serviceorder.Decision;
 import com.os.workshop.domain.serviceorder.OrderRejectedEvent;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
@@ -30,7 +31,18 @@ public class DecideOrderUseCase {
     public void execute(String email, UUID orderId, Decision decision, String reason) {
         Client client = clientRepository.findByEmail(email)
                 .orElseThrow(() -> new ClientNotFoundException("email: " + email));
+        decideFor(client, orderId, decision, reason);
+    }
 
+    /** Resolves the client by CPF/document — used for client (CPF) authentication. */
+    @Transactional
+    public void executeByDocument(String document, UUID orderId, Decision decision, String reason) {
+        Client client = clientRepository.findByDocument(new Cpf(document).getValue())
+                .orElseThrow(() -> new ClientNotFoundException("document: " + document));
+        decideFor(client, orderId, decision, reason);
+    }
+
+    private void decideFor(Client client, UUID orderId, Decision decision, String reason) {
         ServiceOrder order = serviceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new NoSuchElementException("Order not found with id: " + orderId));
 
