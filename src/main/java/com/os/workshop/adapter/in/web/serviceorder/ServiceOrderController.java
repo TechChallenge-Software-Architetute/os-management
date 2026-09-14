@@ -4,6 +4,7 @@ import com.os.workshop.application.serviceorder.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/order")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Service Orders", description = "Gestao de Ordens de Servico")
 public class ServiceOrderController {
 
@@ -27,7 +29,9 @@ public class ServiceOrderController {
     @Operation(summary = "Criar ordem de servico", description = "Cria uma nova OS associando cliente (CPF/CNPJ), veiculo (placa) e tipos de servico.")
     public ResponseEntity<ServiceOrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
         var order = createOrderUseCase.execute(request.getCpfCnpj(), request.getPlacaVeiculo(), request.getServiceTypes());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ServiceOrderResponse.from(order));
+        var response = ServiceOrderResponse.from(order);
+        log.info("Service order created: id={}, status={}", response.id(), response.serviceStatus());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -56,6 +60,7 @@ public class ServiceOrderController {
     public ResponseEntity<Void> updateOrder(
             @PathVariable UUID id, @RequestBody UpdateOrderRequest request) {
         updateOrderUseCase.execute(id, request.getStatus());
+        log.info("Service order status updated: id={}, newStatus={}", id, request.getStatus());
         return ResponseEntity.noContent().build();
     }
 }
