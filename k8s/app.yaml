@@ -7,6 +7,13 @@ metadata:
     app: os-management
 spec:
   replicas: 1
+  # Nodes fit ~1 app pod each (2x t3.small). maxSurge:0 replaces in place so a
+  # rollout never needs a 3rd slot; maxUnavailable:1 keeps it progressing.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: os-management
