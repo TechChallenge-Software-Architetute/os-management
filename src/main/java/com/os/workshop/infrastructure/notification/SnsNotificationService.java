@@ -1,6 +1,7 @@
 package com.os.workshop.infrastructure.notification;
 
 import com.os.workshop.application.notification.port.out.EmailNotificationPort;
+import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -14,12 +15,15 @@ public class SnsNotificationService implements EmailNotificationPort {
 
     private final SnsClient snsClient;
     private final String topicArn;
+    private final ServiceOrderMetrics metrics;
 
     public SnsNotificationService(
             SnsClient snsClient,
-            @Value("${aws.sns.topic-arn}") String topicArn) {
+            @Value("${aws.sns.topic-arn}") String topicArn,
+            ServiceOrderMetrics metrics) {
         this.snsClient = snsClient;
         this.topicArn = topicArn;
+        this.metrics = metrics;
     }
 
     @Override
@@ -38,6 +42,7 @@ public class SnsNotificationService implements EmailNotificationPort {
             snsClient.publish(request);
             log.info("SNS notification published - Client: {}, Status: {}", clientName, newStatus);
         } catch (Exception e) {
+            metrics.integrationFailed("aws_sns");
             log.error("Failed to publish SNS notification for {}: {}", clientName, e.getMessage(), e);
         }
     }

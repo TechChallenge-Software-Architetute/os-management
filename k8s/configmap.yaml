@@ -10,6 +10,13 @@ data:
   SPRING_JPA_HIBERNATE_DDL_AUTO: update
   SPRING_JPA_SHOW_SQL: "false"
   JWT_EXPIRATION: "86400000"
+  # Datadog unified service tagging + Micrometer export (agentless HTTP).
+  # DD_ENV defaults to "local" for the Kind cluster; override per environment.
+  DD_ENV: "local"
+  DD_SERVICE: "os-management"
+  DD_VERSION: "1.0.0"
+  DD_METRICS_ENABLED: "true"
+  DD_METRICS_URI: "https://api.datadoghq.eu"
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -5,12 +5,17 @@ on:
     branches:
       - main
       - develop
-      - homol
   pull_request:
     branches:
       - main
       - develop
-      - homol
+
+# Serialize runs per ref so overlapping merges to develop/main don't race on the
+# "Bump versão" push. Do NOT cancel in progress — let a running publish finish.
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
 
   unit-test:
@@ -116,6 +121,7 @@ jobs:
           cache: maven
 
       - name: Incrementar versão no pom.xml
+        if: github.ref == 'refs/heads/develop'
         run: |
           mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} -DgenerateBackupPoms=false
 
@@ -138,12 +144,20 @@ jobs:
           mvn versions:set -DnewVersion="${{ steps.publish-version.outputs.release_version }}" -DgenerateBackupPoms=false
 
       - name: Fazer commit e enviar atualização de versão
+        if: github.ref == 'refs/heads/develop'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add pom.xml
           git commit -m "Bump versão para próximo build [skip ci]"
-          git push origin HEAD:${{ github.ref_name }}
+          # Rebase onto the latest tip and retry: avoids non-fast-forward when
+          # another run pushed to the same branch between checkout and push.
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin "${{ github.ref_name }}" \
+              && git push origin HEAD:"${{ github.ref_name }}" && break
+            echo "push attempt ${attempt} failed; retrying in 5s..."
+            sleep 5
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -190,13 +204,20 @@ jobs:
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/os-management:buildcache,mode=max
 
   # ---------------------------------------------------------------------------
-  # Terraform LOCAL — usa Kind (cluster efêmero) quando AWS não está configurada
+  # Deploy LOCAL — cluster Kind efêmero, aplicado via kubectl + kustomize.
+  # Sem Terraform: a app não é mais dona de nenhuma infraestrutura.
+  # Roda quando USE_AWS != 'true' na branch 'develop'. Usa o Postgres in-cluster
+  # (k8s/kustomization.yaml) — não depende de RDS.
   # ---------------------------------------------------------------------------
-  terraform-local:
+  deploy-local:
     runs-on: ubuntu-latest
     needs: docker-build-push
-   
     if: vars.USE_AWS != 'true' && github.ref == 'refs/heads/develop'
+
+    env:
+      IMAGE: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
+      # Optional: when unset, the Datadog Agent install is skipped (app still deploys).
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
 
     steps:
       - name: Fazer checkout do código
@@ -215,282 +236,183 @@ jobs:
             --selector=app.kubernetes.io/component=controller \
             --timeout=90s
 
-      - name: Exportar credenciais do cluster
+      # Instala o Datadog Agent (DaemonSet) + Cluster Agent ANTES da app, para
+      # que o admission controller injete o dd-java-agent no rollout. Sem
+      # DD_API_KEY, o passo é ignorado e a app sobe sem observabilidade.
+      - name: Configurar Helm
+        if: ${{ env.DD_API_KEY != '' }}
+        uses: azure/setup-helm@v4
+
+      - name: Instalar Datadog Agent (Helm)
+        if: ${{ env.DD_API_KEY != '' }}
+        # Best-effort: observability must not gate the app rollout. No --wait, so
+        # a slow/capacity-starved Agent rollout doesn't block; continue-on-error
+        # so any Helm hiccup is logged but non-fatal.
+        continue-on-error: true
         run: |
-          kubectl create serviceaccount terraform-sa -n kube-system
-          kubectl create clusterrolebinding terraform-sa-admin \
-            --clusterrole=cluster-admin \
-            --serviceaccount=kube-system:terraform-sa
+          kubectl create namespace datadog --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic datadog-secret \
+            --namespace datadog \
+            --from-literal api-key="${DD_API_KEY}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          helm repo add datadog https://helm.datadoghq.com
+          helm repo update
+          helm upgrade --install datadog datadog/datadog \
+            --namespace datadog \
+            -f k8s/datadog/values.yaml
 
-          echo "KUBE_HOST=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')" >> $GITHUB_ENV
-          echo "KUBE_CA=$(kubectl config view --minify --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')" >> $GITHUB_ENV
-          echo "KUBE_TOKEN=$(kubectl create token terraform-sa -n kube-system --duration=1h)" >> $GITHUB_ENV
-          echo "KUBE_CONFIG=$(kubectl config view --minify --raw | base64 -w 0)" >> $GITHUB_ENV
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.8.0
-
-      - name: Terraform Init
-        working-directory: terraform
-        run: terraform init
-
-      - name: Terraform Apply
-        working-directory: terraform
+      - name: Aplicar manifests (kubectl + kustomize)
         run: |
-          terraform apply -auto-approve \
-            -var="use_aws=false" \
-            -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="kubernetes_host=${{ env.KUBE_HOST }}" \
-            -var="kubernetes_token=${{ env.KUBE_TOKEN }}" \
-            -var="kubernetes_ca_certificate=${{ env.KUBE_CA }}" \
-            -var="kube_config=${{ env.KUBE_CONFIG }}"
+          kubectl apply -k k8s/
 
       - name: Atualizar imagem do Deployment
         run: |
-          IMAGE="${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
-          kubectl set image deployment/os-management os-management=$IMAGE -n os-management
-          kubectl rollout status deployment/os-management -n os-management --timeout=120s
+          kubectl set image deployment/os-management os-management="$IMAGE" -n os-management
+          kubectl rollout status deployment/os-management -n os-management --timeout=180s
 
   # ---------------------------------------------------------------------------
-  # Terraform AWS — EC2 t3.micro + RDS db.t3.micro (free tier)
-  # Roda quando USE_AWS == 'true' e USE_EKS != 'true'.
-  # Usa backend S3 para persistir o state entre execucoes (bucket: TF_STATE_BUCKET).
+  # Deploy AWS — anexa ao cluster EKS gerenciado pelo repositório
+  # os-management-k8s-terraform (cluster: os-management-<branch>) e aplica os
+  # manifests via kubectl. A app NÃO cria VPC/EKS/RDS.
+  #
+  # Roda quando USE_AWS == 'true' nas branches develop e main. O nome do ambiente
+  # é a branch (develop/main); credenciais AWS por conta usam os sufixos _DEVELOP/_MAIN.
+  # O banco é o RDS do repositório os-management-database, cujo endpoint chega
+  # via secret de repositório DB_URL_<ENV> (DB_URL_DEVELOP/DB_URL_MAIN), escolhido
+  # por branch e sincronizado a partir do output aurora_jdbc_url.
   # ---------------------------------------------------------------------------
-  terraform-ec2:
+  deploy-aws:
     runs-on: ubuntu-latest
     needs: docker-build-push
-
-    if: vars.USE_AWS == 'true' && github.ref == 'refs/heads/develop'
+    if: vars.USE_AWS == 'true' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    environment: ${{ github.ref_name }}
 
     env:
-      TF_VAR_db_url: ${{ secrets.DB_URL }}
-      TF_VAR_db_user: ${{ secrets.DB_USER }}
-      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-      TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
-      TF_VAR_app_image: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
-      TF_VAR_sns_topic_arn: ${{ secrets.AWS_SNS_TOPIC_ARN }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      # Cluster criado pelo os-management-k8s-terraform: os-management-<branch>.
+      CLUSTER_NAME: os-management-${{ github.ref_name }}
+      # RDS do os-management-database (output aurora_jdbc_url).
+      # Secret de repositório, sufixado por branch (main -> _MAIN, develop -> _DEVELOP).
+      DB_URL: ${{ github.ref_name == 'main' && secrets.DB_URL_MAIN || secrets.DB_URL_DEVELOP }}
+      # Segredos por ambiente (GitHub Environments develop/main).
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      # Optional: when unset, the Datadog Agent install is skipped and the app
+      # deploys without in-cluster observability.
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      IMAGE: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
 
     steps:
-      - name: Fazer checkout do codigo
+      - name: Fazer checkout do código
         uses: actions/checkout@v4
+
+      - name: Validar entradas de infraestrutura
+        run: |
+          test -n "${DB_URL}"      || { echo "::error::Segredo DB_URL_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."; exit 1; }
+          test -n "${DB_USER}"     || { echo "::error::Segredo DB_USER ausente."; exit 1; }
+          test -n "${DB_PASSWORD}" || { echo "::error::Segredo DB_PASSWORD ausente."; exit 1; }
+          test -n "${JWT_SECRET}"  || { echo "::error::Segredo JWT_SECRET ausente."; exit 1; }
 
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+          aws-secret-access-key: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.8.0
-
-      - name: Terraform Init
-        working-directory: terraform/ec2
+      - name: Configurar kubectl para o cluster EKS
         run: |
-          terraform init \
-            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
-            -backend-config="region=${{ vars.AWS_REGION || 'us-east-1' }}"
+          aws eks update-kubeconfig --name "${CLUSTER_NAME}" --region "${AWS_REGION}"
+          kubectl config current-context
 
-      - name: Importar recursos AWS existentes
-        working-directory: terraform/ec2
-        shell: bash
-        env:
-          AWS_VPC_ID: ${{ secrets.AWS_VPC_ID }}
+      # Datadog Agent (DaemonSet) + Cluster Agent no EKS, antes da app, para que
+      # o admission controller injete o dd-java-agent. Ignorado sem DD_API_KEY.
+      - name: Configurar Helm
+        if: ${{ env.DD_API_KEY != '' }}
+        uses: azure/setup-helm@v4
+
+      - name: Instalar Datadog Agent (Helm)
+        if: ${{ env.DD_API_KEY != '' }}
+        # Best-effort: observability must not gate the app rollout. No --wait, so
+        # a slow/capacity-starved Agent rollout doesn't block; continue-on-error
+        # so any Helm hiccup is logged but non-fatal.
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          kubectl create namespace datadog --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic datadog-secret \
+            --namespace datadog \
+            --from-literal api-key="${DD_API_KEY}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          helm repo add datadog https://helm.datadoghq.com
+          helm repo update
+          helm upgrade --install datadog datadog/datadog \
+            --namespace datadog \
+            -f k8s/datadog/values.yaml \
+            --set datadog.clusterName="${CLUSTER_NAME}"
 
-          if [ -z "$AWS_VPC_ID" ]; then
-            echo "AWS_VPC_ID não está configurada."
-            exit 1
-          fi
-
-          echo "VPC utilizada: $AWS_VPC_ID"
-
-          app_sg_id=$(aws ec2 describe-security-groups \
-            --filters \
-              "Name=vpc-id,Values=$AWS_VPC_ID" \
-              "Name=group-name,Values=os-management-app-sg" \
-            --query 'SecurityGroups[0].GroupId' \
-            --output text)
-
-          if [ -z "$app_sg_id" ] || [ "$app_sg_id" = "None" ]; then
-            echo "Security Group os-management-app-sg não encontrado na VPC $AWS_VPC_ID."
-            exit 1
-          fi
-
-          echo "Security Group encontrado: $app_sg_id"
-
-          if ! terraform state show aws_security_group.app >/dev/null 2>&1; then
-            terraform import -input=false \
-              aws_security_group.app \
-              "$app_sg_id"
-          fi
-
-          echo "Estado atual do Security Group:"
-          terraform state show aws_security_group.app >/dev/null
-
-      - name: Terraform Apply
-        working-directory: terraform/ec2
+      - name: Aplicar manifests Kubernetes (RDS externo — sem Postgres in-cluster)
         run: |
-          terraform apply -auto-approve \
-            -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
-            -var="db_url=${{ secrets.DB_URL }}" \
-            -var="db_user=${{ secrets.DB_USER }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-            -var="app_image=${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}" \
-            -var="sns_topic_arn=${{ secrets.AWS_SNS_TOPIC_ARN }}"
-
-            
-      - name: Exibir URL da aplicacao
-        working-directory: terraform/ec2
-        run: |
-          echo "========================================"
-          echo "App URL: $(terraform output -raw app_url)"
-          echo "========================================"
-          echo "Aguarde ~3 minutos para o user_data terminar (Docker install + container start)"
-
-  # ---------------------------------------------------------------------------
-  # Deploy HOMOL — EKS + RDS (Kubernetes gerenciado na AWS)
-  # Stage de homologação. Roda quando USE_EKS == 'true' na branch 'develop'.
-  # Cria: VPC + EKS cluster (os-management-homol) + node group + RDS PostgreSQL.
-  # Manifests K8s são aplicados via kubectl após o cluster estar ativo.
-  # Usa backend S3 (key: homol/terraform.tfstate) para persistir o state.
-  # ---------------------------------------------------------------------------
-  deploy-homol:
-    runs-on: ubuntu-latest
-    needs: docker-build-push
-    if: vars.USE_EKS == 'true' && github.ref == 'refs/heads/develop'
-    environment: homol
-
-    steps:
-      - name: Fazer checkout do codigo
-        uses: actions/checkout@v4
-
-      - name: Configurar credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.8.0
-          terraform_wrapper: false
-
-      - name: Terraform Init
-        working-directory: terraform
-        run: |
-          cat > backend.tf << EOF
-          terraform {
-            backend "s3" {
-              bucket = "${{ vars.TF_STATE_BUCKET }}"
-              key    = "homol/terraform.tfstate"
-              region = "${{ vars.AWS_REGION || 'us-east-1' }}"
-            }
-          }
-          EOF
-          terraform init
-
-      - name: Garantir escala minima do node group
-        run: |
-          if aws eks describe-nodegroup \
-            --cluster-name os-management-homol \
-            --nodegroup-name default \
-            --region ${{ vars.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
-            aws eks update-nodegroup-config \
-              --cluster-name os-management-homol \
-              --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }} \
-              --scaling-config minSize=2,desiredSize=2,maxSize=3
-            aws eks wait nodegroup-active \
-              --cluster-name os-management-homol \
-              --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }}
-          fi
-
-      - name: Terraform Apply — Criar EKS + RDS
-        working-directory: terraform
-        run: |
-          terraform apply -auto-approve \
-              -var="use_aws=true" \
-              -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
-              -var="app_name=os-management-homol" \
-              -var="environment=staging" \
-              -var="db_user=${{ secrets.DB_USER }}" \
-              -var="db_password=${{ secrets.DB_PASSWORD }}" \
-              -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-              -var="node_instance_type=t3.small" \
-              -var="node_min_size=2" \
-              -var="node_desired_size=2" \
-              -var="node_max_size=3" \
-              -var="rds_instance_class=db.t3.micro" \
-              -var="rds_multi_az=false"
-
-      - name: Obter JDBC URL do RDS
-        id: rds
-        working-directory: terraform
-        run: |
-          echo "jdbc_url=$(terraform output -raw rds_jdbc_url)" >> "$GITHUB_OUTPUT"
-
-      - name: Configurar kubectl para o EKS
-        run: |
-          aws eks update-kubeconfig --name os-management-homol --region ${{ vars.AWS_REGION || 'us-east-1' }}
-
-      - name: Aplicar manifests Kubernetes
-        run: |
-          JDBC_URL="${{ steps.rds.outputs.jdbc_url }}"
-          DB_USER="${{ secrets.DB_USER }}"
-          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          JWT_SECRET="${{ secrets.JWT_SECRET }}"
-
-          # Metrics Server (necessário para o HPA funcionar)
-          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+          # Metrics Server: provisionado pelo stack de infra (os-management-k8s-terraform,
+          # helm_release.metrics_server em kube-system). Não instalar aqui — o chart do Helm
+          # e o components.yaml upstream usam spec.selector diferentes e selector é imutável,
+          # o que quebra o `kubectl apply`.
 
           # Namespace
           kubectl apply -f k8s/namespace.yaml
 
-          # ConfigMap da app (substitui variável do template)
-          sed "s|\${datasource_url}|${JDBC_URL}|g" k8s/app-configmap.yaml.tpl | kubectl apply -f -
+          # ConfigMap da app — SPRING_DATASOURCE_URL aponta para o RDS externo;
+          # DD_ENV recebe o nome da branch (develop/main).
+          sed -e "s|\${datasource_url}|${DB_URL}|g" \
+              -e "s|\${datadog_env}|${{ github.ref_name }}|g" \
+              k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
-          # Secret da app (substitui variáveis do template)
+          # Secret da app (credenciais nunca hardcoded)
           sed -e "s|\${db_user}|${DB_USER}|g" \
               -e "s|\${db_password}|${DB_PASSWORD}|g" \
               -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
               -e "s|\${external_token}|change-me|g" \
+              -e "s|\${dd_api_key}|${DD_API_KEY}|g" \
               k8s/app-secret.yaml.tpl | kubectl apply -f -
 
-          # App Deployment + Service
+          # App Deployment + Service, HPA e Ingress
           kubectl apply -f k8s/app.yaml
-
-          # HPA
           kubectl apply -f k8s/hpa.yaml
-
-          # Ingress
           kubectl apply -f k8s/ingress.yaml
 
+      - name: Diagnosticar rollout (em caso de falha)
+        if: failure()
+        run: |
+          kubectl get pods -n os-management -o wide
+          kubectl describe deployment/os-management -n os-management
+          kubectl get events -n os-management --sort-by='.lastTimestamp' | tail -30
+          POD=$(kubectl get pods -n os-management -l app=os-management --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+          kubectl logs "$POD" -n os-management --tail=100 || true
+          kubectl describe pod "$POD" -n os-management      
+      
       - name: Atualizar imagem do Deployment
         run: |
-          IMAGE="${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
-          kubectl set image deployment/os-management os-management=$IMAGE -n os-management
-          kubectl rollout status deployment/os-management -n os-management --timeout=300s
+          kubectl set image deployment/os-management os-management="${IMAGE}" -n os-management
+          kubectl rollout status deployment/os-management -n os-management --timeout=300s || {
+            echo "===== ROLLOUT FALHOU — DIAGNOSTICO ====="
+            kubectl get pods -n os-management -o wide
+            echo "----- describe (pod da app) -----"
+            kubectl describe pod -n os-management -l app=os-management
+            echo "----- logs (app, todos os containers) -----"
+            kubectl logs -n os-management -l app=os-management --tail=120 --all-containers=true || true
+            echo "----- eventos do namespace -----"
+            kubectl get events -n os-management --sort-by=.lastTimestamp | tail -40
+            exit 1
+          }
 
       - name: Exibir acesso a aplicacao
         run: |
           echo "========================================"
-          echo "EKS Cluster: os-management-homol (HOMOL)"
+          echo "EKS Cluster: ${CLUSTER_NAME}"
           echo "Namespace: os-management"
           echo "========================================"
           echo "Para acessar localmente:"
-          echo "  aws eks update-kubeconfig --name os-management-homol --region ${{ vars.AWS_REGION || 'us-east-1' }}"
+          echo "  aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}"
           echo "  kubectl port-forward svc/os-management 8080:8080 -n os-management"
           echo "  http://localhost:8080/swagger-ui/index.html"
           echo "========================================"
@@ -500,146 +422,32 @@ jobs:
           echo ""
 
   # ---------------------------------------------------------------------------
-  # Deploy PROD — EKS + RDS (Kubernetes gerenciado na AWS)
-  # Stage de produção. Roda quando USE_EKS == 'true' na branch 'main'.
-  # Requer aprovação manual: configure o Environment 'prod' em
-  #   Settings > Environments > prod > Required reviewers.
-  # Cria: VPC + EKS cluster (os-management-prod) + node group + RDS PostgreSQL
-  #   com multi_az=true e deletion_protection (via environment=prod no terraform).
-  # Usa backend S3 (key: prod/terraform.tfstate) para persistir o state.
+  # Datadog config — cria/atualiza o dashboard e os monitores versionados em
+  # datadog/ via API (idempotente por título/nome). Independe do cluster: aplica
+  # objetos no Datadog SaaS. Roda em develop/main; ignorado sem DD_API_KEY/DD_APP_KEY.
   # ---------------------------------------------------------------------------
-  deploy-prod:
+  datadog-config:
     runs-on: ubuntu-latest
-    needs: docker-build-push
-    if: vars.USE_EKS == 'true' && github.ref == 'refs/heads/main'
-    environment: prod
+    needs: unit-test
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+
+    env:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
 
     steps:
-      - name: Fazer checkout do codigo
+      - name: Fazer checkout do código
         uses: actions/checkout@v4
 
-      - name: Configurar credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.8.0
-          terraform_wrapper: false
-
-      - name: Terraform Init
-        working-directory: terraform
+      - name: Verificar credenciais Datadog
+        id: guard
         run: |
-          cat > backend.tf << EOF
-          terraform {
-            backend "s3" {
-              bucket = "${{ vars.TF_STATE_BUCKET }}"
-              key    = "prod/terraform.tfstate"
-              region = "${{ vars.AWS_REGION || 'us-east-1' }}"
-            }
-          }
-          EOF
-          terraform init
-
-      - name: Garantir escala minima do node group
-        run: |
-          if aws eks describe-nodegroup \
-            --cluster-name os-management-prod \
-            --nodegroup-name default \
-            --region ${{ vars.AWS_REGION || 'us-east-1' }} >/dev/null 2>&1; then
-            aws eks update-nodegroup-config \
-              --cluster-name os-management-prod \
-              --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }} \
-              --scaling-config minSize=2,desiredSize=2,maxSize=3
-            aws eks wait nodegroup-active \
-              --cluster-name os-management-prod \
-              --nodegroup-name default \
-              --region ${{ vars.AWS_REGION || 'us-east-1' }}
+          if [ -z "${DD_API_KEY}" ] || [ -z "${DD_APP_KEY}" ]; then
+            echo "::warning::DD_API_KEY/DD_APP_KEY ausentes — pulando aplicação de dashboards/monitores."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Terraform Apply — Criar EKS + RDS
-        working-directory: terraform
-        run: |
-          terraform apply -auto-approve \
-              -var="use_aws=true" \
-              -var="aws_region=${{ vars.AWS_REGION || 'us-east-1' }}" \
-              -var="app_name=os-management-prod" \
-              -var="environment=prod" \
-              -var="db_user=${{ secrets.DB_USER }}" \
-              -var="db_password=${{ secrets.DB_PASSWORD }}" \
-              -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
-              -var="node_instance_type=t3.small" \
-              -var="node_min_size=2" \
-              -var="node_desired_size=2" \
-              -var="node_max_size=3" \
-              -var="rds_instance_class=db.t3.medium" \
-              -var="rds_multi_az=true"
-
-      - name: Obter JDBC URL do RDS
-        id: rds
-        working-directory: terraform
-        run: |
-          echo "jdbc_url=$(terraform output -raw rds_jdbc_url)" >> "$GITHUB_OUTPUT"
-
-      - name: Configurar kubectl para o EKS
-        run: |
-          aws eks update-kubeconfig --name os-management-prod --region ${{ vars.AWS_REGION || 'us-east-1' }}
-
-      - name: Aplicar manifests Kubernetes
-        run: |
-          JDBC_URL="${{ steps.rds.outputs.jdbc_url }}"
-          DB_USER="${{ secrets.DB_USER }}"
-          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          JWT_SECRET="${{ secrets.JWT_SECRET }}"
-
-          # Metrics Server (necessário para o HPA funcionar)
-          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-          # Namespace
-          kubectl apply -f k8s/namespace.yaml
-
-          # ConfigMap da app (substitui variável do template)
-          sed "s|\${datasource_url}|${JDBC_URL}|g" k8s/app-configmap.yaml.tpl | kubectl apply -f -
-
-          # Secret da app (substitui variáveis do template)
-          sed -e "s|\${db_user}|${DB_USER}|g" \
-              -e "s|\${db_password}|${DB_PASSWORD}|g" \
-              -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
-              -e "s|\${external_token}|change-me|g" \
-              k8s/app-secret.yaml.tpl | kubectl apply -f -
-
-          # App Deployment + Service
-          kubectl apply -f k8s/app.yaml
-
-          # HPA
-          kubectl apply -f k8s/hpa.yaml
-
-          # Ingress
-          kubectl apply -f k8s/ingress.yaml
-
-      - name: Atualizar imagem do Deployment
-        run: |
-          IMAGE="${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}"
-          kubectl set image deployment/os-management os-management=$IMAGE -n os-management
-          kubectl rollout status deployment/os-management -n os-management --timeout=300s
-
-      - name: Exibir acesso a aplicacao
-        run: |
-          echo "========================================"
-          echo "EKS Cluster: os-management-prod (PROD)"
-          echo "Namespace: os-management"
-          echo "========================================"
-          echo "Para acessar localmente:"
-          echo "  aws eks update-kubeconfig --name os-management-prod --region ${{ vars.AWS_REGION || 'us-east-1' }}"
-          echo "  kubectl port-forward svc/os-management 8080:8080 -n os-management"
-          echo "  http://localhost:8080/swagger-ui/index.html"
-          echo "========================================"
-          echo ""
-          echo "LoadBalancer:"
-          kubectl get svc os-management -n os-management -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "(ainda provisionando...)"
-          echo ""
+      - name: Aplicar dashboard e monitores (upsert)
+        if: steps.guard.outputs.skip != 'true'
+        run: bash .github/scripts/apply-datadog.sh

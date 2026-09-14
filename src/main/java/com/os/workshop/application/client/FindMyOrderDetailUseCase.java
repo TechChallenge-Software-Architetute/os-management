@@ -6,6 +6,7 @@ import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.budget.Budget;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
+import com.os.workshop.domain.client.Cpf;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,18 @@ public class FindMyOrderDetailUseCase {
     public FindMyOrderDetailResult execute(String email, UUID orderId) {
         Client client = clientRepository.findByEmail(email)
                 .orElseThrow(() -> new ClientNotFoundException("email: " + email));
+        return detailFor(client, orderId);
+    }
 
+    /** Resolves the client by CPF/document — used for client (CPF) authentication. */
+    @Transactional(readOnly = true)
+    public FindMyOrderDetailResult executeByDocument(String document, UUID orderId) {
+        Client client = clientRepository.findByDocument(new Cpf(document).getValue())
+                .orElseThrow(() -> new ClientNotFoundException("document: " + document));
+        return detailFor(client, orderId);
+    }
+
+    private FindMyOrderDetailResult detailFor(Client client, UUID orderId) {
         ServiceOrder order = serviceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
 

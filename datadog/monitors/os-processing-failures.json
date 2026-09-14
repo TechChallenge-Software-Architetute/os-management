@@ -1,0 +1,8 @@
+{
+  "name": "[os-management] Falhas no processamento de OS",
+  "type": "metric alert",
+  "query": "sum(last_5m):sum:workshop.service_orders.processing.failed{service:os-management,env:production}.as_count() >= 1",
+  "message": "Uma operação de criação/atualização de OS falhou. Investigue os logs com service:os-management e o request_id. @team-oncall",
+  "tags": ["service:os-management", "env:production", "team:workshop"],
+  "options": {"thresholds": {"critical": 1}, "notify_no_data": false, "include_tags": true}
+}

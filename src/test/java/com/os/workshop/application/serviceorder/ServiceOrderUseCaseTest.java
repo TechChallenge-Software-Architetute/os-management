@@ -10,6 +10,7 @@ import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import com.os.workshop.domain.service.WorkshopService;
 import com.os.workshop.domain.vehicle.VehicleNotFoundException;
+import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +49,7 @@ class ServiceOrderUseCaseTest {
         @Mock private FindVehicleByPlateUseCase findVehicleByPlateUseCase;
         @Mock private ServiceOrderRepository serviceOrderRepository;
         @Mock private com.os.workshop.application.notification.OrderStatusNotificationService notificationService;
+        @Mock private ServiceOrderMetrics metrics;
         @InjectMocks private CreateOrderUseCase useCase;
 
         @Test
@@ -196,6 +198,7 @@ class ServiceOrderUseCaseTest {
 
         @Mock private ServiceOrderRepository serviceOrderRepository;
         @Mock private com.os.workshop.application.notification.OrderStatusNotificationService notificationService;
+        @Mock private ServiceOrderMetrics metrics;
         @InjectMocks private UpdateOrderUseCase useCase;
 
         @Test
