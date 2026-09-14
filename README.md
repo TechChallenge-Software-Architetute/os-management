@@ -1,4 +1,4 @@
-# OS Management — Sistema de Gestao de Ordens de Servico para Oficina Mecanica
+# OS Management — Sistema de Gestao de Ordens de Servico para Oficina Mecanica 
 
 Este projeto foi desenvolvido como parte do programa de **Pos-Graduacao da FIAP** (Pos Tech).
 
