@@ -607,7 +607,44 @@ kubectl get svc os-management -n os-management   # hostname do LoadBalancer
 
 ## Referencia Rapida de Endpoints
 
-**Autenticacao:** Todos os endpoints (exceto /auth/login) exigem header `Authorization: Bearer <token>`
+### Autenticacao e Autorizacao
+
+O controle de acesso e definido em `SecurityConfig` (por role) e complementado
+pelo ponto de entrada usado (API Gateway para clientes, LoadBalancer para staff).
+
+**Publico (sem token):**
+- `POST /auth/login` — login de staff (email/senha), emite JWT de staff
+- `POST /auth` — login de cliente por CPF (via API Gateway → Lambda), emite JWT de cliente
+- `GET /swagger-ui/index.html`, `GET /v3/api-docs`, `GET /actuator/health`
+
+**Cliente** (token de cliente; tambem aceita ADMIN/TECHNICIAN) — rotas
+`/api/clients/my-orders/**`, onde o cliente autenticado consulta e decide as
+proprias OS:
+- `GET /api/clients/my-orders`
+- `GET /api/clients/my-orders/{orderId}`
+- `POST /api/clients/my-orders/{orderId}/decision`
+
+**Staff** (ADMIN ou TECHNICIAN) — todo o restante: cadastro/gestao de clientes,
+veiculos, pecas, insumos, estoque, ordens de servico, servicos, orcamentos,
+monitoramento e `POST /signup`.
+
+> Regras no `SecurityConfig`: `/auth/**`, Swagger e `/actuator/health` sao
+> publicos; `/api/clients/my-orders/**` exige role USER/ADMIN/TECHNICIAN;
+> `anyRequest()` exige ADMIN/TECHNICIAN. Todo endpoint protegido exige o header
+> `Authorization: Bearer <token>`.
+
+### Quando usar o API Gateway vs o LoadBalancer
+
+| Cenario | Entrada | Por que |
+|---------|---------|---------|
+| Login de cliente (CPF) | **API Gateway** — `POST {invoke_url}/auth` | Rota publica que aciona a Lambda emissora do JWT de cliente |
+| Rotas do cliente (`/api/clients/my-orders/**`) | **API Gateway** — `{invoke_url}/...` + `Authorization: Bearer <jwt cliente>` | O `ANY /{proxy+}` do gateway valida o JWT no authorizer e faz proxy para o backend |
+| Login de staff | **LoadBalancer** — `POST http://<lb-dns>:8080/auth/login` | O gateway nao expoe rota publica de login de staff; o proxy so aceita o token de cliente (authorizer CPF) |
+| Endpoints de staff (gestao) | **LoadBalancer** — `http://<lb-dns>:8080/...` + `Authorization: Bearer <jwt staff>` | O fluxo staff vai direto ao backend |
+| Swagger / health | **LoadBalancer** — `http://<lb-dns>:8080/swagger-ui/index.html` | Documentacao e sondas ficam no backend |
+
+- `invoke_url` = output do `os-management-gateway` (`https://<api-id>.execute-api.us-east-1.amazonaws.com/<env>`).
+- `<lb-dns>` = hostname do Service LoadBalancer (`kubectl get svc os-management -n os-management`).
 
 ### Autenticacao
 
@@ -687,7 +724,7 @@ kubectl get svc os-management -n os-management   # hostname do LoadBalancer
 | GET | /api/stocks/product/{productId} | Buscar por produto |
 | PATCH | /api/stocks/product/{productId}/entry | Entrada de estoque |
 | PATCH | /api/stocks/product/{productId}/exit | Saida de estoque |
-| PATCH | /api/stocks/product/{productId}/minimum | Atualizar minimo |
+| PATCH | /api/stocks/product/{productId}/minimum | Atualizar minimo (query param `?minimumQuantity=`) |
 | GET | /api/stocks/product/{productId}/movements | Historico movimentacoes |
 
 ### Reservas de Estoque
@@ -739,6 +776,7 @@ Dentro do mesmo status: mais antigas primeiro (createdAt ASC).
 | GET | /services | Listar todos |
 | GET | /services/{id} | Buscar por ID |
 | GET | /services/os/{idOS} | Listar servicos de uma OS |
+| PUT | /services/{id} | Atualizar servico (serviceType e idOS) |
 | PATCH | /services/update-status | Atualizar status do servico |
 | GET | /service-types | Listar tipos disponiveis |
 
@@ -753,7 +791,7 @@ Dentro do mesmo status: mais antigas primeiro (createdAt ASC).
 | Metodo | Endpoint | Descricao |
 |---|---|---|
 | POST | /monitoring/all | Tempo medio por tipo de servico |
-| GET | /monitoring/{serviceType} | Tempo medio de um tipo |
+| POST | /monitoring/by-id | Tempo medio de uma OS (por UUID) |
 
 ---
 

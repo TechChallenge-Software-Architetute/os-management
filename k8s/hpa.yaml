@@ -9,20 +9,18 @@ spec:
     kind: Deployment
     name: os-management
   minReplicas: 1
-  maxReplicas: 6
+  # Cap at node capacity: 2x t3.small, each fits ~1 app pod. No cluster
+  # autoscaler, so a higher ceiling only produces unschedulable Pending pods.
+  maxReplicas: 2
   metrics:
+    # CPU only. A JVM idles near its memory request, so a memory-based target
+    # trips immediately at idle and over-scales past what the nodes can hold.
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
           averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 75
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60

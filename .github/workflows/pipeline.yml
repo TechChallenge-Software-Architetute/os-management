@@ -313,6 +313,7 @@ jobs:
           test -n "${DB_USER}"     || { echo "::error::Segredo DB_USER ausente."; exit 1; }
           test -n "${DB_PASSWORD}" || { echo "::error::Segredo DB_PASSWORD ausente."; exit 1; }
           test -n "${JWT_SECRET}"  || { echo "::error::Segredo JWT_SECRET ausente."; exit 1; }
+          test "${#JWT_SECRET}" -ge 32 || { echo "::error::JWT_SECRET deve ter >=32 bytes (256 bits) para HS256; atual: ${#JWT_SECRET}."; exit 1; }
 
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
