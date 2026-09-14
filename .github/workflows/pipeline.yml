@@ -362,10 +362,19 @@ jobs:
           # Namespace
           kubectl apply -f k8s/namespace.yaml
 
-          # ConfigMap da app — SPRING_DATASOURCE_URL aponta para o RDS externo;
-          # DD_ENV recebe o nome da branch (develop/main).
+          # ConfigMap da app — SPRING_DATASOURCE_URL aponta para o RDS externo.
+          # DD_ENV precisa casar com os valores de env do dashboard e monitores
+          # (developer/homolog/production). Passar a branch crua (develop/main)
+          # gera env:develop/env:main, que não casa com env:$env (default
+          # production) nem com os monitores (env:production) — dados chegam mas
+          # não aparecem. main->production alinha dashboard + monitores.
+          case "${{ github.ref_name }}" in
+            main)    DD_ENV_TAG="production" ;;
+            develop) DD_ENV_TAG="homolog" ;;
+            *)       DD_ENV_TAG="developer" ;;
+          esac
           sed -e "s|\${datasource_url}|${DB_URL}|g" \
-              -e "s|\${datadog_env}|${{ github.ref_name }}|g" \
+              -e "s|\${datadog_env}|${DD_ENV_TAG}|g" \
               k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
           # Secret da app (credenciais nunca hardcoded)
@@ -381,16 +390,13 @@ jobs:
           kubectl apply -f k8s/hpa.yaml
           kubectl apply -f k8s/ingress.yaml
 
-      - name: Diagnosticar rollout (em caso de falha)
-        if: failure()
-        run: |
-          kubectl get pods -n os-management -o wide
-          kubectl describe deployment/os-management -n os-management
-          kubectl get events -n os-management --sort-by='.lastTimestamp' | tail -30
-          POD=$(kubectl get pods -n os-management -l app=os-management --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
-          kubectl logs "$POD" -n os-management --tail=100 || true
-          kubectl describe pod "$POD" -n os-management      
-      
+
+          # As métricas kubernetes.* vêm do node Agent, que deriva a tag env da
+          # label tags.datadoghq.com/env do pod (não do DD_ENV do container). Sem
+          # ela o widget de CPU/memória (env:$env) fica vazio. Injeta a mesma env
+          # mapeada aqui para não precisar templatar o app.yaml (usado no kustomize local).
+          kubectl patch deployment os-management -n os-management --type merge \
+            -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"tags.datadoghq.com/env\":\"${DD_ENV_TAG}\"}}}}}"
       - name: Atualizar imagem do Deployment
         run: |
           kubectl set image deployment/os-management os-management="${IMAGE}" -n os-management
