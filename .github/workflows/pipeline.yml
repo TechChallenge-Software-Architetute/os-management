@@ -393,7 +393,17 @@ jobs:
       - name: Atualizar imagem do Deployment
         run: |
           kubectl set image deployment/os-management os-management="${IMAGE}" -n os-management
-          kubectl rollout status deployment/os-management -n os-management --timeout=300s
+          kubectl rollout status deployment/os-management -n os-management --timeout=300s || {
+            echo "===== ROLLOUT FALHOU — DIAGNOSTICO ====="
+            kubectl get pods -n os-management -o wide
+            echo "----- describe (pod da app) -----"
+            kubectl describe pod -n os-management -l app=os-management
+            echo "----- logs (app, todos os containers) -----"
+            kubectl logs -n os-management -l app=os-management --tail=120 --all-containers=true || true
+            echo "----- eventos do namespace -----"
+            kubectl get events -n os-management --sort-by=.lastTimestamp | tail -40
+            exit 1
+          }
 
       - name: Exibir acesso a aplicacao
         run: |
