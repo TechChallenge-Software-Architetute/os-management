@@ -32,15 +32,38 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
         String token = authHeader.substring(7);
-        String username = jwtService.extractUsername(token);
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtService.isValid(token, userDetails)) {
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            jwtService.tryParseClaims(token).ifPresent(claims -> {
+                if (jwtService.isClientToken(claims)) {
+                    authenticateClient(claims);
+                } else {
+                    authenticateUser(token, claims.getSubject());
+                }
+            });
         }
         filterChain.doFilter(request, response);
+    }
+
+    // Client (CPF) token: trust the verified claims, grant ROLE_CLIENT.
+    // Principal username is the CPF (token subject); no users-table lookup.
+    private void authenticateClient(io.jsonwebtoken.Claims claims) {
+        var authorities = java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_CLIENT"));
+        UserDetails principal = new org.springframework.security.core.userdetails.User(
+                claims.getSubject(), "", authorities);
+        var auth = new UsernamePasswordAuthenticationToken(principal, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
+    // Staff (email) token: resolve against the users table as before.
+    private void authenticateUser(String token, String username) {
+        if (username == null) {
+            return;
+        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        if (jwtService.isValid(token, userDetails)) {
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
     }
 }
