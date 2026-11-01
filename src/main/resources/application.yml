@@ -72,3 +72,11 @@ aws:
   sns:
     region: ${AWS_REGION:us-east-1}
     topic-arn: ${AWS_SNS_TOPIC_ARN:arn:aws:sns:us-east-1:798294347765:os-management-fiap:cb7009aa-c1dd-44cf-abdb-af9c1f1686ff}
+  sqs:
+    region: ${AWS_REGION:us-east-1}
+    # Fila de entrada do os-orchestrator: os-orchestrator-<env>-order-processing.
+    # Nome deterministico, injetado pelo ConfigMap — nunca lido do remote state do
+    # Terraform, para os deploys continuarem independentes.
+    # Vazio desliga o envio (deploy local no Kind nao tem fila); o
+    # SqsSagaCommandPublisher avisa no startup quando isso acontece.
+    orchestrator-queue-url: ${AWS_SQS_ORCHESTRATOR_QUEUE_URL:}

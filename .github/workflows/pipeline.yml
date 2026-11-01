@@ -373,8 +373,16 @@ jobs:
             develop) DD_ENV_TAG="homolog" ;;
             *)       DD_ENV_TAG="developer" ;;
           esac
+
+          # URL da fila do os-orchestrator montada a partir da conta e da branch.
+          # Deterministica de proposito: nao le o state do outro repositorio, então
+          # este deploy nao espera o deploy do orquestrador.
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ORCHESTRATOR_QUEUE_URL="https://sqs.${AWS_REGION}.amazonaws.com/${ACCOUNT_ID}/os-orchestrator-${{ github.ref_name }}-order-processing"
           sed -e "s|\${datasource_url}|${DB_URL}|g" \
               -e "s|\${datadog_env}|${DD_ENV_TAG}|g" \
+              -e "s|\${aws_region}|${AWS_REGION}|g" \
+              -e "s|\${orchestrator_queue_url}|${ORCHESTRATOR_QUEUE_URL}|g" \
               k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
           # Secret da app (credenciais nunca hardcoded)

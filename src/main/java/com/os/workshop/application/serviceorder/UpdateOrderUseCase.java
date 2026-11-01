@@ -1,11 +1,13 @@
 package com.os.workshop.application.serviceorder;
 
 import com.os.workshop.application.notification.OrderStatusNotificationService;
+import com.os.workshop.application.saga.OrderSagaEvent;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.serviceorder.OrderServiceStatusEnum;
 import com.os.workshop.domain.serviceorder.ServiceOrder;
 import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ public class UpdateOrderUseCase {
 
     private final ServiceOrderRepository serviceOrderRepository;
     private final OrderStatusNotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
     private final ServiceOrderMetrics metrics;
 
     @Transactional
@@ -37,6 +40,11 @@ public class UpdateOrderUseCase {
 
             notificationService.notifyStatusChange(saved);
             metrics.recordTimeInStatus(previousStatus, enteredAt);
+
+            // O resolver decide se esta transicao tem acao correspondente na saga;
+            // a maioria nao tem. O envio acontece depois do commit.
+            eventPublisher.publishEvent(OrderSagaEvent.advanced(
+                    saved.getId(), previousStatus.name(), saved.getStatus().name()));
         } catch (RuntimeException exception) {
             metrics.processingFailed("update_status");
             throw exception;
