@@ -1,7 +1,15 @@
 # ADR-0001: Padrão de Comunicação entre Componentes
 
-- **Status:** Aceito
+- **Status:** Aceito — complementado pelo [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md)
 - **Data:** 2026-09-13
+
+> **Nota (2026-11-01):** o [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md)
+> introduziu SQS **entre os serviços da saga** (`os-management` →
+> `os-orchestrator` → `os-payment`). Isso **não** reverte a rejeição de "SQS
+> entre Gateway e Backend" registrada abaixo: o caminho do cliente continua
+> síncrono por `HTTP_PROXY` até o `os-management`, que segue sendo o roteador. A
+> fila fica atrás do roteador, em um fluxo onde nenhum cliente está esperando
+> resposta.
 
 ## Contexto
 
@@ -60,3 +68,5 @@ RabbitMQ, SQS).
 - **SQS entre Gateway e Backend:** rejeitado porque o cliente espera uma
   resposta imediata (aprovação de orçamento, consulta de status) — um
   padrão fire-and-forget não atende ao caso de uso de API síncrona.
+  *(Segue valendo. O [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md) usa SQS
+  apenas entre serviços, atrás do roteador, não neste salto.)*
