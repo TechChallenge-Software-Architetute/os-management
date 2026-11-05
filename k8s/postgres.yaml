@@ -90,7 +90,14 @@ metadata:
   labels:
     app: postgres
 spec:
-  type: LoadBalancer
+  # ClusterIP, nunca LoadBalancer: um banco de dados não vai para a internet,
+  # mesmo com autenticação. A aplicação alcança este Service pelo DNS interno
+  # (`jdbc:postgresql://postgres:15432/workshop` no ConfigMap), então nada
+  # legítimo precisa de endereço externo. Com `type: LoadBalancer` este manifesto
+  # provisiona um NLB internet-facing na porta 15432 quando aplicado no EKS — no
+  # Kind o Service só fica em `pending`, o que esconde o problema até alguém
+  # aplicar o kustomize em um cluster real.
+  type: ClusterIP
   selector:
     app: postgres
   ports:

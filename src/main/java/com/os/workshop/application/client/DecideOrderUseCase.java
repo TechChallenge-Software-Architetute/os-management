@@ -2,6 +2,7 @@ package com.os.workshop.application.client;
 
 import com.os.workshop.application.client.port.out.ClientRepository;
 import com.os.workshop.application.notification.OrderStatusNotificationService;
+import com.os.workshop.application.saga.OrderSagaEvent;
 import com.os.workshop.application.serviceorder.port.out.ServiceOrderRepository;
 import com.os.workshop.domain.client.Client;
 import com.os.workshop.domain.client.ClientNotFoundException;
@@ -50,11 +51,12 @@ public class DecideOrderUseCase {
             throw new SecurityException("Order " + orderId + " does not belong to this client");
         }
 
+        OrderServiceStatusEnum previousStatus = order.getStatus();
+
         switch (decision) {
             case APPROVED -> order.advanceTo(OrderServiceStatusEnum.APROVADO);
             case REJECTED -> order.reject(reason);
         }
-
         ServiceOrder saved = serviceOrderRepository.save(order);
 
         if (decision == Decision.REJECTED) {
@@ -62,5 +64,13 @@ public class DecideOrderUseCase {
         }
 
         notificationService.notifyStatusChange(saved);
+
+        // Caminho de aprovacao do cliente: nao passa pelo UpdateOrderUseCase, por
+        // isso tem o seu proprio publish. Hoje APROVADO e RECUSADA nao mapeiam para
+        // nenhuma acao da saga — o resolver devolve vazio e nada e enviado. O seam
+        // fica ligado para que acrescentar a acao futura seja uma linha no
+        // SagaActionResolver, sem mexer aqui de novo.
+        eventPublisher.publishEvent(OrderSagaEvent.advanced(
+                orderId, previousStatus.name(), saved.getStatus().name()));
     }
 }

@@ -10,6 +10,10 @@ data:
   SPRING_JPA_HIBERNATE_DDL_AUTO: update
   SPRING_JPA_SHOW_SQL: "false"
   JWT_EXPIRATION: "86400000"
+  AWS_REGION: "${aws_region}"
+  # Fila de entrada do os-orchestrator, montada a partir da branch pela pipeline.
+  # Nome determinístico — nunca lido do remote state do outro repositório.
+  AWS_SQS_ORCHESTRATOR_QUEUE_URL: "${orchestrator_queue_url}"
   # Datadog unified service tagging + Micrometer export. DD_ENV is the branch
   # name (develop/main), substituted by the deploy pipeline.
   DD_ENV: "${datadog_env}"

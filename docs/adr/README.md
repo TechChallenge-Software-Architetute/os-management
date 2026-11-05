@@ -9,10 +9,11 @@ alternativas que levou a uma decisão técnica pontual, ver os [RFCs](../rfc/REA
 
 | ADR | Título | Status |
 |---|---|---|
-| [ADR-0001](ADR-0001-padrao-comunicacao.md) | Padrão de comunicação entre componentes | Aceito |
+| [ADR-0001](ADR-0001-padrao-comunicacao.md) | Padrão de comunicação entre componentes | Aceito (complementado pelo [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md)) |
 | [ADR-0002](ADR-0002-uso-hpa.md) | Uso de HPA para escalabilidade horizontal | Aceito |
 | [ADR-0003](ADR-0003-split-multiplos-repositorios.md) | Split em múltiplos repositórios com CI/CD independente | Aceito |
 | [ADR-0004](ADR-0004-arquitetura-hexagonal.md) | Arquitetura Hexagonal (Ports & Adapters) no domínio | Aceito |
+| [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md) | Saga assíncrona via SQS entre serviços | Aceito |
 
 ## Convenção
 

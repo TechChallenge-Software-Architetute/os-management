@@ -49,6 +49,7 @@ class ServiceOrderUseCaseTest {
         @Mock private FindVehicleByPlateUseCase findVehicleByPlateUseCase;
         @Mock private ServiceOrderRepository serviceOrderRepository;
         @Mock private com.os.workshop.application.notification.OrderStatusNotificationService notificationService;
+        @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
         @Mock private ServiceOrderMetrics metrics;
         @InjectMocks private CreateOrderUseCase useCase;
 
@@ -198,6 +199,7 @@ class ServiceOrderUseCaseTest {
 
         @Mock private ServiceOrderRepository serviceOrderRepository;
         @Mock private com.os.workshop.application.notification.OrderStatusNotificationService notificationService;
+        @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
         @Mock private ServiceOrderMetrics metrics;
         @InjectMocks private UpdateOrderUseCase useCase;
 

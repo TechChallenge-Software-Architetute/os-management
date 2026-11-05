@@ -373,8 +373,16 @@ jobs:
             develop) DD_ENV_TAG="homolog" ;;
             *)       DD_ENV_TAG="developer" ;;
           esac
+
+          # URL da fila do os-orchestrator montada a partir da conta e da branch.
+          # Deterministica de proposito: nao le o state do outro repositorio, então
+          # este deploy nao espera o deploy do orquestrador.
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ORCHESTRATOR_QUEUE_URL="https://sqs.${AWS_REGION}.amazonaws.com/${ACCOUNT_ID}/os-orchestrator-${{ github.ref_name }}-order-processing"
           sed -e "s|\${datasource_url}|${DB_URL}|g" \
               -e "s|\${datadog_env}|${DD_ENV_TAG}|g" \
+              -e "s|\${aws_region}|${AWS_REGION}|g" \
+              -e "s|\${orchestrator_queue_url}|${ORCHESTRATOR_QUEUE_URL}|g" \
               k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
           # Secret da app (credenciais nunca hardcoded)
@@ -458,3 +466,127 @@ jobs:
       - name: Aplicar dashboard e monitores (upsert)
         if: steps.guard.outputs.skip != 'true'
         run: bash .github/scripts/apply-datadog.sh
+
+  # ---------------------------------------------------------------------------
+  # Terraform — cria somente a fila de eventos da saga e a DLQ dela. Sem Lambda:
+  # a aplicação continua no EKS, implantada pelo job deploy-aws acima.
+  #
+  # Independente de propósito: não lê o state de nenhum outro repositório e não
+  # espera o deploy de nenhum outro. Não declara `needs`, então roda em paralelo
+  # com os jobs da aplicação e não interfere no deploy do Kubernetes.
+  # ---------------------------------------------------------------------------
+  terraform-preflight:
+    name: "Terraform preflight (PR → develop)"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    if: >
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.base.ref == 'develop') ||
+      (github.event_name == 'push' &&
+       github.ref == 'refs/heads/develop')
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Terraform fmt e init (sem backend)
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+
+      - name: Terraform validate (placeholders)
+        run: |
+          cat > ci-placeholder.auto.tfvars <<EOF
+          environment = "develop"
+          EOF
+          terraform validate
+
+  terraform-deploy:
+    name: "Terraform deploy (develop/main)"
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+    defaults:
+      run:
+        working-directory: infra/terraform
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    env:
+      TF_VAR_environment: ${{ github.ref_name }}
+      TF_VAR_aws_account_id: ${{ github.ref_name == 'main' && secrets.AWS_ACCOUNT_ID_MAIN || secrets.AWS_ACCOUNT_ID_DEVELOP }}
+      TF_STATE_BUCKET: ${{ github.ref_name == 'main' && secrets.TF_STATE_BUCKET_MAIN || secrets.TF_STATE_BUCKET_DEVELOP }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      TF_VAR_region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+          aws-secret-access-key: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Terraform Init
+        shell: bash
+        run: |
+          if [ -z "$TF_STATE_BUCKET" ]; then
+            echo "::error::Segredo TF_STATE_BUCKET_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."
+            exit 1
+          fi
+
+          terraform init \
+            -input=false \
+            -reconfigure \
+            -backend-config="bucket=$TF_STATE_BUCKET" \
+            -backend-config="key=os-management/${{ github.ref_name }}/terraform.tfstate" \
+            -backend-config="region=$AWS_REGION" \
+            -backend-config="use_lockfile=true"
+
+      - name: Importar recursos existentes quando o state está vazio
+        shell: bash
+        run: |
+          import_if_missing() {
+            local address="$1"
+            local resource_id="$2"
+
+            if ! terraform state show "$address" >/dev/null 2>&1; then
+              terraform import -input=false "$address" "$resource_id"
+            fi
+          }
+
+          env_name="${{ github.ref_name }}"
+
+          for pair in \
+            "aws_sqs_queue.order_events_dlq:os-management-${env_name}-order-events-dlq" \
+            "aws_sqs_queue.order_events:os-management-${env_name}-order-events"
+          do
+            address="${pair%%:*}"
+            queue_name="${pair#*:}"
+            queue_url=$(aws sqs get-queue-url --queue-name "$queue_name" --query 'QueueUrl' --output text 2>/dev/null || true)
+            if [ -n "$queue_url" ] && [ "$queue_url" != "None" ]; then
+              import_if_missing "$address" "$queue_url"
+            fi
+          done
+
+      - name: Terraform Plan (salvar tfplan)
+        run: terraform plan -input=false -no-color -out=tfplan
+
+      - name: Upload do artefato de plano
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: infra/terraform/tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan
