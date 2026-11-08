@@ -80,6 +80,10 @@ public class OrdemDeServicoSteps {
     private Long partId;
     private UUID orderId;
 
+    /** X-Request-Id da requisicao que abre a OS: vira o correlationId do CRIAR_OS. */
+    private final String requestId = "bdd-req-" + UUID.randomUUID();
+    /** correlationId que o "orquestrador" do cenario manda nos comandos. */
+    private final String sagaCorrelationId = "bdd-saga-" + UUID.randomUUID();
     /** Quantas mensagens a OS ja tinha mandado ao orquestrador antes do "Quando". */
     private int messagesBeforeAction;
     private RuntimeException commandError;
@@ -184,7 +188,7 @@ public class OrdemDeServicoSteps {
     public void umaOsEmExecucao(int quantity) {
         umaOsAprovada(quantity);
         // Pelo contrato, so o comando do orquestrador inicia a execucao.
-        orchestratorQueue.onMessage(orderId.toString(), SagaAction.EXECUTAR_SERVICO.name());
+        orchestratorQueue.onMessage(orchestratorBody(SagaAction.EXECUTAR_SERVICO.name()), null);
     }
 
     // ==================== Quando ====================
@@ -199,7 +203,7 @@ public class OrdemDeServicoSteps {
     public void oOrquestradorManda(String action) {
         markMessages();
         try {
-            orchestratorQueue.onMessage(orderId.toString(), action);
+            orchestratorQueue.onMessage(orchestratorBody(action), null);
         } catch (RuntimeException e) {
             // Em producao a excecao deixa a mensagem sem confirmacao: ela volta para
             // a fila e, depois do maxReceiveCount, vai para a DLQ. Quem decide se
@@ -250,6 +254,16 @@ public class OrdemDeServicoSteps {
     public void oOrquestradorRecebe(String action) {
         assertNoUnexpectedCommandError();
         assertThat(messagesSinceAction()).containsExactly(SagaAction.valueOf(action));
+    }
+
+    @Then("a mensagem leva o valor {string} e o id da requisição como correlationId")
+    public void aMensagemLevaOValorEOIdDaRequisicao(String expectedAmount) {
+        assertLastMessage(expectedAmount, requestId);
+    }
+
+    @Then("a mensagem leva o valor {string} e o correlationId do comando")
+    public void aMensagemLevaOValorEOCorrelationIdDoComando(String expectedAmount) {
+        assertLastMessage(expectedAmount, sagaCorrelationId);
     }
 
     @Then("o orquestrador não recebe nada")
@@ -311,12 +325,37 @@ public class OrdemDeServicoSteps {
     // ==================== Apoio ====================
 
     private void openOrder() {
-        var response = call(HttpMethod.POST, "/order", adminToken, Map.of(
-                "cpfCnpj", cpf,
-                "placaVeiculo", plate,
-                "serviceTypes", List.of(SERVICE_TYPE)));
+        var response = http.post().uri("/order")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                // O RequestCorrelationFilter usa este header como request_id, e o
+                // CRIAR_OS sai com ele como correlationId.
+                .header("X-Request-Id", requestId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of(
+                        "cpfCnpj", cpf,
+                        "placaVeiculo", plate,
+                        "serviceTypes", List.of(SERVICE_TYPE)))
+                .retrieve()
+                .toEntity(JSON_OBJECT);
         assertStatus(response, HttpStatus.CREATED);
         orderId = UUID.fromString((String) response.getBody().get("id"));
+    }
+
+    /**
+     * Corpo no formato do contrato (ADR-0006), como o orquestrador manda: os 4
+     * campos no JSON e nenhum atributo de mensagem.
+     */
+    private String orchestratorBody(String action) {
+        return "{\"order\":\"" + orderId + "\",\"action\":\"" + action
+                + "\",\"amount\":0.00,\"correlationId\":\"" + sagaCorrelationId + "\"}";
+    }
+
+    private void assertLastMessage(String expectedAmount, String expectedCorrelationId) {
+        var messages = sagaPublisher.messagesFor(orderId);
+        assertThat(messages).as("nenhuma mensagem enviada ao orquestrador").isNotEmpty();
+        var last = messages.get(messages.size() - 1);
+        assertThat(last.amount()).isEqualByComparingTo(new BigDecimal(expectedAmount));
+        assertThat(last.correlationId()).isEqualTo(expectedCorrelationId);
     }
 
     private void moveOrderTo(String status) {

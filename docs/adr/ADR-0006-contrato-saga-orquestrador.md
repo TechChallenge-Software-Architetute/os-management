@@ -20,9 +20,26 @@ cada comando e o que acontece quando um comando não cabe no estado da OS.
 
 ## Decisão
 
-- **Formato da mensagem, nos dois sentidos:** corpo = id da OS (texto); atributo
-  de mensagem `action` (String) = nome da ação. Os nomes são os do enum
-  `StateMachineActions` do orquestrador, espelhado em `SagaAction`.
+- **Formato da mensagem, nos dois sentidos:** corpo JSON com exatamente quatro
+  campos:
+
+  ```json
+  {"order": "8f1c...-uuid-da-os", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}
+  ```
+
+  - `action`: nome da ação, com os nomes do enum `StateMachineActions` do
+    orquestrador (espelhado em `SagaAction`).
+  - `amount`: total do orçamento da OS no momento do envio, com 2 casas. Na
+    abertura ainda não há orçamento, então o `CRIAR_OS` sai com `0.00`.
+  - `correlationId`: no `CRIAR_OS`, o `X-Request-Id` da requisição que abriu a OS
+    (o mesmo `request_id` dos logs da API); nas respostas, o `correlationId` que
+    veio no comando do orquestrador. Cada serviço repassa o que recebe, e a saga
+    da OS fica com um único id de ponta a ponta.
+  - Transição: o os-management ainda envia também o atributo de mensagem
+    `action` (mesmo valor), para o listener antigo do orquestrador continuar
+    funcionando até a migração; na entrada, aceita a ação pelo atributo e o corpo
+    só com o id da OS. O contrato é o JSON: quando os dois lados estiverem no
+    formato novo, o atributo pode sair.
 
 - **O orquestrador comanda, o serviço executa e responde com a mesma ação.**
   Fluxo de sucesso:
