@@ -29,6 +29,13 @@ public class UpdateOrderUseCase {
             if (status == null) {
                 throw new IllegalArgumentException("Status da ordem de servico e obrigatorio.");
             }
+            if (status == OrderServiceStatusEnum.CANCELADA) {
+                // O cancelamento libera reservas de estoque e faz parte da compensacao da
+                // saga (HandleSagaCommandUseCase). Pela atualizacao manual a OS ficaria
+                // cancelada com as reservas ainda ativas.
+                throw new IllegalArgumentException(
+                        "O cancelamento da OS e feito pela saga (compensacao), nao pela atualizacao manual de status.");
+            }
 
             ServiceOrder order = serviceOrderRepository.findById(id)
                     .orElseThrow(() -> new NoSuchElementException("Ordem de servico nao encontrada com id: " + id));

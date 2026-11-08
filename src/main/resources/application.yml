@@ -1,6 +1,12 @@
 spring:
   application:
     name: workshop
+  cloud:
+    aws:
+      # Regiao do Spring Cloud AWS (listener da fila de entrada da saga). Fixa aqui
+      # para o startup nao depender do provider chain da AWS em teste ou no Kind.
+      region:
+        static: ${AWS_REGION:us-east-1}
   # A URL do banco deve ser fornecida pelo ambiente de execução.
   # O valor padrão é usado apenas no desenvolvimento local com Docker Compose.
   datasource:
@@ -80,3 +86,10 @@ aws:
     # Vazio desliga o envio (deploy local no Kind nao tem fila); o
     # SqsSagaCommandPublisher avisa no startup quando isso acontece.
     orchestrator-queue-url: ${AWS_SQS_ORCHESTRATOR_QUEUE_URL:}
+    # Fila de entrada da saga: os-management-<env>-order-events ("sqs-gerar-os"),
+    # onde o os-orchestrator publica EXECUTAR_SERVICO, ATUALIZAR_ESTOQUE e as
+    # compensacoes. O listener so sobe com enabled=true (ConfigMap do deploy AWS):
+    # o Kind e os testes nao tem SQS.
+    order-events:
+      enabled: ${AWS_SQS_ORDER_EVENTS_ENABLED:false}
+      queue: ${AWS_SQS_ORDER_EVENTS_QUEUE:os-management-local-order-events}

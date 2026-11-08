@@ -79,6 +79,7 @@ public class SnsNotificationService implements EmailNotificationPort {
             case "Finalizada" -> "Todos os servicos foram concluidos! Seu veiculo esta pronto para retirada.";
             case "Entregue" -> "Seu veiculo foi entregue. Obrigado pela confianca!";
             case "Recusada" -> "O orcamento foi recusado. Entre em contato conosco caso deseje reavaliar.";
+            case "Cancelada" -> "Sua ordem de servico foi cancelada. Entre em contato conosco para mais detalhes.";
             default -> "O status da sua ordem de servico foi atualizado para: " + status;
         };
     }

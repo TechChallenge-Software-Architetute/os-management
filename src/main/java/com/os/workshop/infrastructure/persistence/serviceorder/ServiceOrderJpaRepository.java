@@ -12,7 +12,7 @@ public interface ServiceOrderJpaRepository extends JpaRepository<ServiceOrderEnt
 
     @Query(value = """
             SELECT * FROM service_order
-            WHERE service_status NOT IN ('FINALIZADA', 'ENTREGUE')
+            WHERE service_status NOT IN ('FINALIZADA', 'ENTREGUE', 'CANCELADA')
             ORDER BY
                 CASE service_status
                     WHEN 'EM_EXECUCAO' THEN 1

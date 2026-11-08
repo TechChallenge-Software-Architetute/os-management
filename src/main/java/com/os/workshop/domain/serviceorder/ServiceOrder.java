@@ -72,6 +72,15 @@ public class ServiceOrder {
         this.rejectionReason = reason;
     }
 
+    /**
+     * Compensacao da saga: encerra a OS sem executar o servico. O motivo fica no
+     * mesmo campo da recusa ({@code rejectionReason}), que ja e exposto na API.
+     */
+    public void cancel(String reason) {
+        advanceTo(OrderServiceStatusEnum.CANCELADA);
+        this.rejectionReason = reason;
+    }
+
     public void reopen() {
         advanceTo(OrderServiceStatusEnum.EM_DIAGNOSTICO);
     }

@@ -17,15 +17,19 @@ public enum OrderServiceStatusEnum {
     EM_EXECUCAO("EM_EXECUCAO"),
     FINALIZADA("FINALIZADA"),
     ENTREGUE("ENTREGUE"),
-    RECUSADA("RECUSADA");
+    RECUSADA("RECUSADA"),
+    /** Encerrada pela compensacao da saga (NEGAR_SERVICO, NEGAR_ESTOQUE ou ERRO). Estado final. */
+    CANCELADA("CANCELADA");
 
     private final String status;
 
+    // CANCELADA so e alcancavel antes da execucao: depois que o servico comeca, a
+    // saga nao desfaz a OS automaticamente.
     private static final Map<OrderServiceStatusEnum, List<OrderServiceStatusEnum>> ALLOWED_TRANSITIONS = Map.of(
-            RECEBIDA, List.of(EM_DIAGNOSTICO),
-            EM_DIAGNOSTICO, List.of(AGUARDANDO_APROVACAO),
-            AGUARDANDO_APROVACAO, List.of(APROVADO, RECUSADA),
-            APROVADO, List.of(EM_EXECUCAO),
+            RECEBIDA, List.of(EM_DIAGNOSTICO, CANCELADA),
+            EM_DIAGNOSTICO, List.of(AGUARDANDO_APROVACAO, CANCELADA),
+            AGUARDANDO_APROVACAO, List.of(APROVADO, RECUSADA, CANCELADA),
+            APROVADO, List.of(EM_EXECUCAO, CANCELADA),
             EM_EXECUCAO, List.of(FINALIZADA),
             FINALIZADA, List.of(ENTREGUE),
             RECUSADA, List.of(EM_DIAGNOSTICO)

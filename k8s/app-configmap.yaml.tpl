@@ -14,6 +14,11 @@ data:
   # Fila de entrada do os-orchestrator, montada a partir da branch pela pipeline.
   # Nome determinístico — nunca lido do remote state do outro repositório.
   AWS_SQS_ORCHESTRATOR_QUEUE_URL: "${orchestrator_queue_url}"
+  # Fila de entrada da saga (comandos do os-orchestrator): liga o listener
+  # OrderEventsSqsListener. A policy os-management-<env>-sqs-access precisa estar
+  # anexada à role dos nodes (ver infra/terraform/README.md).
+  AWS_SQS_ORDER_EVENTS_ENABLED: "true"
+  AWS_SQS_ORDER_EVENTS_QUEUE: "${order_events_queue}"
   # Datadog unified service tagging + Micrometer export. DD_ENV is the branch
   # name (develop/main), substituted by the deploy pipeline.
   DD_ENV: "${datadog_env}"
