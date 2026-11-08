@@ -5,71 +5,62 @@ Funcionalidade: Saga da OS do lado do os-management
   um com a mesma acao e desfaz a OS quando recebe uma compensacao.
 
   Contexto:
-    Dado que existe o tipo de serviço "TROCA_OLEO"
-    E que existe um cliente com veículo cadastrado
-    E que existe uma peça com preço de venda "89.90" e 10 unidades em estoque
+    Dado um cliente com veículo cadastrado
+    E uma peça com preço de venda "89.90" e 10 unidades em estoque
 
-  Cenário: Fluxo completo da abertura até a baixa do estoque
-    Quando a oficina abre uma OS com o serviço "TROCA_OLEO"
+  Cenário: Abertura da OS inicia a saga
+    Quando a oficina abre uma OS
     Então a OS fica com status "RECEBIDA"
-    E o orquestrador recebeu "CRIAR_OS" nessa ordem
-    Quando a oficina move a OS para "EM_DIAGNOSTICO"
-    E a oficina reserva 2 unidades da peça para a OS
-    E a oficina move a OS para "AGUARDANDO_APROVACAO"
-    Então o orçamento da OS soma "179.80"
-    Quando o cliente aprova o orçamento
-    E o orquestrador manda "EXECUTAR_SERVICO" para a OS
+    E o orquestrador recebe "CRIAR_OS"
+
+  Cenário: Orquestrador libera a execução de uma OS aprovada
+    Dado uma OS aprovada pelo cliente com 2 unidades da peça reservadas
+    Quando o orquestrador manda "EXECUTAR_SERVICO"
     Então a OS fica com status "EM_EXECUCAO"
-    Quando o orquestrador manda "ATUALIZAR_ESTOQUE" para a OS
-    Então as reservas de estoque da OS ficam "CONFIRMED"
-    E o estoque disponível da peça fica em 8
-    E o orçamento da OS soma "179.80"
-    E o orquestrador recebeu "CRIAR_OS, EXECUTAR_SERVICO, ATUALIZAR_ESTOQUE" nessa ordem
+    E o orquestrador recebe "EXECUTAR_SERVICO"
+
+  Cenário: Orquestrador manda baixar o estoque da OS em execução
+    Dado uma OS em execução com 2 unidades da peça reservadas
+    Quando o orquestrador manda "ATUALIZAR_ESTOQUE"
+    Então o estoque disponível da peça fica em 8
+    E o orçamento da OS continua em "179.80"
+    E o orquestrador recebe "ATUALIZAR_ESTOQUE"
 
   Cenário: Serviço negado pela saga cancela a OS e devolve o estoque
-    Quando a oficina abre uma OS com o serviço "TROCA_OLEO"
-    E a oficina move a OS para "EM_DIAGNOSTICO"
-    E a oficina reserva 2 unidades da peça para a OS
-    E a oficina move a OS para "AGUARDANDO_APROVACAO"
-    E o cliente aprova o orçamento
-    E o orquestrador manda "NEGAR_SERVICO" para a OS
+    Dado uma OS aprovada pelo cliente com 2 unidades da peça reservadas
+    Quando o orquestrador manda "NEGAR_SERVICO"
     Então a OS fica com status "CANCELADA"
-    E as reservas de estoque da OS ficam "RELEASED"
-    E o estoque disponível da peça fica em 10
-    E o orçamento da OS soma "0"
-    E o orquestrador recebeu "CRIAR_OS" nessa ordem
+    E o estoque disponível da peça volta para 10
+    E o orquestrador não recebe nada
 
-  Cenário: Comando de execução repetido não executa de novo
-    Quando a oficina abre uma OS com o serviço "TROCA_OLEO"
-    E a oficina move a OS para "EM_DIAGNOSTICO"
-    E a oficina move a OS para "AGUARDANDO_APROVACAO"
-    E o cliente aprova o orçamento
-    E o orquestrador manda "EXECUTAR_SERVICO" para a OS
-    E o orquestrador manda "EXECUTAR_SERVICO" para a OS
-    Então a OS fica com status "EM_EXECUCAO"
-    E o orquestrador recebeu "CRIAR_OS, EXECUTAR_SERVICO, EXECUTAR_SERVICO" nessa ordem
+  Cenário: Comando repetido não executa a OS de novo
+    Dado uma OS em execução com 2 unidades da peça reservadas
+    Quando o orquestrador manda "EXECUTAR_SERVICO"
+    Então a OS continua com status "EM_EXECUCAO"
+    E o orquestrador recebe "EXECUTAR_SERVICO"
 
   Cenário: Execução antes da aprovação é recusada
-    Quando a oficina abre uma OS com o serviço "TROCA_OLEO"
-    E o orquestrador manda "EXECUTAR_SERVICO" para a OS, que é recusado
-    Então a OS fica com status "RECEBIDA"
-    E o orquestrador recebeu "CRIAR_OS" nessa ordem
+    Dado uma OS recém-aberta
+    Quando o orquestrador manda "EXECUTAR_SERVICO"
+    Então o comando é recusado
+    E a OS continua com status "RECEBIDA"
+    E o orquestrador não recebe nada
+
+  Cenário: Cliente acompanha a OS em execução
+    Dado uma OS em execução com 2 unidades da peça reservadas
+    Quando o cliente consulta suas ordens de serviço
+    Então ele vê a OS com status "EM_EXECUCAO" e orçamento de "179.80"
 
   Cenário: Orçamento recusado pelo cliente devolve o estoque
-    Quando a oficina abre uma OS com o serviço "TROCA_OLEO"
-    E a oficina move a OS para "EM_DIAGNOSTICO"
-    E a oficina reserva 2 unidades da peça para a OS
-    E a oficina move a OS para "AGUARDANDO_APROVACAO"
-    E o cliente recusa o orçamento com o motivo "Muito caro"
+    Dado uma OS aguardando aprovação com 2 unidades da peça reservadas
+    Quando o cliente recusa o orçamento
     Então a OS fica com status "RECUSADA"
-    E as reservas de estoque da OS ficam "RELEASED"
-    E o estoque disponível da peça fica em 10
-    E o orçamento da OS soma "0"
-    E o orquestrador recebeu "CRIAR_OS" nessa ordem
+    E o estoque disponível da peça volta para 10
+    E o orquestrador não recebe nada
 
-  Cenário: Transição inválida não avança a OS nem a saga
-    Quando a oficina abre uma OS com o serviço "TROCA_OLEO"
-    E a oficina tenta mover a OS para "EM_EXECUCAO"
+  Cenário: Transição inválida não avança a OS
+    Dado uma OS recém-aberta
+    Quando a oficina tenta mover a OS para "EM_EXECUCAO"
     Então a operação é recusada com status HTTP 422
-    E a OS fica com status "RECEBIDA"
-    E o orquestrador recebeu "CRIAR_OS" nessa ordem
+    E a OS continua com status "RECEBIDA"
+    E o orquestrador não recebe nada

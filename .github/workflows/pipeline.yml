@@ -76,7 +76,7 @@ jobs:
           cache: maven
 
       # Antes era `mvn verify -DskipTests`: sem testes não há jacoco.exec, e o
-      # check de cobertura do pom (BUNDLE >= 90%) era pulado em silêncio.
+      # check de cobertura do pom (BUNDLE >= 80%) era pulado em silêncio.
       # Agora o verify roda os testes unitários (surefire), o BDD (failsafe +
       # Testcontainers; o runner ubuntu-latest já tem Docker) e o gate do JaCoCo.
       # -Dit.test limita o failsafe ao BDD: os *IntegrationTest legados estão

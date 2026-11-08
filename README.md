@@ -904,7 +904,7 @@ chmod +x validation.sh
 
 ### Cobertura minima
 
-O build falha se a cobertura de linha (JaCoCo) ficar abaixo de **90%**. A verificacao e feita automaticamente na fase `verify`.
+O build falha se a cobertura de linha (JaCoCo) ficar abaixo de **80%**, a exigencia da Fase 4. A verificacao e feita na fase `verify` e conta os testes unitarios e o BDD; o relatorio combinado fica em `target/site/jacoco/index.html`.
 
 ### BDD (Cucumber)
 
@@ -916,18 +916,28 @@ entram pelo mesmo adapter que consome a fila (`OrderEventsSqsListener`), com o
 formato da mensagem SQS; so a fila fica de fora. As mensagens que o
 os-management envia sao capturadas em memoria, e o e-mail via SNS vira no-op.
 
+Os cenarios seguem o estilo declarativo: cada um tem um estado inicial (`Dado`),
+uma unica acao (`Quando`) e o resultado (`Então`, com no maximo dois `E`). Os
+passos tecnicos para chegar ao estado (abrir, diagnosticar, reservar, aprovar)
+ficam na implementacao dos `Dado`.
+
 | Cenario | O que prova |
 |---|---|
-| Fluxo completo | `CRIAR_OS` na abertura; `EXECUTAR_SERVICO` leva a OS aprovada para execucao; `ATUALIZAR_ESTOQUE` baixa o estoque sem zerar o orcamento; respostas na ordem |
-| Servico negado pela saga | compensacao: OS `CANCELADA`, reservas `RELEASED`, estoque e orcamento restaurados, sem resposta |
+| Abertura da OS inicia a saga | `CRIAR_OS` sai na abertura |
+| Orquestrador libera a execucao | OS aprovada vai para `EM_EXECUCAO` e responde `EXECUTAR_SERVICO` |
+| Orquestrador manda baixar o estoque | estoque baixado sem zerar o orcamento; responde `ATUALIZAR_ESTOQUE` |
+| Servico negado pela saga | compensacao: OS `CANCELADA`, estoque devolvido, sem resposta |
 | Comando repetido | a OS nao executa de novo; so a confirmacao e reenviada |
 | Execucao antes da aprovacao | comando recusado (iria para a DLQ); a OS nao muda |
-| Orcamento recusado pelo cliente | reservas liberadas e nenhum comando alem do `CRIAR_OS` |
+| Cliente acompanha a OS | `/my-orders` mostra status e orcamento |
+| Orcamento recusado pelo cliente | estoque devolvido e nada enviado ao orquestrador |
 | Transicao invalida | `422`, a OS nao muda e a saga nao recebe nada |
 
 ```bash
 # So o BDD (precisa de Docker)
 ./mvnw verify -Dit.test=CucumberIntegrationTest
+# No PowerShell, com aspas (senao o "." quebra o argumento):
+#   ./mvnw verify "-Dit.test=CucumberIntegrationTest"
 # Relatorio: target/cucumber-reports/cucumber.html
 ```
 

@@ -310,6 +310,15 @@
 							<goal>report</goal>
 						</goals>
 					</execution>
+					<!-- Relatorio com os testes unitarios + failsafe (BDD), que e o que o check e o
+					     Sonar avaliam. O 'report' da fase test continua para o badge do job unit-test. -->
+					<execution>
+						<id>report-integration</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
 					<execution>
 						<id>check</id>
 						<phase>verify</phase>
@@ -324,7 +333,8 @@
 										<limit>
 											<counter>LINE</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.90</minimum>
+											<!-- Exigencia da Fase 4: cobertura minima de 80% por servico. -->
+											<minimum>0.80</minimum>
 										</limit>
 									</limits>
 								</rule>
