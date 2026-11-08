@@ -1,6 +1,6 @@
 package com.os.workshop.application.saga.port.out;
 
-import com.os.workshop.application.saga.OrderSagaCommand;
+import com.os.workshop.application.saga.SagaMessage;
 
 /**
  * Porta de saída para entregar comandos à máquina de estados do os-orchestrator.
@@ -12,5 +12,5 @@ import com.os.workshop.application.saga.OrderSagaCommand;
  */
 public interface SagaCommandPublisherPort {
 
-    void publish(OrderSagaCommand command);
+    void publish(SagaMessage message);
 }

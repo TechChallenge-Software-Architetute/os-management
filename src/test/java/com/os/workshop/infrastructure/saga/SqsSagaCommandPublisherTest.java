@@ -1,7 +1,9 @@
 package com.os.workshop.infrastructure.saga;
 
-import com.os.workshop.application.saga.OrderSagaCommand;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.os.workshop.application.saga.SagaAction;
+import com.os.workshop.application.saga.SagaMessage;
 import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,28 +35,41 @@ class SqsSagaCommandPublisherTest {
     private final UUID orderId = UUID.randomUUID();
 
     @Test
-    void enviaCorpoComIdDaOsEAcaoNoAtributo() {
+    void enviaCorpoJsonComExatamenteOsQuatroCampos() throws Exception {
         var publisher = new SqsSagaCommandPublisher(sqsClient, metrics, QUEUE_URL);
 
-        publisher.publish(new OrderSagaCommand(orderId, SagaAction.CRIAR_OS));
+        publisher.publish(message(SagaAction.CRIAR_OS, new BigDecimal("179.8")));
 
         ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(sqsClient).sendMessage(captor.capture());
         SendMessageRequest request = captor.getValue();
 
+        JsonNode body = new ObjectMapper().readTree(request.messageBody());
+        assertThat(body.get("order").asText()).isEqualTo(orderId.toString());
+        assertThat(body.get("action").asText()).isEqualTo("CRIAR_OS");
+        assertThat(body.get("amount").decimalValue()).isEqualByComparingTo("179.80");
+        assertThat(body.get("correlationId").asText()).isEqualTo("corr-1");
+        assertThat(body.size()).as("o corpo leva so os 4 campos do contrato").isEqualTo(4);
+
         assertThat(request.queueUrl()).isEqualTo(QUEUE_URL);
-        assertThat(request.messageBody()).isEqualTo(orderId.toString());
-        assertThat(request.messageAttributes()).containsKey("action");
+        // Atributo mantido so por compatibilidade com o listener antigo do orquestrador.
         assertThat(request.messageAttributes().get("action").dataType()).isEqualTo("String");
         assertThat(request.messageAttributes().get("action").stringValue()).isEqualTo("CRIAR_OS");
         verifyNoInteractions(metrics);
     }
 
     @Test
+    void valorSaiComDuasCasasNoJson() {
+        assertThat(SqsSagaCommandPublisher.toJson(message(SagaAction.EXECUTAR_SERVICO, BigDecimal.ZERO)))
+                .isEqualTo("{\"order\":\"" + orderId + "\",\"action\":\"EXECUTAR_SERVICO\","
+                        + "\"amount\":0.00,\"correlationId\":\"corr-1\"}");
+    }
+
+    @Test
     void removeEspacosDaUrlConfigurada() {
         var publisher = new SqsSagaCommandPublisher(sqsClient, metrics, "  " + QUEUE_URL + "  ");
 
-        publisher.publish(new OrderSagaCommand(orderId, SagaAction.ATUALIZAR_ESTOQUE));
+        publisher.publish(message(SagaAction.ATUALIZAR_ESTOQUE, BigDecimal.ONE));
 
         ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
         verify(sqsClient).sendMessage(captor.capture());
@@ -65,7 +81,7 @@ class SqsSagaCommandPublisherTest {
         var publisher = new SqsSagaCommandPublisher(sqsClient, metrics, "");
 
         publisher.warnWhenDisabled();
-        publisher.publish(new OrderSagaCommand(orderId, SagaAction.CRIAR_OS));
+        publisher.publish(message(SagaAction.CRIAR_OS, BigDecimal.ONE));
 
         verifyNoInteractions(sqsClient, metrics);
     }
@@ -74,7 +90,7 @@ class SqsSagaCommandPublisherTest {
     void urlNulaTambemDesligaASaga() {
         var publisher = new SqsSagaCommandPublisher(sqsClient, metrics, null);
 
-        publisher.publish(new OrderSagaCommand(orderId, SagaAction.CRIAR_OS));
+        publisher.publish(message(SagaAction.CRIAR_OS, BigDecimal.ONE));
 
         verifyNoInteractions(sqsClient, metrics);
     }
@@ -93,9 +109,12 @@ class SqsSagaCommandPublisherTest {
                 .thenThrow(new RuntimeException("SQS indisponivel"));
         var publisher = new SqsSagaCommandPublisher(sqsClient, metrics, QUEUE_URL);
 
-        assertThatNoException().isThrownBy(() ->
-                publisher.publish(new OrderSagaCommand(orderId, SagaAction.EXECUTAR_SERVICO)));
+        assertThatNoException().isThrownBy(() -> publisher.publish(message(SagaAction.EXECUTAR_SERVICO, BigDecimal.TEN)));
 
         verify(metrics).integrationFailed("aws_sqs");
+    }
+
+    private SagaMessage message(SagaAction action, BigDecimal amount) {
+        return new SagaMessage(orderId, action, amount, "corr-1");
     }
 }
