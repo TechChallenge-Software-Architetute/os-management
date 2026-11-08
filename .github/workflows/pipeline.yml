@@ -332,6 +332,11 @@ jobs:
       # deploys without in-cluster observability.
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       IMAGE: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
+      # Credenciais AWS que vao para o Secret do pod (sem IRSA no cluster). Mesmo
+      # padrao do os-orchestrator; o token so existe para chaves temporarias (ASIA).
+      APP_AWS_ACCESS_KEY_ID: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+      APP_AWS_SECRET_ACCESS_KEY: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+      APP_AWS_SESSION_TOKEN: ${{ github.ref_name != 'main' && secrets.AWS_SESSION_TOKEN_DEVELOP || '' }}
 
     steps:
       - name: Fazer checkout do código
@@ -344,12 +349,15 @@ jobs:
           test -n "${DB_PASSWORD}" || { echo "::error::Segredo DB_PASSWORD ausente."; exit 1; }
           test -n "${JWT_SECRET}"  || { echo "::error::Segredo JWT_SECRET ausente."; exit 1; }
           test "${#JWT_SECRET}" -ge 32 || { echo "::error::JWT_SECRET deve ter >=32 bytes (256 bits) para HS256; atual: ${#JWT_SECRET}."; exit 1; }
+          test -n "${APP_AWS_ACCESS_KEY_ID}"     || { echo "::error::Segredo AWS_ACCESS_KEY_ID_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."; exit 1; }
+          test -n "${APP_AWS_SECRET_ACCESS_KEY}" || { echo "::error::Segredo AWS_SECRET_ACCESS_KEY_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."; exit 1; }
 
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
           aws-secret-access-key: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-session-token: ${{ github.ref_name != 'main' && secrets.AWS_SESSION_TOKEN_DEVELOP || '' }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configurar kubectl para o cluster EKS
@@ -419,12 +427,21 @@ jobs:
               -e "s|\${order_events_queue}|${ORDER_EVENTS_QUEUE}|g" \
               k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
-          # Secret da app (credenciais nunca hardcoded)
+          # Secret da app (credenciais nunca hardcoded). Chave temporaria (ASIA)
+          # precisa de AWS_SESSION_TOKEN; com chave fixa a linha e removida.
+          if [ -n "${APP_AWS_SESSION_TOKEN}" ]; then
+            TOKEN_SED="s|\${aws_session_token}|${APP_AWS_SESSION_TOKEN}|g"
+          else
+            TOKEN_SED="/AWS_SESSION_TOKEN/d"
+          fi
           sed -e "s|\${db_user}|${DB_USER}|g" \
               -e "s|\${db_password}|${DB_PASSWORD}|g" \
               -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
               -e "s|\${external_token}|change-me|g" \
               -e "s|\${dd_api_key}|${DD_API_KEY}|g" \
+              -e "s|\${aws_access_key_id}|${APP_AWS_ACCESS_KEY_ID}|g" \
+              -e "s|\${aws_secret_access_key}|${APP_AWS_SECRET_ACCESS_KEY}|g" \
+              -e "${TOKEN_SED}" \
               k8s/app-secret.yaml.tpl | kubectl apply -f -
 
           # App Deployment + Service, HPA e Ingress
@@ -447,7 +464,9 @@ jobs:
             kubectl get pods -n os-management -o wide
             echo "----- describe (pod da app) -----"
             kubectl describe pod -n os-management -l app=os-management
-            echo "----- logs (app, todos os containers) -----"
+            echo "----- logs do container que caiu (--previous): aqui fica o erro do startup -----"
+            kubectl logs -n os-management -l app=os-management --previous --tail=200 --all-containers=true || true
+            echo "----- logs (app, container atual) -----"
             kubectl logs -n os-management -l app=os-management --tail=120 --all-containers=true || true
             echo "----- eventos do namespace -----"
             kubectl get events -n os-management --sort-by=.lastTimestamp | tail -40
