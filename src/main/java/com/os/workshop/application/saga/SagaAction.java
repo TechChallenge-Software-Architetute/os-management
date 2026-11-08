@@ -1,29 +1,40 @@
 package com.os.workshop.application.saga;
 
 /**
- * Comandos que o os-management envia para a máquina de estados do os-orchestrator.
+ * Acoes da saga, com os mesmos nomes do {@code StateMachineActions} do
+ * os-orchestrator.
  *
- * <p>O nome de cada constante vai no atributo de mensagem {@code action} do SQS e
- * é desserializado do outro lado como {@code StateMachineActions}, então estes
- * nomes precisam casar exatamente com os do orquestrador.
+ * <p>O nome viaja no atributo de mensagem {@code action} do SQS, nos dois
+ * sentidos, e o corpo da mensagem e sempre o id da OS. Os nomes precisam casar
+ * exatamente com os do orquestrador: e o unico ponto de acoplamento do contrato.
  *
- * <p><strong>Ao adicionar uma ação nova:</strong> declare a constante aqui com o
- * mesmo nome usado no orquestrador e acrescente uma linha em
- * {@link SagaActionResolver}. Nada mais precisa mudar — os três use cases já
- * publicam o evento e o resolver decide se há comando a enviar.
- *
- * <p>O orquestrador ainda vai ganhar ações para os estados finais
- * ({@code FINALIZADA}, {@code ENTREGUE}, {@code RECUSADA}); elas entram aqui
- * quando existirem lá.
+ * <p>O enum espelha todas as acoes do orquestrador, mesmo as que nao passam pelo
+ * os-management, para que uma mensagem com acao conhecida mas fora do lugar seja
+ * recusada com uma mensagem clara em vez de falhar na conversao.
  */
 public enum SagaAction {
 
-    /** Ordem de serviço criada. */
+    /** os-management -> orquestrador: OS aberta, inicia a saga. */
     CRIAR_OS,
 
-    /** Orçamento gerado e aguardando aprovação do cliente. */
+    /** Orquestrador <-> os-payment. Nao e destinada ao os-management. */
     GERAR_ORCAMENTO,
 
-    /** Serviço liberado para execução. */
-    EXECUTAR_SERVICO
+    /** Orquestrador <-> os-payment. Nao e destinada ao os-management. */
+    GERAR_PAGAMENTO,
+
+    /** Orquestrador -> os-management: executar o servico. Respondida com a mesma acao. */
+    EXECUTAR_SERVICO,
+
+    /** Orquestrador -> os-management: baixar o estoque reservado. Respondida com a mesma acao. */
+    ATUALIZAR_ESTOQUE,
+
+    /** Orquestrador -> os-management: compensacao, servico negado. Sem resposta. */
+    NEGAR_SERVICO,
+
+    /** Orquestrador -> os-management: compensacao, estoque negado. Sem resposta. */
+    NEGAR_ESTOQUE,
+
+    /** Orquestrador -> os-management: a saga falhou. Tratada como compensacao. Sem resposta. */
+    ERRO
 }

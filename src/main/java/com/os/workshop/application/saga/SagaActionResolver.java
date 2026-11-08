@@ -7,36 +7,35 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Traduz uma mudança de estado da ordem no comando correspondente da saga.
+ * Traduz uma mudanca de estado da OS na acao da saga que o os-management inicia
+ * por conta propria.
  *
- * <p>O os-management tem oito estados e o orquestrador tem três ações, então a
- * maioria das transições não gera comando algum. O mapa abaixo é a única coisa
- * que precisa mudar quando o orquestrador ganhar ações novas: a chave é o estado
- * de destino, porque o domínio já garante que a transição é válida
- * ({@code ServiceOrder.advanceTo}), e o valor é a ação a enviar.
+ * <p>No contrato com o os-orchestrator (ADR-0006), o os-management so toma a
+ * iniciativa uma vez: o {@code CRIAR_OS}, na abertura da OS. Os outros passos sao
+ * comandos do orquestrador, e a resposta a cada um sai do
+ * {@link HandleSagaCommandUseCase}, nao daqui.
+ *
+ * <p>Por isso as transicoes de status nao geram comando:
+ * <ul>
+ *   <li>{@code AGUARDANDO_APROVACAO} deixou de gerar {@code GERAR_ORCAMENTO}: quem
+ *       responde essa acao ao orquestrador e o os-payment. Se o os-management
+ *       tambem enviasse, o orquestrador receberia a acao em duplicidade e iria
+ *       para {@code ERRO}.</li>
+ *   <li>{@code EM_EXECUCAO} deixou de gerar {@code EXECUTAR_SERVICO}: a resposta so
+ *       sai quando o orquestrador manda executar. Se a oficina iniciar a execucao
+ *       pela API, a confirmacao sai quando o comando chegar.</li>
+ * </ul>
+ *
+ * <p>O mapa continua aqui como ponto de extensao: se o contrato ganhar uma acao
+ * disparada por transicao de status, e uma linha.
  */
 @Component
 public class SagaActionResolver {
 
-    /**
-     * Estado de destino -> ação da saga. Transição ausente = nenhum comando.
-     *
-     * <p>Entradas futuras, quando o orquestrador tiver os passos finais:
-     * <ul>
-     *   <li>{@code FINALIZADA} -> finalizar serviço</li>
-     *   <li>{@code ENTREGUE} -> entregar ordem</li>
-     *   <li>{@code RECUSADA} -> recusar orçamento</li>
-     * </ul>
-     * Hoje {@code APROVADO} e {@code RECUSADA} também não geram comando: a
-     * aprovação do cliente só vira {@code EXECUTAR_SERVICO} quando a oficina
-     * move a ordem para {@code EM_EXECUCAO}.
-     */
-    private static final Map<OrderServiceStatusEnum, SagaAction> ACTION_BY_TARGET_STATUS = Map.of(
-            OrderServiceStatusEnum.AGUARDANDO_APROVACAO, SagaAction.GERAR_ORCAMENTO,
-            OrderServiceStatusEnum.EM_EXECUCAO, SagaAction.EXECUTAR_SERVICO
-    );
+    /** Estado de destino -> acao da saga. Vazio no contrato atual. */
+    private static final Map<OrderServiceStatusEnum, SagaAction> ACTION_BY_TARGET_STATUS = Map.of();
 
-    /** A criação da ordem é sempre o primeiro passo da saga. */
+    /** A abertura da OS e sempre o primeiro passo da saga. */
     private static final SagaAction CREATION_ACTION = SagaAction.CRIAR_OS;
 
     public Optional<SagaAction> resolve(OrderSagaEvent event) {
@@ -55,8 +54,7 @@ public class SagaActionResolver {
         try {
             return Optional.of(OrderServiceStatusEnum.valueOf(status));
         } catch (IllegalArgumentException e) {
-            // Estado desconhecido não derruba o fluxo da ordem; simplesmente não
-            // há comando a enviar.
+            // Estado desconhecido nao derruba o fluxo da OS; so nao ha comando a enviar.
             return Optional.empty();
         }
     }

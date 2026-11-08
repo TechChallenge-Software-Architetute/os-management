@@ -11,6 +11,7 @@ import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,6 +27,16 @@ public class CreateOrderUseCase {
     private final ApplicationEventPublisher eventPublisher;
     private final ServiceOrderMetrics metrics;
 
+    /**
+     * Cria a OS e os servicos dela numa unica transacao.
+     *
+     * <p>Antes os servicos eram gravados um a um e a OS por ultimo, sem transacao:
+     * se o save da OS falhasse, os servicos ficavam orfaos no banco. Agora tudo
+     * entra ou nada entra, e o CRIAR_OS (enviado pelo
+     * {@code OrderSagaEventListener} em AFTER_COMMIT) so sai depois que a OS
+     * existe de fato.
+     */
+    @Transactional
     public ServiceOrder execute(String cpfCnpj, String placaVeiculo, List<String> serviceTypes) {
         try {
             findClientByCpfUseCase.execute(cpfCnpj);

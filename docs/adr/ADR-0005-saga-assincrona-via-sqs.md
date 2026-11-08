@@ -95,9 +95,10 @@ de um não passe a depender do deploy do outro.
   mudou e o comando não saiu. Para o volume do desafio isso é aceitável; um
   outbox persistente é o próximo passo se deixar de ser.
 
-- **`AFTER_COMMIT` exige `fallbackExecution = true`.** O `CreateOrderUseCase`
-  não é `@Transactional`; sem essa flag o Spring descartaria em silêncio
-  justamente o evento que inicia a saga.
+- **A criação da OS é atômica.** O `CreateOrderUseCase` é `@Transactional`: a
+  OS e os serviços dela entram juntos ou não entram, e o `CRIAR_OS` só sai
+  depois do commit. O `fallbackExecution = true` do listener continua como rede
+  de segurança para qualquer caminho que publique o evento fora de transação.
 
 - **Contrato de mensagem é acoplamento, e ele é mínimo por escolha.** Corpo =
   id da ordem; atributo `action` = nome da ação. Os nomes das ações precisam

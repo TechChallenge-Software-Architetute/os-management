@@ -29,8 +29,13 @@ public class RecalculateBudgetUseCase {
 
     @Transactional
     public Budget execute(UUID serviceOrderId) {
+        // Entram as reservas ativas e as ja confirmadas (baixadas do estoque pelo
+        // ATUALIZAR_ESTOQUE da saga). Antes so as ACTIVE contavam, e a baixa do
+        // estoque zerava o orcamento que o cliente tinha aprovado.
         List<StockReservation> activeReservations = reservationRepository
-                .findByServiceOrderIdAndStatus(serviceOrderId, StockReservationStatus.ACTIVE);
+                .findByServiceOrderId(serviceOrderId).stream()
+                .filter(reservation -> reservation.getStatus() != StockReservationStatus.RELEASED)
+                .toList();
 
         Budget budget = budgetRepository.findByServiceOrderId(serviceOrderId)
                 .orElseGet(() -> {

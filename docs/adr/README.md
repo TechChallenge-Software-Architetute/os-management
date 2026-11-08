@@ -13,7 +13,8 @@ alternativas que levou a uma decisão técnica pontual, ver os [RFCs](../rfc/REA
 | [ADR-0002](ADR-0002-uso-hpa.md) | Uso de HPA para escalabilidade horizontal | Aceito |
 | [ADR-0003](ADR-0003-split-multiplos-repositorios.md) | Split em múltiplos repositórios com CI/CD independente | Aceito |
 | [ADR-0004](ADR-0004-arquitetura-hexagonal.md) | Arquitetura Hexagonal (Ports & Adapters) no domínio | Aceito |
-| [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md) | Saga assíncrona via SQS entre serviços | Aceito |
+| [ADR-0005](ADR-0005-saga-assincrona-via-sqs.md) | Saga assíncrona via SQS entre serviços | Aceito (contrato no [ADR-0006](ADR-0006-contrato-saga-orquestrador.md)) |
+| [ADR-0006](ADR-0006-contrato-saga-orquestrador.md) | Contrato de mensagens da saga com o os-orchestrator | Aceito |
 
 ## Convenção
 
