@@ -62,4 +62,7 @@ clusterAgent:
     # Injects dd-java-agent into pods carrying the
     # admission.datadoghq.com/java-lib.version annotation (see k8s/app.yaml).
     enabled: true
+    # Opt-in por pod: so muta pods com a label admission.datadoghq.com/enabled: "true".
+    # A annotation java-lib.version sozinha NAO basta. Injecao so acontece em pods
+    # criados depois que o Cluster Agent esta pronto (a pipeline espera por ele).
     mutateUnlabelled: false
