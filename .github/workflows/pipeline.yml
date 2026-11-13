@@ -390,6 +390,24 @@ jobs:
             -f k8s/datadog/values.yaml \
             --set datadog.clusterName="${CLUSTER_NAME}"
 
+      # O admission controller só injeta o dd-java-agent em pods criados DEPOIS
+      # que o Cluster Agent está pronto (pods que já estão rodando não são
+      # alterados). Por isso o job espera o Agent antes de aplicar a app. Segue
+      # mesmo se estourar o tempo (observabilidade não bloqueia o deploy), mas
+      # deixa um aviso no resumo do job.
+      - name: Aguardar Datadog Agent ficar pronto
+        if: ${{ env.DD_API_KEY != '' }}
+        continue-on-error: true
+        run: |
+          if kubectl rollout status deployment/datadog-cluster-agent -n datadog --timeout=180s \
+             && kubectl rollout status daemonset/datadog -n datadog --timeout=180s; then
+            echo "Datadog Agent e Cluster Agent prontos."
+          else
+            echo "::warning::Datadog Agent não ficou pronto a tempo; o pod da app pode subir sem o dd-java-agent."
+            kubectl get pods -n datadog -o wide || true
+            exit 1
+          fi
+
       - name: Aplicar manifests Kubernetes (RDS externo — sem Postgres in-cluster)
         run: |
           # Metrics Server: provisionado pelo stack de infra (os-management-k8s-terraform,
@@ -473,6 +491,23 @@ jobs:
             exit 1
           }
 
+      # Confere se o admission controller injetou o tracer no pod novo. Não falha
+      # o deploy, só avisa, para não descobrir pelo APM vazio no Datadog.
+      - name: Verificar injeção do dd-java-agent
+        if: ${{ env.DD_API_KEY != '' }}
+        continue-on-error: true
+        run: |
+          kubectl get pods -n os-management -l app=os-management \
+            -o custom-columns='POD:.metadata.name,STATUS:.status.phase,INIT:.spec.initContainers[*].name'
+          INIT_CONTAINERS=$(kubectl get pods -n os-management -l app=os-management \
+            -o jsonpath='{.items[*].spec.initContainers[*].name}')
+          if echo "${INIT_CONTAINERS}" | grep -q "datadog-lib-java"; then
+            echo "dd-java-agent injetado (init container datadog-lib-java-init presente)."
+          else
+            echo "::warning::Pod da app sem o init container datadog-lib-java-init: o tracer não foi injetado. Confira a label admission.datadoghq.com/enabled no k8s/app.yaml e os pods do namespace datadog."
+            exit 1
+          fi
+
       - name: Exibir acesso a aplicacao
         run: |
           echo "========================================"
@@ -502,7 +537,10 @@ jobs:
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
-      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
+      # A conta é da UE: Agent (values.yaml) e Micrometer (DD_METRICS_URI) já
+      # apontam para datadoghq.eu. A variável de repositório DD_SITE só é
+      # necessária se a conta mudar de site.
+      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.eu' }}
 
     steps:
       - name: Fazer checkout do código

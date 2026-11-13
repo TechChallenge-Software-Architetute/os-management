@@ -21,12 +21,18 @@ spec:
     metadata:
       labels:
         app: os-management
+        # Libera o admission controller do Cluster Agent para este pod. O
+        # k8s/datadog/values.yaml usa mutateUnlabelled: false, entao sem esta label
+        # o webhook ignora o pod e o dd-java-agent nunca e injetado (sem APM, sem
+        # dd.trace_id nos logs, sem trace atravessando o SQS).
+        admission.datadoghq.com/enabled: "true"
         tags.datadoghq.com/service: os-management
         tags.datadoghq.com/version: "1.0.0"
       annotations:
         # Datadog Cluster Agent admission controller injects the Java tracer
         # (dd-java-agent), its volume mount and JVM options — no initContainer or
-        # image change needed. Requires the Cluster Agent admission controller.
+        # image change needed. Requires the Cluster Agent admission controller
+        # AND the admission.datadoghq.com/enabled label above.
         admission.datadoghq.com/java-lib.version: "latest"
         # Collect this container's JSON stdout logs without turning on collection
         # for every workload in the cluster.
