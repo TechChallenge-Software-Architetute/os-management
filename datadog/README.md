@@ -31,6 +31,8 @@ annotations:
 
 Sem a label, o pod sobe normalmente, mas sem tracer: o APM fica vazio, o painel de latência e o monitor de p95 ficam sem dados e os logs chegam sem `dd.trace_id`.
 
+**Porta do webhook no EKS:** o plano de controle chama o webhook do Cluster Agent direto no pod. A porta padrão do chart (8000) não é liberada pelo security group dos nodes, então a chamada expira, o Kubernetes ignora o webhook e o pod sobe sem tracer, sem erro nenhum. Por isso o `values.yaml` usa `clusterAgent.admissionController.port: 8443`, que as regras recomendadas do módulo EKS (`os-management-k8s-terraform`) já liberam para webhooks.
+
 A injeção só acontece em pods criados depois que o Cluster Agent está pronto. Por isso a pipeline espera o `datadog-cluster-agent` e o DaemonSet `datadog` antes de aplicar a app e, no fim do deploy, confere se o pod tem o init container `datadog-lib-java-init`. Se algum desses passos falhar, o deploy segue e o job mostra um aviso.
 
 ## Ambientes

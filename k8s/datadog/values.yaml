@@ -68,3 +68,10 @@ clusterAgent:
     # A annotation java-lib.version sozinha NAO basta. Injecao so acontece em pods
     # criados depois que o Cluster Agent esta pronto (a pipeline espera por ele).
     mutateUnlabelled: false
+    # Porta em que o Cluster Agent recebe o webhook (o Service continua em 443).
+    # O padrao do chart e 8000, que o security group dos nodes do EKS nao libera
+    # para o plano de controle: a chamada expira, o webhook e ignorado e os pods
+    # sobem sem o tracer. 8443 ja esta liberada pelas regras recomendadas do
+    # modulo terraform-aws-modules/eks (os-management-k8s-terraform), entao nao
+    # e preciso mudar a rede. Vale para o Kind tambem.
+    port: 8443
