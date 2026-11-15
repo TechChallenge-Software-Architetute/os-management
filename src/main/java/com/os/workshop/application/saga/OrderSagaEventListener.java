@@ -31,7 +31,8 @@ public class OrderSagaEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void onOrderSagaEvent(OrderSagaEvent event) {
         resolver.resolve(event).ifPresentOrElse(
-                action -> publisher.publish(new OrderSagaCommand(event.orderId(), action)),
+                action -> publisher.publish(new OrderSagaCommand(
+                        event.orderId(), action, event.amount(), event.correlationId())),
                 () -> log.debug("Transicao {} -> {} da ordem {} nao corresponde a nenhuma acao da saga.",
                         event.previousStatus(), event.newStatus(), event.orderId()));
     }

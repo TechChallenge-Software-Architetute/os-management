@@ -9,7 +9,7 @@ class SqsConfigTest {
 
     @Test
     void criaClienteNaRegiaoConfigurada() {
-        try (var client = new SqsConfig().sqsClient("sa-east-1")) {
+        try (var client = new SqsConfig().sqsClient("sa-east-1", "")) {
             assertThat(client).isNotNull();
             assertThat(client.serviceClientConfiguration().region()).isEqualTo(Region.SA_EAST_1);
         }

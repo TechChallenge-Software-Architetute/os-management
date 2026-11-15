@@ -71,6 +71,11 @@ public class HandleSagaCommandUseCase {
 
     @Transactional
     public void execute(UUID orderId, SagaAction action) {
+        execute(orderId, action, null);
+    }
+
+    @Transactional
+    public void execute(UUID orderId, SagaAction action, String correlationId) {
         Objects.requireNonNull(orderId, "orderId do comando da saga e obrigatorio.");
         Objects.requireNonNull(action, "action do comando da saga e obrigatoria.");
 
@@ -79,8 +84,8 @@ public class HandleSagaCommandUseCase {
 
         try {
             switch (action) {
-                case EXECUTAR_SERVICO -> executeService(order);
-                case ATUALIZAR_ESTOQUE -> updateStock(order);
+                case EXECUTAR_SERVICO -> executeService(order, correlationId);
+                case ATUALIZAR_ESTOQUE -> updateStock(order, correlationId);
                 case NEGAR_SERVICO, NEGAR_ESTOQUE, ERRO -> compensate(order, action);
                 default -> throw new SagaCommandRejectedException(orderId, action,
                         "a acao nao e destinada ao os-management");
@@ -91,7 +96,7 @@ public class HandleSagaCommandUseCase {
         }
     }
 
-    private void executeService(ServiceOrder order) {
+    private void executeService(ServiceOrder order, String correlationId) {
         OrderServiceStatusEnum status = order.getStatus();
 
         if (status == OrderServiceStatusEnum.APROVADO) {
@@ -106,10 +111,10 @@ public class HandleSagaCommandUseCase {
                     "a OS esta em " + status + "; a execucao so comeca depois do orcamento aprovado");
         }
 
-        reply(order.getId(), SagaAction.EXECUTAR_SERVICO);
+        reply(order.getId(), SagaAction.EXECUTAR_SERVICO, correlationId);
     }
 
-    private void updateStock(ServiceOrder order) {
+    private void updateStock(ServiceOrder order, String correlationId) {
         if (!EXECUTION_STARTED.contains(order.getStatus())) {
             throw new SagaCommandRejectedException(order.getId(), SagaAction.ATUALIZAR_ESTOQUE,
                     "a OS esta em " + order.getStatus() + "; o estoque so e baixado depois que a execucao comeca");
@@ -122,7 +127,7 @@ public class HandleSagaCommandUseCase {
             log.info("OS {} sem reservas ativas para baixar (sem pecas ou ja baixadas).", order.getId());
         }
 
-        reply(order.getId(), SagaAction.ATUALIZAR_ESTOQUE);
+        reply(order.getId(), SagaAction.ATUALIZAR_ESTOQUE, correlationId);
     }
 
     private void compensate(ServiceOrder order, SagaAction action) {
@@ -153,8 +158,8 @@ public class HandleSagaCommandUseCase {
     }
 
     /** A resposta sai como evento interno e so vai para o SQS depois do commit. */
-    private void reply(UUID orderId, SagaAction action) {
-        eventPublisher.publishEvent(new OrderSagaCommand(orderId, action));
+    private void reply(UUID orderId, SagaAction action, String correlationId) {
+        eventPublisher.publishEvent(new OrderSagaCommand(orderId, action, null, correlationId));
     }
 
     private static String cancellationReason(SagaAction action) {

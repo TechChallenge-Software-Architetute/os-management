@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -21,7 +22,8 @@ import java.util.Map;
  * por remote state do Terraform — é isso que mantém os deploys independentes.
  *
  * <p>O formato da mensagem é o que o {@code StateMachineListener} do orquestrador
- * já espera: corpo = id da ordem, atributo {@code action} = nome da ação.
+ * já espera: corpo = id da ordem, atributo {@code action} = nome da ação e,
+ * quando disponível, atributo {@code amount} = total do orçamento.
  */
 @Component
 @Slf4j
@@ -59,13 +61,28 @@ public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
         }
 
         try {
+            Map<String, MessageAttributeValue> attributes = new HashMap<>();
+            attributes.put(ACTION_ATTRIBUTE, MessageAttributeValue.builder()
+                    .dataType("String")
+                    .stringValue(command.action().name())
+                    .build());
+            if (command.amount() != null) {
+                attributes.put("amount", MessageAttributeValue.builder()
+                        .dataType("Number")
+                        .stringValue(command.amount().toPlainString())
+                        .build());
+            }
+            if (command.correlationId() != null && !command.correlationId().isBlank()) {
+                attributes.put("correlationId", MessageAttributeValue.builder()
+                        .dataType("String")
+                        .stringValue(command.correlationId())
+                        .build());
+            }
+
             sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(command.orderId().toString())
-                    .messageAttributes(Map.of(ACTION_ATTRIBUTE, MessageAttributeValue.builder()
-                            .dataType("String")
-                            .stringValue(command.action().name())
-                            .build()))
+                    .messageAttributes(attributes)
                     .build());
 
             log.info("Comando {} enviado ao orquestrador para a ordem {}.",

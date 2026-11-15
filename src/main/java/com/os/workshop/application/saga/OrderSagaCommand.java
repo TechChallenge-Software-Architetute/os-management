@@ -1,5 +1,6 @@
 package com.os.workshop.application.saga;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -9,7 +10,15 @@ import java.util.UUID;
  * {@code action} — o formato que o {@code StateMachineListener} do
  * os-orchestrator já espera.
  */
-public record OrderSagaCommand(UUID orderId, SagaAction action) {
+public record OrderSagaCommand(UUID orderId, SagaAction action, BigDecimal amount, String correlationId) {
+
+    public OrderSagaCommand(UUID orderId, SagaAction action) {
+        this(orderId, action, null, null);
+    }
+
+    public OrderSagaCommand(UUID orderId, SagaAction action, BigDecimal amount) {
+        this(orderId, action, amount, null);
+    }
 
     public OrderSagaCommand {
         if (orderId == null) {

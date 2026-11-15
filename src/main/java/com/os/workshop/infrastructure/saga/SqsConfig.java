@@ -3,8 +3,13 @@ package com.os.workshop.infrastructure.saga;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsClientBuilder;
+
+import java.net.URI;
 
 /**
  * Cliente SQS. Credenciais vêm do default provider chain (role dos nodes do EKS
@@ -15,9 +20,14 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 public class SqsConfig {
 
     @Bean
-    public SqsClient sqsClient(@Value("${aws.sqs.region:us-east-1}") String region) {
-        return SqsClient.builder()
-                .region(Region.of(region))
-                .build();
+    public SqsClient sqsClient(@Value("${aws.sqs.region:us-east-1}") String region,
+                               @Value("${AWS_SQS_ENDPOINT:}") String endpoint) {
+        SqsClientBuilder builder = SqsClient.builder().region(Region.of(region));
+        if (!endpoint.isBlank()) {
+            builder.endpointOverride(URI.create(endpoint))
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create("test", "test")));
+        }
+        return builder.build();
     }
 }

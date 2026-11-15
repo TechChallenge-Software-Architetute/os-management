@@ -40,19 +40,28 @@ public class OrderEventsSqsListener {
 
     @SqsListener("${aws.sqs.order-events.queue}")
     public void onMessage(@Payload String body,
-                          @Header(name = ACTION_ATTRIBUTE, required = false) String action) {
+                          @Header(name = ACTION_ATTRIBUTE, required = false) String action,
+                          @Header(name = "correlationId", required = false) String correlationId) {
         UUID orderId = parseOrderId(body);
         SagaAction sagaAction = parseAction(action);
 
         MDC.put("orderId", orderId.toString());
         MDC.put("sagaAction", sagaAction.name());
+        if (correlationId != null && !correlationId.isBlank()) {
+            MDC.put("correlationId", correlationId);
+        }
         try {
             log.info("Comando da saga recebido: {} para a OS {}.", sagaAction, orderId);
-            handleSagaCommandUseCase.execute(orderId, sagaAction);
+            handleSagaCommandUseCase.execute(orderId, sagaAction, correlationId);
         } finally {
             MDC.remove("orderId");
             MDC.remove("sagaAction");
+            MDC.remove("correlationId");
         }
+    }
+
+    public void onMessage(String body, String action) {
+        onMessage(body, action, null);
     }
 
     static UUID parseOrderId(String body) {

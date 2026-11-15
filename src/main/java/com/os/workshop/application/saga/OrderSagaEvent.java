@@ -1,5 +1,6 @@
 package com.os.workshop.application.saga;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -14,14 +15,23 @@ import java.util.UUID;
  * <p>{@code previousStatus} é nulo na criação da ordem, que é o que distingue
  * "ordem criada" de "ordem avançou".
  */
-public record OrderSagaEvent(UUID orderId, String previousStatus, String newStatus) {
+public record OrderSagaEvent(UUID orderId, String previousStatus, String newStatus, BigDecimal amount,
+                             String correlationId) {
+
+    public static OrderSagaEvent created(UUID orderId, String newStatus, BigDecimal amount, String correlationId) {
+        return new OrderSagaEvent(orderId, null, newStatus, amount, correlationId);
+    }
 
     public static OrderSagaEvent created(UUID orderId, String newStatus) {
-        return new OrderSagaEvent(orderId, null, newStatus);
+        return created(orderId, newStatus, null, null);
+    }
+
+    public static OrderSagaEvent created(UUID orderId, String newStatus, BigDecimal amount) {
+        return created(orderId, newStatus, amount, null);
     }
 
     public static OrderSagaEvent advanced(UUID orderId, String previousStatus, String newStatus) {
-        return new OrderSagaEvent(orderId, previousStatus, newStatus);
+        return new OrderSagaEvent(orderId, previousStatus, newStatus, null, null);
     }
 
     public boolean isCreation() {
