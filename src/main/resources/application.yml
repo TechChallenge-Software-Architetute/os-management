@@ -10,7 +10,7 @@ spring:
   # A URL do banco deve ser fornecida pelo ambiente de execução.
   # O valor padrão é usado apenas no desenvolvimento local com Docker Compose.
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:15432/workshop} # Local
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/workshop} # Local
     # url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://workshop.cyv0ccwg29gy.us-east-1.rds.amazonaws.com:5432/workshop}  # aws
     username: ${SPRING_DATASOURCE_USERNAME:dbadmin}
     password: ${SPRING_DATASOURCE_PASSWORD:senha-super-segura}
@@ -34,6 +34,9 @@ spring:
         format_sql: true
         # Explicitly sets PostgreSQL dialect for correct SQL generation.
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 1
 
 logging:
   file:
@@ -80,6 +83,8 @@ aws:
     topic-arn: ${AWS_SNS_TOPIC_ARN:arn:aws:sns:us-east-1:798294347765:os-management-fiap:cb7009aa-c1dd-44cf-abdb-af9c1f1686ff}
   sqs:
     region: ${AWS_REGION:us-east-1}
+    # Optional LocalStack endpoint. Blank in AWS so the SDK uses the regional endpoint.
+    endpoint: ${AWS_SQS_ENDPOINT:}
     # Fila de entrada do os-orchestrator: os-orchestrator-<env>-order-processing.
     # Nome deterministico, injetado pelo ConfigMap — nunca lido do remote state do
     # Terraform, para os deploys continuarem independentes.

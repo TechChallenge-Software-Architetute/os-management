@@ -1,7 +1,5 @@
 package com.os.workshop.infrastructure.saga;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.os.workshop.application.saga.SagaAction;
 import com.os.workshop.application.saga.SagaMessage;
 import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
@@ -35,7 +33,7 @@ class SqsSagaCommandPublisherTest {
     private final UUID orderId = UUID.randomUUID();
 
     @Test
-    void enviaCorpoJsonComExatamenteOsQuatroCampos() throws Exception {
+    void enviaUuidNoCorpoEAcaoValorECorrelationIdComoAtributos() {
         var publisher = new SqsSagaCommandPublisher(sqsClient, metrics, QUEUE_URL);
 
         publisher.publish(message(SagaAction.CRIAR_OS, new BigDecimal("179.8")));
@@ -44,25 +42,14 @@ class SqsSagaCommandPublisherTest {
         verify(sqsClient).sendMessage(captor.capture());
         SendMessageRequest request = captor.getValue();
 
-        JsonNode body = new ObjectMapper().readTree(request.messageBody());
-        assertThat(body.get("order").asText()).isEqualTo(orderId.toString());
-        assertThat(body.get("action").asText()).isEqualTo("CRIAR_OS");
-        assertThat(body.get("amount").decimalValue()).isEqualByComparingTo("179.80");
-        assertThat(body.get("correlationId").asText()).isEqualTo("corr-1");
-        assertThat(body.size()).as("o corpo leva so os 4 campos do contrato").isEqualTo(4);
+        assertThat(request.messageBody()).isEqualTo(orderId.toString());
 
         assertThat(request.queueUrl()).isEqualTo(QUEUE_URL);
-        // Atributo mantido so por compatibilidade com o listener antigo do orquestrador.
         assertThat(request.messageAttributes().get("action").dataType()).isEqualTo("String");
         assertThat(request.messageAttributes().get("action").stringValue()).isEqualTo("CRIAR_OS");
+        assertThat(request.messageAttributes().get("amount").stringValue()).isEqualTo("179.80");
+        assertThat(request.messageAttributes().get("correlationId").stringValue()).isEqualTo("corr-1");
         verifyNoInteractions(metrics);
-    }
-
-    @Test
-    void valorSaiComDuasCasasNoJson() {
-        assertThat(SqsSagaCommandPublisher.toJson(message(SagaAction.EXECUTAR_SERVICO, BigDecimal.ZERO)))
-                .isEqualTo("{\"order\":\"" + orderId + "\",\"action\":\"EXECUTAR_SERVICO\","
-                        + "\"amount\":0.00,\"correlationId\":\"corr-1\"}");
     }
 
     @Test

@@ -51,10 +51,14 @@ class OrderSagaEventListenerTest {
     }
 
     @Test
-    void transicaoDeStatusNaoEnviaNada() {
-        listener.onOrderSagaEvent(OrderSagaEvent.advanced(orderId, "EM_DIAGNOSTICO", "AGUARDANDO_APROVACAO"));
+    void aprovacaoDoOrcamentoNotificaOrquestrador() {
+        MDC.put(RequestCorrelationFilter.REQUEST_ID, "req-123");
+        when(budgetRepository.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
 
-        verifyNoInteractions(publisher, budgetRepository);
+        listener.onOrderSagaEvent(OrderSagaEvent.advanced(orderId, "AGUARDANDO_APROVACAO", "APROVADO"));
+
+        verify(publisher).publish(new SagaMessage(
+                orderId, SagaAction.ORCAMENTO_APROVADO, BigDecimal.ZERO, "req-123"));
     }
 
     @Test

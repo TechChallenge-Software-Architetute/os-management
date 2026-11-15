@@ -7,7 +7,8 @@ data:
   SERVER_PORT: "8080"
   SPRING_APPLICATION_NAME: workshop
   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:15432/workshop
-  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+  SPRING_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/dev
   SPRING_JPA_SHOW_SQL: "false"
   JWT_EXPIRATION: "86400000"
   # Datadog unified service tagging + Micrometer export (agentless HTTP).

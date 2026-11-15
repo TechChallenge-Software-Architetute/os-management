@@ -23,13 +23,16 @@ class SagaActionResolverTest {
         assertThat(resolver.resolve(event)).contains(SagaAction.CRIAR_OS);
     }
 
-    /**
-     * No contrato com o orquestrador, nenhuma transicao de status gera comando:
-     * GERAR_ORCAMENTO e respondido pelo os-payment, e EXECUTAR_SERVICO e a
-     * resposta a um comando do orquestrador.
-     */
     @ParameterizedTest
-    @EnumSource(OrderServiceStatusEnum.class)
+    @EnumSource(value = OrderServiceStatusEnum.class, names = {"APROVADO"})
+    void aprovacaoDoClienteNotificaAOrquestracao(OrderServiceStatusEnum target) {
+        var event = OrderSagaEvent.advanced(orderId, "AGUARDANDO_APROVACAO", target.name());
+
+        assertThat(resolver.resolve(event)).contains(SagaAction.ORCAMENTO_APROVADO);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = OrderServiceStatusEnum.class, mode = EnumSource.Mode.EXCLUDE, names = {"APROVADO"})
     void transicaoDeStatusNaoGeraComando(OrderServiceStatusEnum target) {
         var event = OrderSagaEvent.advanced(orderId, "QUALQUER", target.name());
 

@@ -20,36 +20,37 @@ cada comando e o que acontece quando um comando não cabe no estado da OS.
 
 ## Decisão
 
-- **Formato da mensagem, nos dois sentidos:** corpo JSON com exatamente quatro
-  campos:
+- **Formato da mensagem, nos dois sentidos:** UUID da OS no corpo da mensagem;
+  `action`, `amount` e `correlationId` nos atributos SQS:
 
   ```json
-  {"order": "8f1c...-uuid-da-os", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}
+  corpo: 8f1c...-uuid-da-os
+  atributos: action=CRIAR_OS, amount=0.00, correlationId=...
   ```
 
   - `action`: nome da ação, com os nomes do enum `StateMachineActions` do
     orquestrador (espelhado em `SagaAction`).
-  - `amount`: total do orçamento da OS no momento do envio, com 2 casas. Na
-    abertura ainda não há orçamento, então o `CRIAR_OS` sai com `0.00`.
+  - `amount`: total do orçamento da OS no momento do envio, com 2 casas. O
+    `CRIAR_OS` não inicia pagamento; `ORCAMENTO_DISPONIVEL` só é enviado depois
+    das reservas e do recálculo de um orçamento positivo.
   - `correlationId`: no `CRIAR_OS`, o `X-Request-Id` da requisição que abriu a OS
     (o mesmo `request_id` dos logs da API); nas respostas, o `correlationId` que
     veio no comando do orquestrador. Cada serviço repassa o que recebe, e a saga
     da OS fica com um único id de ponta a ponta.
-  - Transição: o os-management ainda envia também o atributo de mensagem
-    `action` (mesmo valor), para o listener antigo do orquestrador continuar
-    funcionando até a migração; na entrada, aceita a ação pelo atributo e o corpo
-    só com o id da OS. O contrato é o JSON: quando os dois lados estiverem no
-    formato novo, o atributo pode sair.
 
 - **O orquestrador comanda, o serviço executa e responde com a mesma ação.**
   Fluxo de sucesso:
 
   | # | De → Para | Ação | O que o os-management faz |
   |---|---|---|---|
-  | 1 | os-management → orquestrador | `CRIAR_OS` | Envia na abertura da OS (após o commit). |
-  | 2 | orquestrador ↔ os-payment | `GERAR_ORCAMENTO` | Nada. O os-management **não** envia mais essa ação. |
-  | 3 | orquestrador → os-management | `EXECUTAR_SERVICO` | OS `APROVADO` → `EM_EXECUCAO`; responde `EXECUTAR_SERVICO`. |
-  | 4 | orquestrador → os-management | `ATUALIZAR_ESTOQUE` | Confirma (baixa) as reservas da OS; responde `ATUALIZAR_ESTOQUE`. |
+  | 1 | os-management → orquestrador | `CRIAR_OS` | Envia na abertura da OS (após o commit); não avança ao pagamento. |
+  | 2 | os-management → orquestrador | `ORCAMENTO_DISPONIVEL` | Envia após o commit das reservas e recálculo de valor positivo. |
+  | 3 | orquestrador → os-payment | `GERAR_ORCAMENTO` | Cria a cobrança com o valor calculado; a saga aguarda aprovação. |
+  | 4 | os-payment → orquestrador | `GERAR_ORCAMENTO` | Confirma a geração da cobrança, sem iniciar execução. |
+  | 5 | os-management → orquestrador | `ORCAMENTO_APROVADO` | Envia quando o cliente aprova a OS. |
+  | 6 | os-payment → orquestrador | `PAGAMENTO_APROVADO` | Sinaliza aprovação do pagamento. A execução só segue após as duas aprovações. |
+  | 7 | orquestrador → os-management | `EXECUTAR_SERVICO` | OS `APROVADO` → `EM_EXECUCAO`; responde `EXECUTAR_SERVICO`. |
+  | 8 | orquestrador → os-management | `ATUALIZAR_ESTOQUE` | Confirma (baixa) as reservas da OS; responde `ATUALIZAR_ESTOQUE`. |
 
 - **Compensação:** `NEGAR_SERVICO`, `NEGAR_ESTOQUE` e `ERRO` liberam as reservas
   ativas da OS e levam a OS para o status novo `CANCELADA` (motivo em
@@ -69,7 +70,8 @@ cada comando e o que acontece quando um comando não cabe no estado da OS.
   reservas já confirmadas não são baixadas duas vezes.
 
 - **Comando fora do lugar vai para a DLQ.** Ação que não é do os-management
-  (`CRIAR_OS`, `GERAR_ORCAMENTO`, `GERAR_PAGAMENTO`), mensagem malformada ou
+  (`CRIAR_OS`, `ORCAMENTO_DISPONIVEL`, `ORCAMENTO_APROVADO`, `PAGAMENTO_APROVADO`,
+  `GERAR_ORCAMENTO`, `GERAR_PAGAMENTO`), mensagem malformada ou
   comando que não cabe no estado da OS lança exceção: a mensagem não é confirmada,
   volta para a fila e, após o `maxReceiveCount` (5), cai na DLQ.
 
@@ -89,11 +91,10 @@ cada comando e o que acontece quando um comando não cabe no estado da OS.
   pode levar a OS para `EM_EXECUCAO` pela API; nesse caso a confirmação
   `EXECUTAR_SERVICO` sai quando o comando do orquestrador chegar.
 
-- **Com o `CRIAR_OS` na abertura, a saga anda na frente da OS.** O orquestrador
-  emenda `GERAR_ORCAMENTO`; se o os-payment responder antes de o cliente aprovar
-  o orçamento, o `EXECUTAR_SERVICO` chega com a OS em diagnóstico e vai para a
-  DLQ. O os-payment precisa esperar a aprovação do cliente. Isso fica fora do
-  os-management e precisa ser resolvido com o os-payment.
+- **O pagamento começa após o orçamento positivo.** `CRIAR_OS` apenas registra
+  a OS no orquestrador. Reservas confirmadas e orçamento calculado liberam
+  `ORCAMENTO_DISPONIVEL`; mensagens duplicadas dessa ação são ignoradas nos
+  estados de geração e orçamento gerado.
 
 - **Uma resposta duplicada leva o orquestrador para `ERRO`.** O os-management
   reenvia a confirmação quando recebe um comando repetido (pode ser um

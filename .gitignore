@@ -32,3 +32,9 @@ replay_pid*
 zap-reports/*.html
 zap-reports/*.json
 zap-reports/*.log
+
+### macOS ###
+.DS_Store
+
+### IntelliJ module ###
+*.iml
