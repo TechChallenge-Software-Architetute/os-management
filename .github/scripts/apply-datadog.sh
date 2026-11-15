@@ -3,12 +3,13 @@
 # Idempotent: matches by dashboard title / monitor name, so re-running on every
 # push updates in place instead of creating duplicates.
 #
-# Requires: DD_API_KEY, DD_APP_KEY, DD_SITE (e.g. datadoghq.com). Needs jq + curl.
+# Requires: DD_API_KEY, DD_APP_KEY. DD_SITE defaults to datadoghq.eu (the
+# account's site, same as k8s/datadog/values.yaml). Needs jq + curl.
 set -euo pipefail
 
 : "${DD_API_KEY:?DD_API_KEY is required}"
 : "${DD_APP_KEY:?DD_APP_KEY is required}"
-DD_SITE="${DD_SITE:-datadoghq.com}"
+DD_SITE="${DD_SITE:-datadoghq.eu}"
 API="https://api.${DD_SITE}"
 
 # Authenticated API call. Args: METHOD URL [DATA_FILE].

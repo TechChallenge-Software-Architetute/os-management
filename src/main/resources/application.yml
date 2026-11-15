@@ -61,7 +61,7 @@ management:
       export:
         enabled: ${DD_METRICS_ENABLED:false}
         api-key: ${DD_API_KEY:}
-        uri: ${DD_METRICS_URI:https://api.datadoghq.com}
+        uri: ${DD_METRICS_URI:https://api.datadoghq.eu}
         step: 1m
 
 server:
