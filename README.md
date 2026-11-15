@@ -358,7 +358,11 @@ A validacao de transicoes e feita no dominio (ServiceOrder). Transicoes invalida
 ### Saga com o os-orchestrator
 
 Contrato completo no [ADR-0006](docs/adr/ADR-0006-contrato-saga-orquestrador.md).
-Mensagens SQS com corpo = id da OS e atributo `action` = nome da acao.
+Mensagens SQS com corpo JSON de exatamente quatro campos:
+`{"order": "<id da OS>", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}`. O `amount` e
+o total do orcamento no momento do envio (`0.00` na abertura); o `correlationId`
+do `CRIAR_OS` e o `X-Request-Id` da requisicao que abriu a OS, e nas respostas e
+o que veio no comando do orquestrador.
 
 | Direcao | Acao | Efeito no os-management |
 |---|---|---|

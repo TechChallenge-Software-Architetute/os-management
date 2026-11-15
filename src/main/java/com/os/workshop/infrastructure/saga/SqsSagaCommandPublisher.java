@@ -1,6 +1,8 @@
 package com.os.workshop.infrastructure.saga;
 
-import com.os.workshop.application.saga.OrderSagaCommand;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.os.workshop.application.saga.SagaMessage;
 import com.os.workshop.application.saga.port.out.SagaCommandPublisherPort;
 import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
 import jakarta.annotation.PostConstruct;
@@ -11,23 +13,31 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Entrega comandos na fila de entrada do os-orchestrator.
+ * Entrega as mensagens da saga na fila de entrada do os-orchestrator.
  *
- * <p>A URL da fila é determinística
- * ({@code os-orchestrator-<env>-order-processing}) e chega pelo ConfigMap, não
- * por remote state do Terraform — é isso que mantém os deploys independentes.
+ * <p>A URL da fila e deterministica ({@code os-orchestrator-<env>-order-processing})
+ * e chega pelo ConfigMap, nao por remote state do Terraform: e isso que mantem os
+ * deploys independentes.
  *
- * <p>O formato da mensagem é o que o {@code StateMachineListener} do orquestrador
- * já espera: corpo = id da ordem, atributo {@code action} = nome da ação.
+ * <p>Formato (ADR-0006): corpo JSON com exatamente quatro campos,
+ * {@code {"order": "<id da OS>", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}}.
+ * O atributo de mensagem {@code action} continua sendo enviado com o mesmo valor,
+ * so por compatibilidade com o listener antigo do orquestrador enquanto ele migra
+ * para o JSON; o contrato e o corpo.
  */
 @Component
 @Slf4j
 public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
 
-    private static final String ACTION_ATTRIBUTE = "action";
+    static final String ACTION_ATTRIBUTE = "action";
+
+    // Jackson 2, o mesmo dos conversores JPA do projeto. Instancia propria: o corpo
+    // tem tres campos fixos e nao deve mudar se a configuracao do Jackson da API mudar.
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final SqsClient sqsClient;
     private final ServiceOrderMetrics metrics;
@@ -44,16 +54,16 @@ public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
     @PostConstruct
     void warnWhenDisabled() {
         if (isDisabled()) {
-            // Visível no startup em vez de silencioso: o deploy local (Kind) não
-            // tem fila, e sem esse aviso a saga ficaria desligada sem ninguém notar.
+            // Visivel no startup em vez de silencioso: o deploy local (Kind) nao
+            // tem fila, e sem esse aviso a saga ficaria desligada sem ninguem notar.
             log.warn("aws.sqs.orchestrator-queue-url nao configurada "
                     + "(AWS_SQS_ORCHESTRATOR_QUEUE_URL). A saga esta DESLIGADA: "
-                    + "nenhum comando sera enviado ao os-orchestrator.");
+                    + "nenhuma mensagem sera enviada ao os-orchestrator.");
         }
     }
 
     @Override
-    public void publish(OrderSagaCommand command) {
+    public void publish(SagaMessage message) {
         if (isDisabled()) {
             return;
         }
@@ -61,22 +71,36 @@ public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
         try {
             sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
-                    .messageBody(command.orderId().toString())
+                    .messageBody(toJson(message))
                     .messageAttributes(Map.of(ACTION_ATTRIBUTE, MessageAttributeValue.builder()
                             .dataType("String")
-                            .stringValue(command.action().name())
+                            .stringValue(message.action().name())
                             .build()))
                     .build());
 
-            log.info("Comando {} enviado ao orquestrador para a ordem {}.",
-                    command.action(), command.orderId());
+            log.info("Mensagem {} enviada ao orquestrador: OS {}, valor {}, correlationId {}.",
+                    message.action(), message.orderId(), message.amount(), message.correlationId());
         } catch (RuntimeException e) {
-            // Mesmo tratamento do SnsNotificationService: a falha de integração é
-            // registrada e medida, mas não desfaz a mudança de estado já commitada
+            // Mesmo tratamento do SnsNotificationService: a falha de integracao e
+            // registrada e medida, mas nao desfaz a mudanca de estado ja commitada
             // nem propaga erro para o cliente HTTP.
             metrics.integrationFailed("aws_sqs");
-            log.error("Falha ao enviar o comando {} da ordem {} ao orquestrador: {}",
-                    command.action(), command.orderId(), e.getMessage(), e);
+            log.error("Falha ao enviar a mensagem {} da OS {} ao orquestrador: {}",
+                    message.action(), message.orderId(), e.getMessage(), e);
+        }
+    }
+
+    static String toJson(SagaMessage message) {
+        // Exatamente estes 4 campos: e o contrato combinado com o os-orchestrator.
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("order", message.orderId().toString());
+        body.put("action", message.action().name());
+        body.put("amount", message.amount());
+        body.put("correlationId", message.correlationId());
+        try {
+            return JSON.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Nao foi possivel serializar a mensagem da saga.", e);
         }
     }
 

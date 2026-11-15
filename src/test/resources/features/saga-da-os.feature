@@ -12,12 +12,14 @@ Funcionalidade: Saga da OS do lado do os-management
     Quando a oficina abre uma OS
     Então a OS fica com status "RECEBIDA"
     E o orquestrador recebe "CRIAR_OS"
+    E a mensagem leva o valor "0.00" e o id da requisição como correlationId
 
   Cenário: Orquestrador libera a execução de uma OS aprovada
     Dado uma OS aprovada pelo cliente com 2 unidades da peça reservadas
     Quando o orquestrador manda "EXECUTAR_SERVICO"
     Então a OS fica com status "EM_EXECUCAO"
     E o orquestrador recebe "EXECUTAR_SERVICO"
+    E a mensagem leva o valor "179.80" e o correlationId do comando
 
   Cenário: Orquestrador manda baixar o estoque da OS em execução
     Dado uma OS em execução com 2 unidades da peça reservadas

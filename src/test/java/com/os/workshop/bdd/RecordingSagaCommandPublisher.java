@@ -1,7 +1,7 @@
 package com.os.workshop.bdd;
 
-import com.os.workshop.application.saga.OrderSagaCommand;
 import com.os.workshop.application.saga.SagaAction;
+import com.os.workshop.application.saga.SagaMessage;
 import com.os.workshop.application.saga.port.out.SagaCommandPublisherPort;
 
 import java.util.List;
@@ -14,17 +14,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class RecordingSagaCommandPublisher implements SagaCommandPublisherPort {
 
-    private final List<OrderSagaCommand> commands = new CopyOnWriteArrayList<>();
+    private final List<SagaMessage> messages = new CopyOnWriteArrayList<>();
 
     @Override
-    public void publish(OrderSagaCommand command) {
-        commands.add(command);
+    public void publish(SagaMessage message) {
+        messages.add(message);
+    }
+
+    public List<SagaMessage> messagesFor(UUID orderId) {
+        return messages.stream()
+                .filter(message -> message.orderId().equals(orderId))
+                .toList();
     }
 
     public List<SagaAction> actionsFor(UUID orderId) {
-        return commands.stream()
-                .filter(command -> command.orderId().equals(orderId))
-                .map(OrderSagaCommand::action)
-                .toList();
+        return messagesFor(orderId).stream().map(SagaMessage::action).toList();
     }
 }
