@@ -248,6 +248,8 @@ jobs:
       IMAGE: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
       # Optional: when unset, the Datadog Agent install is skipped (app still deploys).
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      # Site of the Datadog account (US1 by default); the DD_SITE repository variable overrides it.
+      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
 
     steps:
       - name: Fazer checkout do código
@@ -289,7 +291,8 @@ jobs:
           helm repo update
           helm upgrade --install datadog datadog/datadog \
             --namespace datadog \
-            -f k8s/datadog/values.yaml
+            -f k8s/datadog/values.yaml \
+            --set datadog.site="${DD_SITE}"
 
       - name: Aplicar manifests (kubectl + kustomize)
         run: |
@@ -331,6 +334,9 @@ jobs:
       # Optional: when unset, the Datadog Agent install is skipped and the app
       # deploys without in-cluster observability.
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      # Site da conta Datadog (US1 por padrão), usado pelo Agent (Helm) e pelo
+      # Micrometer (ConfigMap). A variável de repositório DD_SITE sobrescreve.
+      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
       IMAGE: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
       # Credenciais AWS que vao para o Secret do pod (sem IRSA no cluster). Mesmo
       # padrao do os-orchestrator; o token so existe para chaves temporarias (ASIA).
@@ -388,6 +394,7 @@ jobs:
           helm upgrade --install datadog datadog/datadog \
             --namespace datadog \
             -f k8s/datadog/values.yaml \
+            --set datadog.site="${DD_SITE}" \
             --set datadog.clusterName="${CLUSTER_NAME}"
 
       # O admission controller só injeta o dd-java-agent em pods criados DEPOIS
@@ -440,6 +447,7 @@ jobs:
           ORDER_EVENTS_QUEUE="os-management-${{ github.ref_name }}-order-events"
           sed -e "s|\${datasource_url}|${DB_URL}|g" \
               -e "s|\${datadog_env}|${DD_ENV_TAG}|g" \
+              -e "s|\${datadog_site}|${DD_SITE}|g" \
               -e "s|\${aws_region}|${AWS_REGION}|g" \
               -e "s|\${orchestrator_queue_url}|${ORCHESTRATOR_QUEUE_URL}|g" \
               -e "s|\${order_events_queue}|${ORDER_EVENTS_QUEUE}|g" \
@@ -537,10 +545,9 @@ jobs:
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
-      # A conta é da UE: Agent (values.yaml) e Micrometer (DD_METRICS_URI) já
-      # apontam para datadoghq.eu. A variável de repositório DD_SITE só é
-      # necessária se a conta mudar de site.
-      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.eu' }}
+      # Mesmo site do Agent e do Micrometer (US1 por padrão). A variável de
+      # repositório DD_SITE sobrescreve nos três lugares.
+      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
 
     steps:
       - name: Fazer checkout do código

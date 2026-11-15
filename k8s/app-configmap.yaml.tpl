@@ -19,10 +19,10 @@ data:
   # anexada à role dos nodes (ver infra/terraform/README.md).
   AWS_SQS_ORDER_EVENTS_ENABLED: "true"
   AWS_SQS_ORDER_EVENTS_QUEUE: "${order_events_queue}"
-  # Datadog unified service tagging + Micrometer export. DD_ENV is the branch
-  # name (develop/main), substituted by the deploy pipeline.
+  # Datadog unified service tagging + Micrometer export. DD_ENV (mapped from the
+  # branch) and the Datadog site are substituted by the deploy pipeline.
   DD_ENV: "${datadog_env}"
   DD_SERVICE: "os-management"
   DD_VERSION: "1.0.0"
   DD_METRICS_ENABLED: "true"
-  DD_METRICS_URI: "https://api.datadoghq.eu"
+  DD_METRICS_URI: "https://api.${datadog_site}"
