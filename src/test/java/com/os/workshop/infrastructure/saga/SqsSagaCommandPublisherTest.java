@@ -47,7 +47,7 @@ class SqsSagaCommandPublisherTest {
         assertThat(request.queueUrl()).isEqualTo(QUEUE_URL);
         assertThat(request.messageAttributes().get("action").dataType()).isEqualTo("String");
         assertThat(request.messageAttributes().get("action").stringValue()).isEqualTo("CRIAR_OS");
-        assertThat(request.messageAttributes().get("amount").stringValue()).isEqualTo("179.8");
+        assertThat(request.messageAttributes().get("amount").stringValue()).isEqualTo("179.80");
         assertThat(request.messageAttributes().get("correlationId").stringValue()).isEqualTo("corr-1");
         verifyNoInteractions(metrics);
     }
