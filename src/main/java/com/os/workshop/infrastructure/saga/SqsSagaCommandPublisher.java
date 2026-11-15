@@ -1,7 +1,5 @@
 package com.os.workshop.infrastructure.saga;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.os.workshop.application.saga.SagaMessage;
 import com.os.workshop.application.saga.port.out.SagaCommandPublisherPort;
 import com.os.workshop.infrastructure.monitoring.ServiceOrderMetrics;
@@ -13,7 +11,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -23,21 +20,16 @@ import java.util.Map;
  * e chega pelo ConfigMap, nao por remote state do Terraform: e isso que mantem os
  * deploys independentes.
  *
- * <p>Formato (ADR-0006): corpo JSON com exatamente quatro campos,
- * {@code {"order": "<id da OS>", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}}.
- * O atributo de mensagem {@code action} continua sendo enviado com o mesmo valor,
- * so por compatibilidade com o listener antigo do orquestrador enquanto ele migra
- * para o JSON; o contrato e o corpo.
+ * <p>O corpo é o UUID da OS. A ação, o valor e o correlationId são atributos SQS,
+ * conforme o contrato consumido pelo StateMachineListener do os-orchestrator.
  */
 @Component
 @Slf4j
 public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
 
     static final String ACTION_ATTRIBUTE = "action";
-
-    // Jackson 2, o mesmo dos conversores JPA do projeto. Instancia propria: o corpo
-    // tem tres campos fixos e nao deve mudar se a configuracao do Jackson da API mudar.
-    private static final ObjectMapper JSON = new ObjectMapper();
+    static final String AMOUNT_ATTRIBUTE = "amount";
+    static final String CORRELATION_ID_ATTRIBUTE = "correlationId";
 
     private final SqsClient sqsClient;
     private final ServiceOrderMetrics metrics;
@@ -71,11 +63,11 @@ public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
         try {
             sqsClient.sendMessage(SendMessageRequest.builder()
                     .queueUrl(queueUrl)
-                    .messageBody(toJson(message))
-                    .messageAttributes(Map.of(ACTION_ATTRIBUTE, MessageAttributeValue.builder()
-                            .dataType("String")
-                            .stringValue(message.action().name())
-                            .build()))
+                    .messageBody(message.orderId().toString())
+                    .messageAttributes(Map.of(
+                            ACTION_ATTRIBUTE, stringAttribute(message.action().name()),
+                            AMOUNT_ATTRIBUTE, stringAttribute(message.amount().toPlainString()),
+                            CORRELATION_ID_ATTRIBUTE, stringAttribute(message.correlationId())))
                     .build());
 
             log.info("Mensagem {} enviada ao orquestrador: OS {}, valor {}, correlationId {}.",
@@ -90,18 +82,11 @@ public class SqsSagaCommandPublisher implements SagaCommandPublisherPort {
         }
     }
 
-    static String toJson(SagaMessage message) {
-        // Exatamente estes 4 campos: e o contrato combinado com o os-orchestrator.
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("order", message.orderId().toString());
-        body.put("action", message.action().name());
-        body.put("amount", message.amount());
-        body.put("correlationId", message.correlationId());
-        try {
-            return JSON.writeValueAsString(body);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Nao foi possivel serializar a mensagem da saga.", e);
-        }
+    private static MessageAttributeValue stringAttribute(String value) {
+        return MessageAttributeValue.builder()
+                .dataType("String")
+                .stringValue(value)
+                .build();
     }
 
     private boolean isDisabled() {

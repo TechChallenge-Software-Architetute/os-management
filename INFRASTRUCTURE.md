@@ -30,8 +30,6 @@ k8s/
   configmap.yaml              ← ConfigMap da app (modo local/kustomize)
   secret.yaml                 ← Secret da app (modo local/kustomize)
   postgres.yaml               ← Postgres in-cluster (SOMENTE local)
-  postgres-init-job.yaml      ← Job de carga inicial do schema (SOMENTE local)
-  init.sh                     ← Script DDL/DML usado pelo Job (configMapGenerator)
   app.yaml                    ← Deployment + Service da aplicação
   hpa.yaml                    ← HorizontalPodAutoscaler (min 1 / max 6)
   ingress.yaml                ← Ingress nginx
@@ -235,7 +233,7 @@ Local (Kind, kustomize):        AWS (EKS, RDS externo):
   configmap.yaml                  app-configmap.yaml.tpl (URL → RDS)
   secret.yaml                     app-secret.yaml.tpl
   postgres.yaml  ← aplicado       postgres.yaml  ← NÃO aplicado
-  postgres-init-job.yaml          app.yaml
+  Flyway migrations (no app)     app.yaml
   app.yaml                        hpa.yaml
   hpa.yaml                        ingress.yaml
   ingress.yaml

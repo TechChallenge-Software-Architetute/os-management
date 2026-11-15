@@ -88,7 +88,6 @@ k8s/                  ← Manifestos Kubernetes
   configmap.yaml      ← ConfigMap (modo local/kustomize)
   secret.yaml         ← Secret (modo local/kustomize)
   postgres.yaml       ← Postgres in-cluster (SOMENTE local)
-  postgres-init-job.yaml ← Job de carga do schema (SOMENTE local)
   kustomization.yaml  ← Entrada do modo local (kubectl apply -k k8s/)
   app-configmap.yaml.tpl ← Template do ConfigMap (modo AWS, URL → RDS)
   app-secret.yaml.tpl    ← Template do Secret (modo AWS)
@@ -362,7 +361,9 @@ Mensagens SQS com corpo JSON de exatamente quatro campos:
 `{"order": "<id da OS>", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}`. O `amount` e
 o total do orcamento no momento do envio (`0.00` na abertura); o `correlationId`
 do `CRIAR_OS` e o `X-Request-Id` da requisicao que abriu a OS, e nas respostas e
-o que veio no comando do orquestrador.
+o que veio no comando do orquestrador. Para compatibilidade com os listeners
+legados, `action`, `amount` e `correlationId` também são publicados como atributos
+da mensagem SQS.
 
 | Direcao | Acao | Efeito no os-management |
 |---|---|---|
@@ -863,9 +864,11 @@ O [Bruno](https://www.usebruno.com/) e um cliente HTTP open-source para testar A
 
 ## Scripts
 
-### init.sh
+### Migrations do Flyway
 
-Executado automaticamente pelo PostgreSQL na primeira inicializacao. Cria todas as tabelas e insere dados de exemplo.
+O schema do PostgreSQL e versionado em `src/main/resources/db/migration` e aplicado
+automaticamente pela aplicação antes da validação do Hibernate. Dados de exemplo
+ficam em `src/main/resources/db/dev` e são habilitados somente nos ambientes locais.
 
 ### validation.sh
 

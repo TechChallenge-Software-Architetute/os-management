@@ -17,6 +17,12 @@ public enum SagaAction {
     /** os-management -> orquestrador: OS aberta, inicia a saga. */
     CRIAR_OS,
 
+    /** os-management -> orquestrador: reservas concluidas e orçamento positivo calculado. */
+    ORCAMENTO_DISPONIVEL,
+
+    /** os-management -> orquestrador: cliente aprovou o orçamento da OS. */
+    ORCAMENTO_APROVADO,
+
     /** Orquestrador <-> os-payment. Nao e destinada ao os-management. */
     GERAR_ORCAMENTO,
 
