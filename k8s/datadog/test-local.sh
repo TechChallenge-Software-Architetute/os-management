@@ -10,7 +10,7 @@
 # Uso (Git Bash, na raiz do repositório):
 #   export DD_API_KEY=<api key>          # obrigatória para "up"
 #   export DD_APP_KEY=<app key>          # opcional: importa o dashboard e os monitores
-#   export DD_SITE=datadoghq.com         # opcional: padrão datadoghq.eu (conta do time)
+#   export DD_SITE=datadoghq.eu          # opcional: padrão datadoghq.com (US1)
 #   bash k8s/datadog/test-local.sh up        # cluster, Agent, imagem local e app
 #   bash k8s/datadog/test-local.sh traffic   # port-forward + validation.sh + links
 #   bash k8s/datadog/test-local.sh check     # repete as verificações
@@ -22,7 +22,7 @@
 set -euo pipefail
 
 CLUSTER="${CLUSTER:-os-management}"
-DD_SITE="${DD_SITE:-datadoghq.eu}"
+DD_SITE="${DD_SITE:-datadoghq.com}"
 DD_ENV="${DD_ENV:-developer}"   # um dos valores do filtro env do dashboard
 IMAGE="${IMAGE:-os-management:dev}"
 NS=os-management

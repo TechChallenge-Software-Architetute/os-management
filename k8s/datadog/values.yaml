@@ -16,7 +16,9 @@ datadog:
   # API key is read from a pre-created secret so it never lives in git.
   # Secret key MUST be named "api-key".
   apiKeyExistingSecret: datadog-secret
-  site: datadoghq.eu
+  # Default for manual installs; the pipeline and k8s/datadog/test-local.sh pass
+  # --set datadog.site from DD_SITE.
+  site: datadoghq.com
   clusterName: os-management
   # Trimmed: these each add a pod/containers and memory pressure.
   kubeStateMetricsEnabled: false

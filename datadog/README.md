@@ -9,12 +9,12 @@ Esta pasta versiona o dashboard e os monitores do `os-management`. A instalaçã
 | Traces (APM) | O admission controller do Cluster Agent injeta o `dd-java-agent` no pod; o tracer envia os spans para o Node Agent do mesmo nó (`DD_AGENT_HOST` = IP do nó, porta 8126) | `k8s/datadog/values.yaml`; label e annotation em `k8s/app.yaml` |
 | Logs | JSON no stdout, coletado pelo Node Agent pela annotation `ad.datadoghq.com/os-management.logs`; `dd.trace_id`/`dd.span_id` entram no MDC pelo `DD_LOGS_INJECTION` | `logback-spring.xml`, `k8s/app.yaml` |
 | Métricas de infraestrutura | O Node Agent lê o kubelet (`kubernetes.cpu.usage.total`, `kubernetes.memory.usage`) e roda o `http_check` da annotation (`http.can_connect`) | `k8s/app.yaml` |
-| Métricas de negócio | O Micrometer (`micrometer-registry-datadog`) envia direto para `https://api.datadoghq.eu` a cada minuto, sem passar pelo Agent | `application.yml`, `ServiceOrderMetrics`, ConfigMap |
+| Métricas de negócio | O Micrometer (`micrometer-registry-datadog`) envia direto para `https://api.<site>` (padrão `datadoghq.com`) a cada minuto, sem passar pelo Agent | `application.yml`, `ServiceOrderMetrics`, ConfigMap |
 | Dashboard e monitores | O job `datadog-config` roda `.github/scripts/apply-datadog.sh` (upsert por título/nome) | esta pasta |
 
 ## Pré-requisitos
 
-- A conta Datadog é do site **EU** (`datadoghq.eu`). Agent, Micrometer e script de importação usam esse site por padrão; a variável de repositório `DD_SITE` só é necessária se a conta mudar de site.
+- Site da conta: **US1** (`datadoghq.com`) por padrão. A variável de repositório `DD_SITE` muda o site de uma vez no Agent (Helm), no Micrometer (ConfigMap) e no script de importação — por exemplo, `datadoghq.eu` para uma conta da UE. Chave e site precisam ser da mesma conta.
 - Secrets do repositório: `DD_API_KEY` (Agent e Micrometer) e `DD_APP_KEY` (só para importar dashboard e monitores; precisa de escrita nos dois). Sem `DD_API_KEY`, a pipeline sobe a app sem Agent; sem `DD_APP_KEY`, o job `datadog-config` é ignorado.
 - Troque `@team-oncall` nos monitores pelo destino de alerta da equipe.
 
@@ -52,7 +52,7 @@ O deploy local em Kind (`deploy-local`) não serve para validar o Datadog: o Sec
 O job `datadog-config` já faz o upsert em `develop` e `main`. Para aplicar à mão (requer `jq` e `curl`):
 
 ```sh
-export DD_API_KEY=... DD_APP_KEY=... DD_SITE=datadoghq.eu
+export DD_API_KEY=... DD_APP_KEY=... DD_SITE=datadoghq.com
 bash .github/scripts/apply-datadog.sh
 ```
 
@@ -67,7 +67,7 @@ Requer Docker rodando, `kind`, `kubectl` e `helm` (`winget install Kubernetes.ki
 ```sh
 export DD_API_KEY=...              # obrigatória
 export DD_APP_KEY=...              # opcional: importa dashboard e monitores (requer jq)
-export DD_SITE=datadoghq.eu        # padrão; troque se a conta for de outro site
+export DD_SITE=datadoghq.com       # padrão; troque se a conta for de outro site
 bash k8s/datadog/test-local.sh up        # cluster, Agent, imagem local, app e verificações
 bash k8s/datadog/test-local.sh traffic   # port-forward + validation.sh + links do Datadog
 bash k8s/datadog/test-local.sh down      # apaga o cluster
@@ -80,7 +80,7 @@ Os dados chegam com `env:developer` (um dos valores do filtro do dashboard). O `
 1. **Credenciais**
 
    ```sh
-   curl -s "https://api.datadoghq.eu/api/v1/validate" -H "DD-API-KEY: $DD_API_KEY"   # {"valid":true}
+   curl -s "https://api.datadoghq.com/api/v1/validate" -H "DD-API-KEY: $DD_API_KEY"   # {"valid":true}
    ```
 
 2. **Agent**
