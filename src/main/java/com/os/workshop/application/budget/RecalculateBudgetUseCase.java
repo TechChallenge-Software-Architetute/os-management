@@ -11,6 +11,7 @@ import com.os.workshop.domain.stock.StockReservation;
 import com.os.workshop.domain.stock.StockReservationStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -27,7 +28,11 @@ public class RecalculateBudgetUseCase {
     private final PartRepository partRepository;
     private final SupplyRepository supplyRepository;
 
-    @Transactional
+    // REQUIRES_NEW porque o unico chamador e o BudgetEventListener, que roda em
+    // AFTER_COMMIT. Nessa fase a transacao da reserva ja foi commitada, mas continua
+    // vinculada a thread: com REQUIRED o recalculo entraria nela e nunca seria
+    // gravado, sem erro nenhum.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Budget execute(UUID serviceOrderId) {
         // Entram as reservas ativas e as ja confirmadas (baixadas do estoque pelo
         // ATUALIZAR_ESTOQUE da saga). Antes so as ACTIVE contavam, e a baixa do
