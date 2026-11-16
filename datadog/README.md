@@ -14,7 +14,7 @@ Esta pasta versiona o dashboard e os monitores do `os-management`. A instalaçã
 
 ## Pré-requisitos
 
-- Site da conta: **US1** (`datadoghq.com`) por padrão. A variável de repositório `DD_SITE` muda o site de uma vez no Agent (Helm), no Micrometer (ConfigMap) e no script de importação — por exemplo, `datadoghq.eu` para uma conta da UE. Chave e site precisam ser da mesma conta.
+- Site da conta: **US1** (`datadoghq.com`), fixo no `env` do topo de `.github/workflows/pipeline.yml` e usado pelo Agent (Helm), pelo Micrometer (ConfigMap) e pelo script de importação. A pipeline não lê a variável `DD_SITE` do GitHub, para que um valor antigo não desvie os dados para outra conta. Para trocar de conta, mude esse valor; chave e site precisam ser da mesma conta.
 - Secrets do repositório: `DD_API_KEY` (Agent e Micrometer) e `DD_APP_KEY` (só para importar dashboard e monitores; precisa de escrita nos dois). Sem `DD_API_KEY`, a pipeline sobe a app sem Agent; sem `DD_APP_KEY`, o job `datadog-config` é ignorado.
 - Troque `@team-oncall` nos monitores pelo destino de alerta da equipe.
 
