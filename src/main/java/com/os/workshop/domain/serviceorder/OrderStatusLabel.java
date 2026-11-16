@@ -14,7 +14,8 @@ public final class OrderStatusLabel {
             OrderServiceStatusEnum.EM_EXECUCAO, "Em Execucao",
             OrderServiceStatusEnum.FINALIZADA, "Finalizada",
             OrderServiceStatusEnum.ENTREGUE, "Entregue",
-            OrderServiceStatusEnum.RECUSADA, "Recusada"
+            OrderServiceStatusEnum.RECUSADA, "Recusada",
+            OrderServiceStatusEnum.CANCELADA, "Cancelada"
     );
 
     public static String of(OrderServiceStatusEnum status) {

@@ -5,8 +5,11 @@
 
 ## Visão Consolidada da Solução (Multi-Repositório)
 
-O sistema é composto por 5 repositórios com ciclos de deploy independentes
-(ver [ADR-0003](adr/ADR-0003-split-multiplos-repositorios.md)). O diagrama
+O sistema é composto por 7 repositórios com ciclos de deploy independentes
+(ver [ADR-0003](adr/ADR-0003-split-multiplos-repositorios.md)). Nenhum deles lê
+o state do Terraform de outro: filas são endereçadas por nome determinístico
+(`os-<serviço>-<env>-<propósito>`), então cada stack aplica em qualquer ordem
+(ver [ADR-0005](adr/ADR-0005-saga-assincrona-via-sqs.md)). O diagrama
 abaixo mostra a visão de nuvem completa — API Gateway, funções serverless de
 autenticação, cluster Kubernetes, banco gerenciado e observabilidade — algo
 que os diagramas C4 da seção seguinte não cobrem sozinhos, pois eles têm
@@ -38,6 +41,16 @@ flowchart TB
         rds[(RDS PostgreSQL 16)]
     end
 
+    subgraph SAGA["Saga assíncrona (SQS)"]
+        q_orch[["os-orchestrator-env-order-processing"]]
+        orch["os-orchestrator<br/>máquina de estados<br/>(ClusterIP, sem API)"]
+        state[(DynamoDB order-state)]
+        q_pay[["os-payment-env-payment-requests"]]
+        pay["os-payment<br/>Lambda payment-handler"]
+        payments[(DynamoDB payments)]
+        q_events[["os-management-env-order-events"]]
+    end
+
     subgraph OBS["Datadog SaaS"]
         dash[Dashboards + Monitores + Alertas]
     end
@@ -57,8 +70,30 @@ flowchart TB
     app -- "publica notificação" --> sns[(AWS SNS)]
     sns --> emailCliente([E-mail do Cliente])
 
+    app -- "SendMessage action=CRIAR_OS/..." --> q_orch
+    q_orch -- "SqsListener" --> orch
+    orch --> state
+    orch -. "SendMessage (produtor pendente)" .-> q_pay
+    q_pay -- "event source mapping" --> pay
+    pay --> payments
+    orch -. "resultado da saga (produtor pendente)" .-> q_events
+    q_events -. "consumidor pendente" .-> app
+
     dd_agent --> dash
 ```
+
+> O cliente **não** fala com a saga. O caminho dele continua síncrono —
+> API Gateway → `os-management` por `HTTP_PROXY` — e o `os-management` publica na
+> fila do orquestrador depois do commit da mudança de estado. O
+> `os-orchestrator` não tem rota no API Gateway nem `Service` público.
+>
+> As setas tracejadas marcam o que ainda **não existe em código**: o
+> `os-orchestrator` não publica nada (nem para o `os-payment`, nem o resultado da
+> saga) e o `os-management` não consome a fila `order-events`. As filas, as DLQs
+> e as tabelas existem; o contrato de mensagem desses saltos é que ainda não foi
+> definido. O trecho sólido — `os-management` → fila do orquestrador → máquina de
+> estados → DynamoDB, e fila de pagamento → Lambda → DynamoDB — está
+> implementado.
 
 #### Descrição dos Componentes por Repositório
 
@@ -69,6 +104,8 @@ flowchart TB
 | `os-management-k8s-terraform` | EKS Cluster + metrics-server | Cluster gerenciado onde a aplicação roda; base para o HPA (ver [ADR-0002](adr/ADR-0002-uso-hpa.md)) |
 | `os-management` | Pods da API + manifests K8s | Lógica de negócio, autenticação de staff, orquestração dos fluxos de OS |
 | `os-management-database` | RDS PostgreSQL | Banco gerenciado único, consumido pela API e pela Lambda issuer (ver [RFC-0002](rfc/RFC-0002-escolha-banco-dados.md) e o [diagrama ER](../../os-management-database/README.md#modelagem-do-banco-de-dados)) |
+| `os-orchestrator` | Máquina de estados + fila `order-processing` + DynamoDB `order-state` | Avança a saga da OS. Consumidor SQS puro: sem controller REST, sem rota no Gateway, `Service` ClusterIP |
+| `os-payment` | Fila `payment-requests` + Lambda `payment-handler` + DynamoDB `payments` | Registra as requisições de pagamento. Regras de negócio e contrato de mensagem ainda a definir |
 | — | Datadog Agent + SaaS | Observabilidade: latência de API, CPU/memória dos pods, healthchecks/uptime, logs estruturados correlacionados, métricas de negócio (ver `os-management/datadog/README.md`) |
 
 ---

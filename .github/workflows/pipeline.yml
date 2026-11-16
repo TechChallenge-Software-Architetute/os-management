@@ -16,6 +16,13 @@ concurrency:
   group: pipeline-${{ github.ref }}
   cancel-in-progress: false
 
+# Site da conta Datadog (US1). Fica fixo aqui, e não numa variável do GitHub,
+# para que uma DD_SITE antiga (datadoghq.eu) no repositório, no environment ou
+# na organização não desvie os dados para outra conta. Vale para o Agent (Helm),
+# o Micrometer (ConfigMap) e o apply-datadog.sh. Para trocar de conta, mude aqui.
+env:
+  DD_SITE: datadoghq.com
+
 jobs:
 
   unit-test:
@@ -58,12 +65,15 @@ jobs:
   code-analysis:
     runs-on: ubuntu-latest
     needs: unit-test
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: Fazer checkout do código
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          # O Sonar usa o histórico para blame e para separar "código novo".
+          fetch-depth: 0
 
       - name: Configurar JDK 21
         uses: actions/setup-java@v4
@@ -72,8 +82,35 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Gerar relatório JaCoCo
-        run: mvn verify -DskipTests
+      # Antes era `mvn verify -DskipTests`: sem testes não há jacoco.exec, e o
+      # check de cobertura do pom (BUNDLE >= 80%) era pulado em silêncio.
+      # Agora o verify roda os testes unitários (surefire), o BDD (failsafe +
+      # Testcontainers; o runner ubuntu-latest já tem Docker) e o gate do JaCoCo.
+      # -Dit.test limita o failsafe ao BDD: os *IntegrationTest legados estão
+      # desatualizados (ver README, seção de testes).
+      - name: Testes, BDD e gate de cobertura (JaCoCo)
+        run: mvn -B verify -Dit.test=CucumberIntegrationTest
+
+      - name: Publicar relatório do BDD
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: cucumber-report
+          path: target/cucumber-reports
+          retention-days: 7
+          overwrite: true
+
+      # Análise de qualidade (exigência da Fase 4). Precisa do secret SONAR_TOKEN
+      # e da variável SONAR_ORGANIZATION no repositório; sem eles o passo é
+      # ignorado, no mesmo padrão do DD_API_KEY. qualitygate.wait faz o job
+      # falhar se o Quality Gate do SonarCloud reprovar.
+      - name: Análise SonarCloud
+        if: ${{ env.SONAR_TOKEN != '' && vars.SONAR_ORGANIZATION != '' }}
+        run: >
+          mvn -B sonar:sonar
+          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+          -Dsonar.qualitygate.wait=true
 
   build:
     runs-on: ubuntu-latest
@@ -259,7 +296,8 @@ jobs:
           helm repo update
           helm upgrade --install datadog datadog/datadog \
             --namespace datadog \
-            -f k8s/datadog/values.yaml
+            -f k8s/datadog/values.yaml \
+            --set datadog.site="${DD_SITE}"
 
       - name: Aplicar manifests (kubectl + kustomize)
         run: |
@@ -302,6 +340,11 @@ jobs:
       # deploys without in-cluster observability.
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       IMAGE: ${{ secrets.DOCKER_USERNAME }}/os-management:v${{ needs.docker-build-push.outputs.publish_version }}
+      # Credenciais AWS que vao para o Secret do pod (sem IRSA no cluster). Mesmo
+      # padrao do os-orchestrator; o token so existe para chaves temporarias (ASIA).
+      APP_AWS_ACCESS_KEY_ID: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+      APP_AWS_SECRET_ACCESS_KEY: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+      APP_AWS_SESSION_TOKEN: ${{ github.ref_name != 'main' && secrets.AWS_SESSION_TOKEN_DEVELOP || '' }}
 
     steps:
       - name: Fazer checkout do código
@@ -314,12 +357,15 @@ jobs:
           test -n "${DB_PASSWORD}" || { echo "::error::Segredo DB_PASSWORD ausente."; exit 1; }
           test -n "${JWT_SECRET}"  || { echo "::error::Segredo JWT_SECRET ausente."; exit 1; }
           test "${#JWT_SECRET}" -ge 32 || { echo "::error::JWT_SECRET deve ter >=32 bytes (256 bits) para HS256; atual: ${#JWT_SECRET}."; exit 1; }
+          test -n "${APP_AWS_ACCESS_KEY_ID}"     || { echo "::error::Segredo AWS_ACCESS_KEY_ID_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."; exit 1; }
+          test -n "${APP_AWS_SECRET_ACCESS_KEY}" || { echo "::error::Segredo AWS_SECRET_ACCESS_KEY_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."; exit 1; }
 
       - name: Configurar credenciais AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
           aws-secret-access-key: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-session-token: ${{ github.ref_name != 'main' && secrets.AWS_SESSION_TOKEN_DEVELOP || '' }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Configurar kubectl para o cluster EKS
@@ -350,7 +396,26 @@ jobs:
           helm upgrade --install datadog datadog/datadog \
             --namespace datadog \
             -f k8s/datadog/values.yaml \
+            --set datadog.site="${DD_SITE}" \
             --set datadog.clusterName="${CLUSTER_NAME}"
+
+      # O admission controller só injeta o dd-java-agent em pods criados DEPOIS
+      # que o Cluster Agent está pronto (pods que já estão rodando não são
+      # alterados). Por isso o job espera o Agent antes de aplicar a app. Segue
+      # mesmo se estourar o tempo (observabilidade não bloqueia o deploy), mas
+      # deixa um aviso no resumo do job.
+      - name: Aguardar Datadog Agent ficar pronto
+        if: ${{ env.DD_API_KEY != '' }}
+        continue-on-error: true
+        run: |
+          if kubectl rollout status deployment/datadog-cluster-agent -n datadog --timeout=180s \
+             && kubectl rollout status daemonset/datadog -n datadog --timeout=180s; then
+            echo "Datadog Agent e Cluster Agent prontos."
+          else
+            echo "::warning::Datadog Agent não ficou pronto a tempo; o pod da app pode subir sem o dd-java-agent."
+            kubectl get pods -n datadog -o wide || true
+            exit 1
+          fi
 
       - name: Aplicar manifests Kubernetes (RDS externo — sem Postgres in-cluster)
         run: |
@@ -373,16 +438,38 @@ jobs:
             develop) DD_ENV_TAG="homolog" ;;
             *)       DD_ENV_TAG="developer" ;;
           esac
+
+          # URL da fila do os-orchestrator montada a partir da conta e da branch.
+          # Deterministica de proposito: nao le o state do outro repositorio, então
+          # este deploy nao espera o deploy do orquestrador.
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ORCHESTRATOR_QUEUE_URL="https://sqs.${AWS_REGION}.amazonaws.com/${ACCOUNT_ID}/os-orchestrator-${{ github.ref_name }}-order-processing"
+          # Fila de entrada da saga deste repositório (infra/terraform), mesmo padrão
+          # de nome. O listener resolve a URL pelo nome em runtime.
+          ORDER_EVENTS_QUEUE="os-management-${{ github.ref_name }}-order-events"
           sed -e "s|\${datasource_url}|${DB_URL}|g" \
               -e "s|\${datadog_env}|${DD_ENV_TAG}|g" \
+              -e "s|\${datadog_site}|${DD_SITE}|g" \
+              -e "s|\${aws_region}|${AWS_REGION}|g" \
+              -e "s|\${orchestrator_queue_url}|${ORCHESTRATOR_QUEUE_URL}|g" \
+              -e "s|\${order_events_queue}|${ORDER_EVENTS_QUEUE}|g" \
               k8s/app-configmap.yaml.tpl | kubectl apply -f -
 
-          # Secret da app (credenciais nunca hardcoded)
+          # Secret da app (credenciais nunca hardcoded). Chave temporaria (ASIA)
+          # precisa de AWS_SESSION_TOKEN; com chave fixa a linha e removida.
+          if [ -n "${APP_AWS_SESSION_TOKEN}" ]; then
+            TOKEN_SED="s|\${aws_session_token}|${APP_AWS_SESSION_TOKEN}|g"
+          else
+            TOKEN_SED="/AWS_SESSION_TOKEN/d"
+          fi
           sed -e "s|\${db_user}|${DB_USER}|g" \
               -e "s|\${db_password}|${DB_PASSWORD}|g" \
               -e "s|\${jwt_secret}|${JWT_SECRET}|g" \
               -e "s|\${external_token}|change-me|g" \
               -e "s|\${dd_api_key}|${DD_API_KEY}|g" \
+              -e "s|\${aws_access_key_id}|${APP_AWS_ACCESS_KEY_ID}|g" \
+              -e "s|\${aws_secret_access_key}|${APP_AWS_SECRET_ACCESS_KEY}|g" \
+              -e "${TOKEN_SED}" \
               k8s/app-secret.yaml.tpl | kubectl apply -f -
 
           # App Deployment + Service, HPA e Ingress
@@ -405,12 +492,31 @@ jobs:
             kubectl get pods -n os-management -o wide
             echo "----- describe (pod da app) -----"
             kubectl describe pod -n os-management -l app=os-management
-            echo "----- logs (app, todos os containers) -----"
+            echo "----- logs do container que caiu (--previous): aqui fica o erro do startup -----"
+            kubectl logs -n os-management -l app=os-management --previous --tail=200 --all-containers=true || true
+            echo "----- logs (app, container atual) -----"
             kubectl logs -n os-management -l app=os-management --tail=120 --all-containers=true || true
             echo "----- eventos do namespace -----"
             kubectl get events -n os-management --sort-by=.lastTimestamp | tail -40
             exit 1
           }
+
+      # Confere se o admission controller injetou o tracer no pod novo. Não falha
+      # o deploy, só avisa, para não descobrir pelo APM vazio no Datadog.
+      - name: Verificar injeção do dd-java-agent
+        if: ${{ env.DD_API_KEY != '' }}
+        continue-on-error: true
+        run: |
+          kubectl get pods -n os-management -l app=os-management \
+            -o custom-columns='POD:.metadata.name,STATUS:.status.phase,INIT:.spec.initContainers[*].name'
+          INIT_CONTAINERS=$(kubectl get pods -n os-management -l app=os-management \
+            -o jsonpath='{.items[*].spec.initContainers[*].name}')
+          if echo "${INIT_CONTAINERS}" | grep -q "datadog-lib-java"; then
+            echo "dd-java-agent injetado (init container datadog-lib-java-init presente)."
+          else
+            echo "::warning::Pod da app sem o init container datadog-lib-java-init: o tracer não foi injetado. Confira a label admission.datadoghq.com/enabled no k8s/app.yaml e os pods do namespace datadog."
+            exit 1
+          fi
 
       - name: Exibir acesso a aplicacao
         run: |
@@ -441,7 +547,6 @@ jobs:
     env:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
-      DD_SITE: ${{ vars.DD_SITE || 'datadoghq.com' }}
 
     steps:
       - name: Fazer checkout do código
@@ -458,3 +563,127 @@ jobs:
       - name: Aplicar dashboard e monitores (upsert)
         if: steps.guard.outputs.skip != 'true'
         run: bash .github/scripts/apply-datadog.sh
+
+  # ---------------------------------------------------------------------------
+  # Terraform — cria somente a fila de eventos da saga e a DLQ dela. Sem Lambda:
+  # a aplicação continua no EKS, implantada pelo job deploy-aws acima.
+  #
+  # Independente de propósito: não lê o state de nenhum outro repositório e não
+  # espera o deploy de nenhum outro. Não declara `needs`, então roda em paralelo
+  # com os jobs da aplicação e não interfere no deploy do Kubernetes.
+  # ---------------------------------------------------------------------------
+  terraform-preflight:
+    name: "Terraform preflight (PR → develop)"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    if: >
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.base.ref == 'develop') ||
+      (github.event_name == 'push' &&
+       github.ref == 'refs/heads/develop')
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Terraform fmt e init (sem backend)
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false
+
+      - name: Terraform validate (placeholders)
+        run: |
+          cat > ci-placeholder.auto.tfvars <<EOF
+          environment = "develop"
+          EOF
+          terraform validate
+
+  terraform-deploy:
+    name: "Terraform deploy (develop/main)"
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+    defaults:
+      run:
+        working-directory: infra/terraform
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    env:
+      TF_VAR_environment: ${{ github.ref_name }}
+      TF_VAR_aws_account_id: ${{ github.ref_name == 'main' && secrets.AWS_ACCOUNT_ID_MAIN || secrets.AWS_ACCOUNT_ID_DEVELOP }}
+      TF_STATE_BUCKET: ${{ github.ref_name == 'main' && secrets.TF_STATE_BUCKET_MAIN || secrets.TF_STATE_BUCKET_DEVELOP }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      TF_VAR_region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+    steps:
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ github.ref_name == 'main' && secrets.AWS_ACCESS_KEY_ID_MAIN || secrets.AWS_ACCESS_KEY_ID_DEVELOP }}
+          aws-secret-access-key: ${{ github.ref_name == 'main' && secrets.AWS_SECRET_ACCESS_KEY_MAIN || secrets.AWS_SECRET_ACCESS_KEY_DEVELOP }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Terraform Init
+        shell: bash
+        run: |
+          if [ -z "$TF_STATE_BUCKET" ]; then
+            echo "::error::Segredo TF_STATE_BUCKET_${{ github.ref_name == 'main' && 'MAIN' || 'DEVELOP' }} ausente."
+            exit 1
+          fi
+
+          terraform init \
+            -input=false \
+            -reconfigure \
+            -backend-config="bucket=$TF_STATE_BUCKET" \
+            -backend-config="key=os-management/${{ github.ref_name }}/terraform.tfstate" \
+            -backend-config="region=$AWS_REGION" \
+            -backend-config="use_lockfile=true"
+
+      - name: Importar recursos existentes quando o state está vazio
+        shell: bash
+        run: |
+          import_if_missing() {
+            local address="$1"
+            local resource_id="$2"
+
+            if ! terraform state show "$address" >/dev/null 2>&1; then
+              terraform import -input=false "$address" "$resource_id"
+            fi
+          }
+
+          env_name="${{ github.ref_name }}"
+
+          for pair in \
+            "aws_sqs_queue.order_events_dlq:os-management-${env_name}-order-events-dlq" \
+            "aws_sqs_queue.order_events:os-management-${env_name}-order-events"
+          do
+            address="${pair%%:*}"
+            queue_name="${pair#*:}"
+            queue_url=$(aws sqs get-queue-url --queue-name "$queue_name" --query 'QueueUrl' --output text 2>/dev/null || true)
+            if [ -n "$queue_url" ] && [ "$queue_url" != "None" ]; then
+              import_if_missing "$address" "$queue_url"
+            fi
+          done
+
+      - name: Terraform Plan (salvar tfplan)
+        run: terraform plan -input=false -no-color -out=tfplan
+
+      - name: Upload do artefato de plano
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: infra/terraform/tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -input=false -auto-approve tfplan

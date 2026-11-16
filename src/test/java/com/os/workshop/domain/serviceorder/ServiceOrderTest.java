@@ -150,6 +150,20 @@ class ServiceOrderTest {
         }
 
         @Test
+        void emDiagnosticoToEmExecucao() {
+            ServiceOrder order = orderWithStatus(OrderServiceStatusEnum.EM_DIAGNOSTICO);
+            order.advanceTo(OrderServiceStatusEnum.EM_EXECUCAO);
+            assertEquals(OrderServiceStatusEnum.EM_EXECUCAO.getStatus(), order.getServiceStatus());
+        }
+
+        @Test
+        void recebidaCannotGoToEmExecucao() {
+            ServiceOrder order = orderWithStatus(OrderServiceStatusEnum.RECEBIDA);
+            assertThrows(InvalidStatusTransitionException.class,
+                    () -> order.advanceTo(OrderServiceStatusEnum.EM_EXECUCAO));
+        }
+
+        @Test
         void recebidaCannotGoDirectlyToAprovado() {
             ServiceOrder order = orderWithStatus(OrderServiceStatusEnum.RECEBIDA);
             assertThrows(InvalidStatusTransitionException.class,

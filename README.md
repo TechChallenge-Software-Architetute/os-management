@@ -88,7 +88,6 @@ k8s/                  ← Manifestos Kubernetes
   configmap.yaml      ← ConfigMap (modo local/kustomize)
   secret.yaml         ← Secret (modo local/kustomize)
   postgres.yaml       ← Postgres in-cluster (SOMENTE local)
-  postgres-init-job.yaml ← Job de carga do schema (SOMENTE local)
   kustomization.yaml  ← Entrada do modo local (kubectl apply -k k8s/)
   app-configmap.yaml.tpl ← Template do ConfigMap (modo AWS, URL → RDS)
   app-secret.yaml.tpl    ← Template do Secret (modo AWS)
@@ -216,6 +215,7 @@ outros repositórios:
 | Variable | Descricao |
 |----------|-----------|
 | `USE_AWS` | `true` = deploy no EKS · caso contrário = Kind local |
+| `SONAR_ORGANIZATION` | Organizacao no SonarCloud (o scan so roda com ela e o secret `SONAR_TOKEN`) |
 
 **Secrets por ambiente** (GitHub Environments `develop` / `main`):
 
@@ -227,6 +227,12 @@ outros repositórios:
 | `DB_PASSWORD` | Senha do banco | Sempre |
 | `JWT_SECRET` | Chave JWT (min 32 chars) | Sempre |
 | `AWS_REGION` | Ex: `us-east-1` | Deploy AWS |
+
+**Secret de repositório** (o job `code-analysis` não usa GitHub Environment):
+
+| Secret | Descricao | Obrigatorio |
+|--------|-----------|-------------|
+| `SONAR_TOKEN` | Token do SonarCloud | Análise de qualidade (sem ele o scan é ignorado) |
 
 **Secrets sufixados por branch** (`_DEVELOP` / `_MAIN`, escolhido por branch):
 
@@ -330,6 +336,8 @@ src/main/java/com/os/workshop/
 RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → APROVADO → EM_EXECUCAO → FINALIZADA → ENTREGUE
                                      |
                                      └→ RECUSADA → (reabertura) → EM_DIAGNOSTICO
+
+RECEBIDA | EM_DIAGNOSTICO | AGUARDANDO_APROVACAO | APROVADO → CANCELADA  (compensacao da saga)
 ```
 
 | Status | Descricao |
@@ -342,8 +350,36 @@ RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → APROVADO → EM_EXECUCA
 | EM_EXECUCAO | Servicos sendo realizados |
 | FINALIZADA | Todos os servicos concluidos |
 | ENTREGUE | Veiculo devolvido ao cliente |
+| CANCELADA | Encerrada pela compensacao da saga (`NEGAR_SERVICO`, `NEGAR_ESTOQUE` ou `ERRO`), com as reservas de estoque liberadas. Nao pode ser definida pelo `PATCH` |
 
 A validacao de transicoes e feita no dominio (ServiceOrder). Transicoes invalidas retornam HTTP 422.
+
+### Saga com o os-orchestrator
+
+Contrato completo no [ADR-0006](docs/adr/ADR-0006-contrato-saga-orquestrador.md).
+Mensagens SQS com corpo JSON de exatamente quatro campos:
+`{"order": "<id da OS>", "action": "CRIAR_OS", "amount": 179.80, "correlationId": "..."}`. O `amount` e
+o total do orcamento no momento do envio (`0.00` na abertura); o `correlationId`
+do `CRIAR_OS` e o `X-Request-Id` da requisicao que abriu a OS, e nas respostas e
+o que veio no comando do orquestrador. Para compatibilidade com os listeners
+legados, `action`, `amount` e `correlationId` também são publicados como atributos
+da mensagem SQS.
+
+| Direcao | Acao | Efeito no os-management |
+|---|---|---|
+| envia | `CRIAR_OS` | na abertura da OS |
+| recebe e responde | `EXECUTAR_SERVICO` | OS `APROVADO` → `EM_EXECUCAO` |
+| recebe e responde | `ATUALIZAR_ESTOQUE` | confirma (baixa) as reservas de estoque |
+| recebe | `NEGAR_SERVICO`, `NEGAR_ESTOQUE`, `ERRO` | libera as reservas e cancela a OS |
+
+Comando que nao cabe no estado da OS (por exemplo, `EXECUTAR_SERVICO` antes da
+aprovacao) nao e confirmado e vai para a DLQ depois de 5 tentativas.
+
+| Variavel | Descricao |
+|---|---|
+| `AWS_SQS_ORCHESTRATOR_QUEUE_URL` | Fila de entrada do os-orchestrator (vazia = envio desligado) |
+| `AWS_SQS_ORDER_EVENTS_ENABLED` | `true` liga o listener da fila de entrada (padrao `false`) |
+| `AWS_SQS_ORDER_EVENTS_QUEUE` | Nome da fila de entrada: `os-management-<env>-order-events` |
 
 ---
 
@@ -828,9 +864,11 @@ O [Bruno](https://www.usebruno.com/) e um cliente HTTP open-source para testar A
 
 ## Scripts
 
-### init.sh
+### Migrations do Flyway
 
-Executado automaticamente pelo PostgreSQL na primeira inicializacao. Cria todas as tabelas e insere dados de exemplo.
+O schema do PostgreSQL e versionado em `src/main/resources/db/migration` e aplicado
+automaticamente pela aplicação antes da validação do Hibernate. Dados de exemplo
+ficam em `src/main/resources/db/dev` e são habilitados somente nos ambientes locais.
 
 ### validation.sh
 
@@ -873,11 +911,58 @@ chmod +x validation.sh
 
 ### Cobertura minima
 
-O build falha se a cobertura de linha (JaCoCo) ficar abaixo de **90%**. A verificacao e feita automaticamente na fase `verify`.
+O build falha se a cobertura de linha (JaCoCo) ficar abaixo de **80%**, a exigencia da Fase 4. A verificacao e feita na fase `verify` e conta os testes unitarios e o BDD; o relatorio combinado fica em `target/site/jacoco/index.html`.
+
+### BDD (Cucumber)
+
+A saga do lado do os-management e descrita em Gherkin (portugues) em
+[`src/test/resources/features/saga-da-os.feature`](src/test/resources/features/saga-da-os.feature)
+e roda contra a aplicacao inteira: API HTTP real, seguranca, transacoes,
+eventos internos e PostgreSQL via Testcontainers. Os comandos do orquestrador
+entram pelo mesmo adapter que consome a fila (`OrderEventsSqsListener`), com o
+formato da mensagem SQS; so a fila fica de fora. As mensagens que o
+os-management envia sao capturadas em memoria, e o e-mail via SNS vira no-op.
+
+Os cenarios seguem o estilo declarativo: cada um tem um estado inicial (`Dado`),
+uma unica acao (`Quando`) e o resultado (`Então`, com no maximo dois `E`). Os
+passos tecnicos para chegar ao estado (abrir, diagnosticar, reservar, aprovar)
+ficam na implementacao dos `Dado`.
+
+| Cenario | O que prova |
+|---|---|
+| Abertura da OS inicia a saga | `CRIAR_OS` sai na abertura |
+| Orquestrador libera a execucao | OS aprovada vai para `EM_EXECUCAO` e responde `EXECUTAR_SERVICO` |
+| Orquestrador manda baixar o estoque | estoque baixado sem zerar o orcamento; responde `ATUALIZAR_ESTOQUE` |
+| Servico negado pela saga | compensacao: OS `CANCELADA`, estoque devolvido, sem resposta |
+| Comando repetido | a OS nao executa de novo; so a confirmacao e reenviada |
+| Execucao antes da aprovacao | comando recusado (iria para a DLQ); a OS nao muda |
+| Cliente acompanha a OS | `/my-orders` mostra status e orcamento |
+| Orcamento recusado pelo cliente | estoque devolvido e nada enviado ao orquestrador |
+| Transicao invalida | `422`, a OS nao muda e a saga nao recebe nada |
+
+```bash
+# So o BDD (precisa de Docker)
+./mvnw verify -Dit.test=CucumberIntegrationTest
+# No PowerShell, com aspas (senao o "." quebra o argumento):
+#   ./mvnw verify "-Dit.test=CucumberIntegrationTest"
+# Relatorio: target/cucumber-reports/cucumber.html
+```
+
+No CI, o job `code-analysis` roda `mvn verify -Dit.test=CucumberIntegrationTest`
+(testes unitarios + BDD + gate do JaCoCo) e publica o relatorio como artefato
+`cucumber-report`.
 
 ### Testes de integracao
 
 Utilizam Testcontainers com PostgreSQL 16 real em container Docker. Requerem Docker Desktop rodando.
+
+> **Desatualizados, fora do CI ate serem corrigidos.** Os `*IntegrationTest`
+> nunca rodaram no pipeline (o `verify` era chamado com `-DskipTests`) e
+> divergiram do codigo: usam CPFs com digito verificador invalido, enviam `cpf`
+> onde o `CreateClientRequest` espera `document`, chamam `/signup` sem token
+> (hoje exige `ADMIN`) e dependem do `TestRestTemplate` sem
+> `@AutoConfigureTestRestTemplate`, que o Spring Boot 4 passou a exigir. O BDD
+> acima cobre o fluxo principal com a API atual.
 
 Cenarios cobertos:
 - Autenticacao (signup, login, acesso protegido)
