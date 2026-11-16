@@ -79,7 +79,6 @@ public class HandleSagaCommandUseCase {
 
         try {
             switch (action) {
-                case EXECUTAR_SERVICO -> executeService(order);
                 case ATUALIZAR_ESTOQUE -> updateStock(order);
                 case NEGAR_SERVICO, NEGAR_ESTOQUE, ERRO -> compensate(order, action);
                 default -> throw new SagaCommandRejectedException(orderId, action,
@@ -91,30 +90,7 @@ public class HandleSagaCommandUseCase {
         }
     }
 
-    private void executeService(ServiceOrder order) {
-        OrderServiceStatusEnum status = order.getStatus();
-
-        if (status == OrderServiceStatusEnum.APROVADO) {
-            order.advanceTo(EM_EXECUCAO);
-            ServiceOrder saved = serviceOrderRepository.save(order);
-            notificationService.notifyStatusChange(saved);
-            log.info("OS {} liberada pela saga: APROVADO -> EM_EXECUCAO.", order.getId());
-        } else if (EXECUTION_STARTED.contains(status)) {
-            log.info("OS {} ja esta em {}; reenviando a confirmacao de EXECUTAR_SERVICO.", order.getId(), status);
-        } else {
-            throw new SagaCommandRejectedException(order.getId(), SagaAction.EXECUTAR_SERVICO,
-                    "a OS esta em " + status + "; a execucao so comeca depois do orcamento aprovado");
-        }
-
-        reply(order.getId(), SagaAction.EXECUTAR_SERVICO);
-    }
-
     private void updateStock(ServiceOrder order) {
-        if (!EXECUTION_STARTED.contains(order.getStatus())) {
-            throw new SagaCommandRejectedException(order.getId(), SagaAction.ATUALIZAR_ESTOQUE,
-                    "a OS esta em " + order.getStatus() + "; o estoque so e baixado depois que a execucao comeca");
-        }
-
         if (hasActiveReservations(order.getId())) {
             confirmReservationUseCase.execute(order.getId());
             log.info("Reservas de estoque da OS {} confirmadas pela saga.", order.getId());

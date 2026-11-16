@@ -27,7 +27,7 @@ public enum OrderServiceStatusEnum {
     // saga nao desfaz a OS automaticamente.
     private static final Map<OrderServiceStatusEnum, List<OrderServiceStatusEnum>> ALLOWED_TRANSITIONS = Map.of(
             RECEBIDA, List.of(EM_DIAGNOSTICO, CANCELADA),
-            EM_DIAGNOSTICO, List.of(AGUARDANDO_APROVACAO, CANCELADA),
+            EM_DIAGNOSTICO, List.of(AGUARDANDO_APROVACAO, EM_EXECUCAO, CANCELADA),
             AGUARDANDO_APROVACAO, List.of(APROVADO, RECUSADA, CANCELADA),
             APROVADO, List.of(EM_EXECUCAO, CANCELADA),
             EM_EXECUCAO, List.of(FINALIZADA),
