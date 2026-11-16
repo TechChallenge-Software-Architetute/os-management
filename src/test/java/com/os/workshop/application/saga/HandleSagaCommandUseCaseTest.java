@@ -48,62 +48,6 @@ class HandleSagaCommandUseCaseTest {
 
     private final UUID orderId = UUID.randomUUID();
 
-    // ==================== EXECUTAR_SERVICO ====================
-
-    @Test
-    void executarServicoComOsAprovadaIniciaAExecucaoERespondeAoOrquestrador() {
-        var order = givenOrder(OrderServiceStatusEnum.APROVADO);
-        givenSaveReturnsArgument();
-
-        useCase.execute(orderId, SagaAction.EXECUTAR_SERVICO);
-
-        assertThat(order.getStatus()).isEqualTo(OrderServiceStatusEnum.EM_EXECUCAO);
-        verify(serviceOrderRepository).save(order);
-        verify(notificationService).notifyStatusChange(order);
-        verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.EXECUTAR_SERVICO));
-    }
-
-    @Test
-    void pagamentoAprovadoAprovaAOsAguardandoAprovacaoEIniciaAExecucao() {
-        var order = givenOrder(OrderServiceStatusEnum.AGUARDANDO_APROVACAO);
-        givenSaveReturnsArgument();
-
-        useCase.execute(orderId, SagaAction.EXECUTAR_SERVICO);
-
-        assertThat(order.getStatus()).isEqualTo(OrderServiceStatusEnum.EM_EXECUCAO);
-        verify(serviceOrderRepository).save(order);
-        verify(notificationService).notifyStatusChange(order);
-        verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.EXECUTAR_SERVICO));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = OrderServiceStatusEnum.class, names = {"EM_EXECUCAO", "FINALIZADA", "ENTREGUE"})
-    void executarServicoRepetidoSoReenviaAConfirmacao(OrderServiceStatusEnum status) {
-        var order = givenOrder(status);
-
-        useCase.execute(orderId, SagaAction.EXECUTAR_SERVICO);
-
-        assertThat(order.getStatus()).isEqualTo(status);
-        verify(serviceOrderRepository, never()).save(any());
-        verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.EXECUTAR_SERVICO));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = OrderServiceStatusEnum.class,
-            names = {"RECEBIDA", "EM_DIAGNOSTICO", "RECUSADA", "CANCELADA"})
-    void executarServicoForaDeAguardandoAprovacaoOuAprovadoERecusado(OrderServiceStatusEnum status) {
-        var order = givenOrder(status);
-
-        assertThatThrownBy(() -> useCase.execute(orderId, SagaAction.EXECUTAR_SERVICO))
-                .isInstanceOf(SagaCommandRejectedException.class)
-                .hasMessageContaining(status.name());
-
-        assertThat(order.getStatus()).isEqualTo(status);
-        verify(serviceOrderRepository, never()).save(any());
-        verifyNoInteractions(eventPublisher);
-        verify(metrics).processingFailed("saga_executar_servico");
-    }
-
     // ==================== ATUALIZAR_ESTOQUE ====================
 
     @Test
@@ -127,15 +71,20 @@ class HandleSagaCommandUseCaseTest {
         verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.ATUALIZAR_ESTOQUE));
     }
 
-    @Test
-    void atualizarEstoqueAntesDaExecucaoERecusado() {
-        givenOrder(OrderServiceStatusEnum.APROVADO);
+    @ParameterizedTest
+    @EnumSource(value = OrderServiceStatusEnum.class,
+            names = {"EM_DIAGNOSTICO", "AGUARDANDO_APROVACAO", "APROVADO"})
+    void atualizarEstoqueBaixaAsReservasMesmoComAOsAindaSemExecucao(OrderServiceStatusEnum status) {
+        // O pagamento aprovado leva direto ao ATUALIZAR_ESTOQUE: a OS ainda nao esta em execucao.
+        var order = givenOrder(status);
+        givenActiveReservations();
 
-        assertThatThrownBy(() -> useCase.execute(orderId, SagaAction.ATUALIZAR_ESTOQUE))
-                .isInstanceOf(SagaCommandRejectedException.class);
+        useCase.execute(orderId, SagaAction.ATUALIZAR_ESTOQUE);
 
-        verifyNoInteractions(confirmReservationUseCase, eventPublisher);
-        verify(metrics).processingFailed("saga_atualizar_estoque");
+        assertThat(order.getStatus()).isEqualTo(status);
+        verify(confirmReservationUseCase).execute(orderId);
+        verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.ATUALIZAR_ESTOQUE));
+        verifyNoInteractions(metrics);
     }
 
     // ==================== Compensacao ====================
@@ -208,7 +157,7 @@ class HandleSagaCommandUseCaseTest {
     // ==================== Fora do contrato ====================
 
     @ParameterizedTest
-    @EnumSource(value = SagaAction.class, names = {"CRIAR_OS", "GERAR_ORCAMENTO", "GERAR_PAGAMENTO"})
+    @EnumSource(value = SagaAction.class, names = {"CRIAR_OS", "EXECUTAR_SERVICO", "GERAR_ORCAMENTO", "GERAR_PAGAMENTO"})
     void acaoQueNaoEDestinadaAoOsManagementERecusada(SagaAction action) {
         givenOrder(OrderServiceStatusEnum.APROVADO);
 
