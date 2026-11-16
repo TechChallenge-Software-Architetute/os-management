@@ -14,8 +14,8 @@ Funcionalidade: Saga da OS do lado do os-management
     E o orquestrador recebe "CRIAR_OS"
     E a mensagem leva o valor "0.00" e o id da requisição como correlationId
 
-  Cenário: Orquestrador libera a execução de uma OS aprovada
-    Dado uma OS aprovada pelo cliente com 2 unidades da peça reservadas
+  Cenário: Pagamento aprovado libera a execução de uma OS aguardando aprovação
+    Dado uma OS aguardando aprovação com 2 unidades da peça reservadas
     Quando o orquestrador manda "EXECUTAR_SERVICO"
     Então a OS fica com status "EM_EXECUCAO"
     E o orquestrador recebe "EXECUTAR_SERVICO"

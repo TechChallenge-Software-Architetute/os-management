@@ -47,10 +47,9 @@ cada comando e o que acontece quando um comando não cabe no estado da OS.
   | 2 | os-management → orquestrador | `ORCAMENTO_DISPONIVEL` | Envia após o commit das reservas e recálculo de valor positivo. |
   | 3 | orquestrador → os-payment | `GERAR_ORCAMENTO` | Cria a cobrança com o valor calculado; a saga aguarda aprovação. |
   | 4 | os-payment → orquestrador | `GERAR_ORCAMENTO` | Confirma a geração da cobrança, sem iniciar execução. |
-  | 5 | os-management → orquestrador | `ORCAMENTO_APROVADO` | Envia quando o cliente aprova a OS. |
-  | 6 | os-payment → orquestrador | `PAGAMENTO_APROVADO` | Sinaliza aprovação do pagamento. A execução só segue após as duas aprovações. |
-  | 7 | orquestrador → os-management | `EXECUTAR_SERVICO` | OS `APROVADO` → `EM_EXECUCAO`; responde `EXECUTAR_SERVICO`. |
-  | 8 | orquestrador → os-management | `ATUALIZAR_ESTOQUE` | Confirma (baixa) as reservas da OS; responde `ATUALIZAR_ESTOQUE`. |
+  | 5 | os-payment → orquestrador | `PAGAMENTO_APROVADO` | Sinaliza o pagamento aprovado. Ele é a aprovação da OS: o cliente não aprova mais dentro da saga. |
+  | 6 | orquestrador → os-management | `EXECUTAR_SERVICO` | OS `AGUARDANDO_APROVACAO` (ou `APROVADO`) → `EM_EXECUCAO`; responde `EXECUTAR_SERVICO`. |
+  | 7 | orquestrador → os-management | `ATUALIZAR_ESTOQUE` | Confirma (baixa) as reservas da OS; responde `ATUALIZAR_ESTOQUE`. |
 
 - **Compensação:** `NEGAR_SERVICO`, `NEGAR_ESTOQUE` e `ERRO` liberam as reservas
   ativas da OS e levam a OS para o status novo `CANCELADA` (motivo em
@@ -59,7 +58,8 @@ cada comando e o que acontece quando um comando não cabe no estado da OS.
 - **O `CRIAR_OS` sai na abertura da OS**, como já acontecia. Decisão do grupo.
 
 - **Regras de estado no os-management** (`HandleSagaCommandUseCase`):
-  - `EXECUTAR_SERVICO` só é aplicado com a OS `APROVADO`.
+  - `EXECUTAR_SERVICO` só é aplicado com a OS `AGUARDANDO_APROVACAO` ou `APROVADO`. Em
+    `AGUARDANDO_APROVACAO`, o pagamento aprovado aprova a OS antes de iniciar a execução.
   - `ATUALIZAR_ESTOQUE` só é aplicado depois que a execução começou
     (`EM_EXECUCAO`, `FINALIZADA`, `ENTREGUE`).
   - A compensação só cancela antes da execução (`RECEBIDA`, `EM_DIAGNOSTICO`,

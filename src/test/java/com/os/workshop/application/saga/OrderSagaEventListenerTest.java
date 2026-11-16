@@ -51,17 +51,6 @@ class OrderSagaEventListenerTest {
     }
 
     @Test
-    void aprovacaoDoOrcamentoNotificaOrquestrador() {
-        MDC.put(RequestCorrelationFilter.REQUEST_ID, "req-123");
-        when(budgetRepository.findByServiceOrderId(orderId)).thenReturn(Optional.empty());
-
-        listener.onOrderSagaEvent(OrderSagaEvent.advanced(orderId, "AGUARDANDO_APROVACAO", "APROVADO"));
-
-        verify(publisher).publish(new SagaMessage(
-                orderId, SagaAction.ORCAMENTO_APROVADO, BigDecimal.ZERO, "req-123"));
-    }
-
-    @Test
     void respostaLevaOTotalDoOrcamentoEOCorrelationIdDaSaga() {
         MDC.put(RequestCorrelationFilter.REQUEST_ID, "req-123");
         MDC.put(SagaCorrelation.MDC_KEY, "saga-1");

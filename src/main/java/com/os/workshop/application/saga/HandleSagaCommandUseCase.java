@@ -33,7 +33,8 @@ import static com.os.workshop.domain.serviceorder.OrderServiceStatusEnum.RECUSAD
  * {@code os-management-<env>-order-events} (contrato no ADR-0006).
  *
  * <ul>
- *   <li>{@code EXECUTAR_SERVICO}: OS aprovada vai para {@code EM_EXECUCAO}.
+ *   <li>{@code EXECUTAR_SERVICO}: o pagamento aprovado aprova a OS, que vai de
+ *       {@code AGUARDANDO_APROVACAO} (ou {@code APROVADO}) para {@code EM_EXECUCAO}.
  *       Responde {@code EXECUTAR_SERVICO}.</li>
  *   <li>{@code ATUALIZAR_ESTOQUE}: confirma (baixa) as reservas da OS.
  *       Responde {@code ATUALIZAR_ESTOQUE}.</li>
@@ -94,16 +95,21 @@ public class HandleSagaCommandUseCase {
     private void executeService(ServiceOrder order) {
         OrderServiceStatusEnum status = order.getStatus();
 
-        if (status == OrderServiceStatusEnum.APROVADO) {
+        if (status == OrderServiceStatusEnum.AGUARDANDO_APROVACAO || status == OrderServiceStatusEnum.APROVADO) {
+            // O comando so chega depois do pagamento aprovado, e e ele que aprova a OS:
+            // o cliente nao precisa mais aprovar. Se ele ja aprovou, a OS ja esta APROVADO.
+            if (status == OrderServiceStatusEnum.AGUARDANDO_APROVACAO) {
+                order.advanceTo(OrderServiceStatusEnum.APROVADO);
+            }
             order.advanceTo(EM_EXECUCAO);
             ServiceOrder saved = serviceOrderRepository.save(order);
             notificationService.notifyStatusChange(saved);
-            log.info("OS {} liberada pela saga: APROVADO -> EM_EXECUCAO.", order.getId());
+            log.info("OS {} liberada pela saga: {} -> EM_EXECUCAO.", order.getId(), status);
         } else if (EXECUTION_STARTED.contains(status)) {
             log.info("OS {} ja esta em {}; reenviando a confirmacao de EXECUTAR_SERVICO.", order.getId(), status);
         } else {
             throw new SagaCommandRejectedException(order.getId(), SagaAction.EXECUTAR_SERVICO,
-                    "a OS esta em " + status + "; a execucao so comeca depois do orcamento aprovado");
+                    "a OS esta em " + status + "; a execucao so comeca com a OS aguardando aprovacao (paga) ou aprovada");
         }
 
         reply(order.getId(), SagaAction.EXECUTAR_SERVICO);
