@@ -24,15 +24,7 @@ class SagaActionResolverTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = OrderServiceStatusEnum.class, names = {"APROVADO"})
-    void aprovacaoDoClienteNotificaAOrquestracao(OrderServiceStatusEnum target) {
-        var event = OrderSagaEvent.advanced(orderId, "AGUARDANDO_APROVACAO", target.name());
-
-        assertThat(resolver.resolve(event)).contains(SagaAction.ORCAMENTO_APROVADO);
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = OrderServiceStatusEnum.class, mode = EnumSource.Mode.EXCLUDE, names = {"APROVADO"})
+    @EnumSource(OrderServiceStatusEnum.class)
     void transicaoDeStatusNaoGeraComando(OrderServiceStatusEnum target) {
         var event = OrderSagaEvent.advanced(orderId, "QUALQUER", target.name());
 

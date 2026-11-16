@@ -20,7 +20,7 @@ public enum SagaAction {
     /** os-management -> orquestrador: reservas concluidas e orçamento positivo calculado. */
     ORCAMENTO_DISPONIVEL,
 
-    /** os-management -> orquestrador: cliente aprovou o orçamento da OS. */
+    /** Reservada: o cliente nao aprova mais dentro da saga (o pagamento aprovado aprova a OS). Nao e enviada. */
     ORCAMENTO_APROVADO,
 
     /** Orquestrador <-> os-payment. Nao e destinada ao os-management. */
