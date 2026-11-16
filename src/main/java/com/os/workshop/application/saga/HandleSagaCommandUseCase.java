@@ -33,7 +33,8 @@ import static com.os.workshop.domain.serviceorder.OrderServiceStatusEnum.RECUSAD
  * {@code os-management-<env>-order-events} (contrato no ADR-0006).
  *
  * <ul>
- *   <li>{@code EXECUTAR_SERVICO}: OS aprovada vai para {@code EM_EXECUCAO}.
+ *   <li>{@code EXECUTAR_SERVICO}: o pagamento aprovado aprova a OS, que vai de
+ *       {@code AGUARDANDO_APROVACAO} (ou {@code APROVADO}) para {@code EM_EXECUCAO}.
  *       Responde {@code EXECUTAR_SERVICO}.</li>
  *   <li>{@code ATUALIZAR_ESTOQUE}: confirma (baixa) as reservas da OS.
  *       Responde {@code ATUALIZAR_ESTOQUE}.</li>

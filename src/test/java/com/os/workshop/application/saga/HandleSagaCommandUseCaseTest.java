@@ -63,6 +63,19 @@ class HandleSagaCommandUseCaseTest {
         verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.EXECUTAR_SERVICO));
     }
 
+    @Test
+    void pagamentoAprovadoAprovaAOsAguardandoAprovacaoEIniciaAExecucao() {
+        var order = givenOrder(OrderServiceStatusEnum.AGUARDANDO_APROVACAO);
+        givenSaveReturnsArgument();
+
+        useCase.execute(orderId, SagaAction.EXECUTAR_SERVICO);
+
+        assertThat(order.getStatus()).isEqualTo(OrderServiceStatusEnum.EM_EXECUCAO);
+        verify(serviceOrderRepository).save(order);
+        verify(notificationService).notifyStatusChange(order);
+        verify(eventPublisher).publishEvent(new OrderSagaCommand(orderId, SagaAction.EXECUTAR_SERVICO));
+    }
+
     @ParameterizedTest
     @EnumSource(value = OrderServiceStatusEnum.class, names = {"EM_EXECUCAO", "FINALIZADA", "ENTREGUE"})
     void executarServicoRepetidoSoReenviaAConfirmacao(OrderServiceStatusEnum status) {
@@ -77,8 +90,8 @@ class HandleSagaCommandUseCaseTest {
 
     @ParameterizedTest
     @EnumSource(value = OrderServiceStatusEnum.class,
-            names = {"RECEBIDA", "EM_DIAGNOSTICO", "AGUARDANDO_APROVACAO", "RECUSADA", "CANCELADA"})
-    void executarServicoSemOrcamentoAprovadoERecusado(OrderServiceStatusEnum status) {
+            names = {"RECEBIDA", "EM_DIAGNOSTICO", "RECUSADA", "CANCELADA"})
+    void executarServicoForaDeAguardandoAprovacaoOuAprovadoERecusado(OrderServiceStatusEnum status) {
         var order = givenOrder(status);
 
         assertThatThrownBy(() -> useCase.execute(orderId, SagaAction.EXECUTAR_SERVICO))

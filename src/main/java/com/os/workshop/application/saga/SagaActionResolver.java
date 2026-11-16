@@ -10,17 +10,15 @@ import java.util.Optional;
  * Traduz uma mudanca de estado da OS na acao da saga que o os-management inicia
  * por conta propria.
  *
- * <p>No contrato com o os-orchestrator (ADR-0006), o os-management inicia a saga
- * com {@code CRIAR_OS}, e depois informa a aprovacao do orçamento pelo cliente.
- * As respostas aos comandos do orquestrador saem do
- * {@link HandleSagaCommandUseCase}, nao daqui.
+ * <p>No contrato com o os-orchestrator (ADR-0006), o os-management so toma a
+ * iniciativa uma vez: o {@code CRIAR_OS}, na abertura da OS. As respostas aos
+ * comandos do orquestrador saem do {@link HandleSagaCommandUseCase}, nao daqui.
  *
- * <p>A unica transicao que inicia um passo adicional e a aprovacao do cliente:
- * ela informa o orquestrador para que a execucao aguarde também a aprovacao do
- * pagamento. As demais respostas continuam sendo disparadas pelo comando recebido.
- *
- * <p>As transicoes de status sem acao correspondente nao geram comando:
+ * <p>As transicoes de status nao geram comando:
  * <ul>
+ *   <li>{@code APROVADO} nao avisa o orquestrador: a aprovacao da OS e o pagamento
+ *       aprovado, que o os-payment informa direto a ele. O cliente nao aprova mais
+ *       dentro da saga.</li>
  *   <li>{@code AGUARDANDO_APROVACAO} deixou de gerar {@code GERAR_ORCAMENTO}: quem
  *       responde essa acao ao orquestrador e o os-payment. Se o os-management
  *       tambem enviasse, o orquestrador receberia a acao em duplicidade.</li>
@@ -29,14 +27,14 @@ import java.util.Optional;
  *       pela API, a confirmacao sai quando o comando chegar.</li>
  * </ul>
  *
- * <p>O mapa associa transicoes de status às ações que iniciam ou liberam passos da saga.
+ * <p>O mapa continua aqui como ponto de extensao: se o contrato ganhar uma acao
+ * disparada por transicao de status, e uma linha.
  */
 @Component
 public class SagaActionResolver {
 
-    /** Estado de destino -> acao da saga. */
-    private static final Map<OrderServiceStatusEnum, SagaAction> ACTION_BY_TARGET_STATUS =
-            Map.of(OrderServiceStatusEnum.APROVADO, SagaAction.ORCAMENTO_APROVADO);
+    /** Estado de destino -> acao da saga. Vazio no contrato atual. */
+    private static final Map<OrderServiceStatusEnum, SagaAction> ACTION_BY_TARGET_STATUS = Map.of();
 
     /** A abertura da OS e sempre o primeiro passo da saga. */
     private static final SagaAction CREATION_ACTION = SagaAction.CRIAR_OS;
