@@ -187,8 +187,8 @@ public class OrdemDeServicoSteps {
     @Given("uma OS em execução com {int} unidades da peça reservadas")
     public void umaOsEmExecucao(int quantity) {
         umaOsAprovada(quantity);
-        // Pelo contrato, so o comando do orquestrador inicia a execucao.
-        orchestratorQueue.onMessage(orchestratorBody(SagaAction.EXECUTAR_SERVICO.name()), null);
+        // A saga nao manda EXECUTAR_SERVICO ao os-management: a oficina inicia a execucao pela API.
+        moveOrderTo("EM_EXECUCAO");
     }
 
     // ==================== Quando ====================

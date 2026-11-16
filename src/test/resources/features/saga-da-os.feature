@@ -1,8 +1,8 @@
 # language: pt
 Funcionalidade: Saga da OS do lado do os-management
-  O os-management abre a saga com CRIAR_OS, executa os comandos que o
-  os-orchestrator manda (EXECUTAR_SERVICO e ATUALIZAR_ESTOQUE), responde cada
-  um com a mesma acao e desfaz a OS quando recebe uma compensacao.
+  O os-management abre a saga com CRIAR_OS, executa o comando ATUALIZAR_ESTOQUE
+  que o os-orchestrator manda, responde com a mesma acao e desfaz a OS quando
+  recebe uma compensacao.
 
   Contexto:
     Dado um cliente com veículo cadastrado
@@ -14,11 +14,12 @@ Funcionalidade: Saga da OS do lado do os-management
     E o orquestrador recebe "CRIAR_OS"
     E a mensagem leva o valor "0.00" e o id da requisição como correlationId
 
-  Cenário: Pagamento aprovado libera a execução de uma OS aguardando aprovação
+  Cenário: Orquestrador manda baixar o estoque de uma OS que ainda aguarda aprovação
     Dado uma OS aguardando aprovação com 2 unidades da peça reservadas
-    Quando o orquestrador manda "EXECUTAR_SERVICO"
-    Então a OS fica com status "EM_EXECUCAO"
-    E o orquestrador recebe "EXECUTAR_SERVICO"
+    Quando o orquestrador manda "ATUALIZAR_ESTOQUE"
+    Então o estoque disponível da peça fica em 8
+    E a OS continua com status "AGUARDANDO_APROVACAO"
+    E o orquestrador recebe "ATUALIZAR_ESTOQUE"
     E a mensagem leva o valor "179.80" e o correlationId do comando
 
   Cenário: Orquestrador manda baixar o estoque da OS em execução
@@ -35,13 +36,7 @@ Funcionalidade: Saga da OS do lado do os-management
     E o estoque disponível da peça volta para 10
     E o orquestrador não recebe nada
 
-  Cenário: Comando repetido não executa a OS de novo
-    Dado uma OS em execução com 2 unidades da peça reservadas
-    Quando o orquestrador manda "EXECUTAR_SERVICO"
-    Então a OS continua com status "EM_EXECUCAO"
-    E o orquestrador recebe "EXECUTAR_SERVICO"
-
-  Cenário: Execução antes da aprovação é recusada
+  Cenário: EXECUTAR_SERVICO não é comando do os-management
     Dado uma OS recém-aberta
     Quando o orquestrador manda "EXECUTAR_SERVICO"
     Então o comando é recusado
